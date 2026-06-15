@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     Never hardcode values that belong here — always import from this module.
 
     Raises:
-        ValidationError: If required fields (OPENAI_API_KEY, EDGAR_USER_AGENT)
+        ValidationError: If required fields (OPENAI_API_KEY, EDGAR_IDENTITY)
                          are missing from the environment or .env file.
     """
 
@@ -24,16 +24,22 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    # Required — no defaults, will raise ValidationError if missing
+    # Required — no defaults, will raise ValidationError at startup if missing
     OPENAI_API_KEY: str
-    EDGAR_USER_AGENT: str
+    EDGAR_IDENTITY: str
 
-    # Optional — defaults provided
+    # Models
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+
+    # Logging
     LOG_LEVEL: str = "INFO"
+
+    # Storage paths
     CHROMA_DB_PATH: str = "db/chroma"
     SQLITE_DB_PATH: str = "db/metadata.db"
-    PROCESSED_DATA_PATH: str = "data/processed"
     RAW_DATA_PATH: str = "data/raw"
+    EVAL_DATA_PATH: str = "data/eval"
 
 
 # Singleton instance — import this everywhere
