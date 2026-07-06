@@ -216,3 +216,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── Project-specific (Enterprise Document Intelligence System) ──
+# Local, regenerable data — not committed
+data/raw/
+data/processed/
+data/exports/
+
+# Databases — SQLite metadata + ChromaDB vector store (regenerable)
+db/
+
+# Keep evaluation evidence — committed as portfolio proof.
+# (Negations are defensive: they re-include eval/ if a broader data/ rule
+#  is ever added above. They work here only because data/ itself is never
+#  ignored as a whole — git must be able to descend into data/ to see eval/.)
+!data/eval/
+!data/eval/**

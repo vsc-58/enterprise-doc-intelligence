@@ -36,7 +36,8 @@ def _configure_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer(),
+            # structlog.processors.JSONRenderer(), --commented to get human readable foramt
+            structlog.dev.ConsoleRenderer(), #added to get human readable format
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,

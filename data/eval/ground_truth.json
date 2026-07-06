@@ -1,0 +1,222 @@
+{
+  "0000019617_2023": {
+    "cik": "0000019617",
+    "company_name": "JPMORGAN CHASE & CO",
+    "fiscal_year": 2023,
+    "fiscal_year_end": "2023-12-31",
+    "net_income": 49552000000.0,
+    "operating_cash_flow": 12974000000.0,
+    "total_assets": 3875393000000.0,
+    "total_liabilities": 3547515000000.0,
+    "total_revenue": null
+  },
+  "0000027419_2021": {
+    "cik": "0000027419",
+    "company_name": "TARGET CORP",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-01-30",
+    "net_income": null,
+    "operating_cash_flow": 10525000000.0,
+    "total_assets": 51248000000.0,
+    "total_liabilities": null,
+    "total_revenue": 93561000000.0
+  },
+  "0000034088_2022": {
+    "cik": "0000034088",
+    "company_name": "EXXON MOBIL CORP",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-12-31",
+    "net_income": 55740000000.0,
+    "operating_cash_flow": 76797000000.0,
+    "total_assets": 369067000000.0,
+    "total_liabilities": 166594000000.0,
+    "total_revenue": 413680000000.0
+  },
+  "0000050863_2023": {
+    "cik": "0000050863",
+    "company_name": "INTEL CORP",
+    "fiscal_year": 2023,
+    "fiscal_year_end": "2023-12-30",
+    "net_income": 1689000000.0,
+    "operating_cash_flow": 11471000000.0,
+    "total_assets": 191572000000.0,
+    "total_liabilities": null,
+    "total_revenue": 54228000000.0
+  },
+  "0000070858_2022": {
+    "cik": "0000070858",
+    "company_name": "BANK OF AMERICA CORP /DE/",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-12-31",
+    "net_income": 27528000000.0,
+    "operating_cash_flow": -6327000000.0,
+    "total_assets": 3051375000000.0,
+    "total_liabilities": 2778178000000.0,
+    "total_revenue": 94950000000.0
+  },
+  "0000078003_2023": {
+    "cik": "0000078003",
+    "company_name": "PFIZER INC",
+    "fiscal_year": 2023,
+    "fiscal_year_end": "2023-12-31",
+    "net_income": 2119000000.0,
+    "operating_cash_flow": 8700000000.0,
+    "total_assets": 226501000000.0,
+    "total_liabilities": 137213000000.0,
+    "total_revenue": 50914000000.0
+  },
+  "0000104169_2023": {
+    "cik": "0000104169",
+    "company_name": "Walmart Inc.",
+    "fiscal_year": 2023,
+    "fiscal_year_end": "2023-01-31",
+    "net_income": 11680000000.0,
+    "operating_cash_flow": 28841000000.0,
+    "total_assets": 243197000000.0,
+    "total_liabilities": null,
+    "total_revenue": 605881000000.0
+  },
+  "0000200406_2021": {
+    "cik": "0000200406",
+    "company_name": "JOHNSON & JOHNSON",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-01-03",
+    "net_income": 14714000000.0,
+    "operating_cash_flow": 23536000000.0,
+    "total_assets": 174894000000.0,
+    "total_liabilities": 111616000000.0,
+    "total_revenue": 82584000000.0
+  },
+  "0000320193_2021": {
+    "cik": "0000320193",
+    "company_name": "Apple Inc.",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-09-25",
+    "net_income": 94680000000.0,
+    "operating_cash_flow": 104038000000.0,
+    "total_assets": 351002000000.0,
+    "total_liabilities": 287912000000.0,
+    "total_revenue": 365817000000.0
+  },
+  "0000789019_2022": {
+    "cik": "0000789019",
+    "company_name": "MICROSOFT CORP",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-06-30",
+    "net_income": 72738000000.0,
+    "operating_cash_flow": 89035000000.0,
+    "total_assets": 364840000000.0,
+    "total_liabilities": 198298000000.0,
+    "total_revenue": 198270000000.0
+  },
+  "0000796343_2022": {
+    "cik": "0000796343",
+    "company_name": "ADOBE INC.",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-12-02",
+    "net_income": 4756000000.0,
+    "operating_cash_flow": 7838000000.0,
+    "total_assets": 27165000000.0,
+    "total_liabilities": 13114000000.0,
+    "total_revenue": 17606000000.0
+  },
+  "0000804328_2021": {
+    "cik": "0000804328",
+    "company_name": "QUALCOMM INC/DE",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-09-26",
+    "net_income": 9043000000.0,
+    "operating_cash_flow": 10536000000.0,
+    "total_assets": 41240000000.0,
+    "total_liabilities": 31290000000.0,
+    "total_revenue": 33566000000.0
+  },
+  "0000886982_2021": {
+    "cik": "0000886982",
+    "company_name": "GOLDMAN SACHS GROUP INC",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-12-31",
+    "net_income": 21635000000.0,
+    "operating_cash_flow": 921000000.0,
+    "total_assets": 1463988000000.0,
+    "total_liabilities": 1354062000000.0,
+    "total_revenue": null
+  },
+  "0001018724_2023": {
+    "cik": "0001018724",
+    "company_name": "AMAZON COM INC",
+    "fiscal_year": 2023,
+    "fiscal_year_end": "2023-12-31",
+    "net_income": 30425000000.0,
+    "operating_cash_flow": 84946000000.0,
+    "total_assets": 527854000000.0,
+    "total_liabilities": null,
+    "total_revenue": 574785000000.0
+  },
+  "0001065280_2023": {
+    "cik": "0001065280",
+    "company_name": "NETFLIX INC",
+    "fiscal_year": 2023,
+    "fiscal_year_end": "2023-12-31",
+    "net_income": 5407990000.0,
+    "operating_cash_flow": 7274301000.0,
+    "total_assets": 48731992000.0,
+    "total_liabilities": 28143679000.0,
+    "total_revenue": 33723297000.0
+  },
+  "0001108524_2021": {
+    "cik": "0001108524",
+    "company_name": "Salesforce, Inc.",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-01-31",
+    "net_income": 4072000000.0,
+    "operating_cash_flow": 4801000000.0,
+    "total_assets": 66301000000.0,
+    "total_liabilities": 24808000000.0,
+    "total_revenue": 21252000000.0
+  },
+  "0001318605_2022": {
+    "cik": "0001318605",
+    "company_name": "Tesla, Inc.",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-12-31",
+    "net_income": 12556000000.0,
+    "operating_cash_flow": 14724000000.0,
+    "total_assets": 82338000000.0,
+    "total_liabilities": 36440000000.0,
+    "total_revenue": 90929000000.0
+  },
+  "0001326801_2022": {
+    "cik": "0001326801",
+    "company_name": "Meta Platforms, Inc.",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-12-31",
+    "net_income": 23200000000.0,
+    "operating_cash_flow": 50475000000.0,
+    "total_assets": 185727000000.0,
+    "total_liabilities": 60014000000.0,
+    "total_revenue": 116609000000.0
+  },
+  "0001403161_2022": {
+    "cik": "0001403161",
+    "company_name": "VISA INC.",
+    "fiscal_year": 2022,
+    "fiscal_year_end": "2022-09-30",
+    "net_income": 14957000000.0,
+    "operating_cash_flow": 18849000000.0,
+    "total_assets": 85501000000.0,
+    "total_liabilities": 49920000000.0,
+    "total_revenue": 29310000000.0
+  },
+  "0001652044_2021": {
+    "cik": "0001652044",
+    "company_name": "Alphabet Inc.",
+    "fiscal_year": 2021,
+    "fiscal_year_end": "2021-12-31",
+    "net_income": 76033000000.0,
+    "operating_cash_flow": 91652000000.0,
+    "total_assets": 359268000000.0,
+    "total_liabilities": 107633000000.0,
+    "total_revenue": 257637000000.0
+  }
+}
