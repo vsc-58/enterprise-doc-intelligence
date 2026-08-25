@@ -1,0 +1,47 @@
+{
+  "strategy_id": "S3",
+  "cik": "0001403161",
+  "year": 2022,
+  "extraction": {
+    "company_name": "VISA INC.",
+    "fiscal_year_end": "2022-09-30",
+    "total_revenue": 29310000000.0,
+    "net_income": 14957000000.0,
+    "total_assets": 85501000000.0,
+    "total_liabilities": 49920000000.0,
+    "operating_cash_flow": 18849000000.0,
+    "business_description": "Visa is one of the world’s leaders in digital payments. Our purpose is to uplift everyone, everywhere by being the best way to pay and be paid. We facilitate global commerce and money movement across more than 200 countries and territories among a global set of consumers, merchants, financial institutions and government entities through innovative technologies.",
+    "primary_risk_factors": [
+      "Legal and regulatory proceedings",
+      "Competition in the payments industry",
+      "Economic conditions affecting consumer spending"
+    ],
+    "auditor_name": "KPMG LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 29310000000.0,
+      "source_line": "Net revenues $29,310 $24,105 $21,846"
+    },
+    "net_income": {
+      "value": 14957000000.0,
+      "source_line": "Net income $14,957 $12,311 $10,866"
+    },
+    "total_assets": {
+      "value": 85501000000.0,
+      "source_line": "Total assets $85,501 $82,896"
+    },
+    "total_liabilities": {
+      "value": 49920000000.0,
+      "source_line": "Total liabilities $49,920 $45,307"
+    },
+    "operating_cash_flow": {
+      "value": 18849000000.0,
+      "source_line": "Net cash provided by (used in) operating activities 18,849 15,227 10,440"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 42809,
+  "output_tokens": 268,
+  "parsing_error": null
+}

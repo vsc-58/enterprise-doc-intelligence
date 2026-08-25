@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0001652044",
+  "year": 2021,
+  "extraction": {
+    "company_name": "Alphabet Inc.",
+    "fiscal_year_end": "2021-12-31",
+    "total_revenue": 257637000000.0,
+    "net_income": 76033000000.0,
+    "total_assets": 359268000000.0,
+    "total_liabilities": 107633000000.0,
+    "operating_cash_flow": 91652000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 257637000000.0,
+      "source_line": "Total revenues$161,857 $182,527 $257,637"
+    },
+    "net_income": {
+      "value": 76033000000.0,
+      "source_line": "Net income$34,343 $40,269 $76,033"
+    },
+    "total_assets": {
+      "value": 359268000000.0,
+      "source_line": "Total assets$319,616 $359,268"
+    },
+    "total_liabilities": {
+      "value": 107633000000.0,
+      "source_line": "Total liabilities97,072 107,633"
+    },
+    "operating_cash_flow": {
+      "value": 91652000000.0,
+      "source_line": "Net cash provided by operating activities54,520 65,124 91,652"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 30336,
+  "output_tokens": 195,
+  "parsing_error": null
+}

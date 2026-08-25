@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     RAW_DATA_PATH: str = "data/raw"
     EVAL_DATA_PATH: str = "data/eval"
 
+    # Secion characters upper and lower limits
+    ITEM8_MIN_CHARS: int = 26136             # edgartools' floor; below = truncated heading
+    ITEM8_MAX_TOKENS: int = 60000            # above = over-capture; GS hit 119591
+    MODEL_INPUT_TOKEN_BUDGET: int = 120000   # leave headroom under gpt-4o-mini's 128k for output
+    COVER_MAX_CHARS: int = 12000
+
+    # error tolerance threshold
+    NUMERIC_REL_TOLERANCE: float = 1e-5   # tight: catches digit-level misreads, absorbs true rounding
+
 
 # Singleton instance — import this everywhere
 # from src.utils.config import settings

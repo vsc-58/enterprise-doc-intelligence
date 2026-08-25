@@ -14,6 +14,7 @@ from edgar import Company, set_identity
 
 from src.utils.config import settings
 from src.utils.logger import get_logger
+from datetime import date, datetime ## added for filing_date extraction
 
 if TYPE_CHECKING:
     # Imported for type-checking only; keeps runtime import surface minimal.
@@ -26,6 +27,34 @@ logger = get_logger(__name__)
 # import itself perform that side effect.
 _identity_set: bool = False
 
+## added for filing_date extraction
+def to_iso_date(value: object) -> str | None:
+    """
+    Normalise edgartools' filing_date to an ISO 'YYYY-MM-DD' string.
+
+    edgartools' return type varies by code path (date | datetime | str |
+    pandas Timestamp); this coerces every shape to one stored form.
+
+    Args:
+        value: The raw filing_date from a filing object.
+
+    Returns:
+        ISO date string 'YYYY-MM-DD', or None if empty/unparseable.
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text[:10]).date().isoformat()
+    except ValueError:
+        logger.warning("filing_date_unparseable", raw=text)
+        return None
 
 def ensure_identity() -> None:
     """Set the SEC identity for edgartools exactly once per process. (Renamed
@@ -153,6 +182,7 @@ def acquire_filing(ticker: str, year: int) -> dict | None:
 
         cik = normalize_cik(matched_filing.cik)
         accession_number = _extract_accession(matched_filing)
+        filing_date = to_iso_date(matched_filing.filing_date) ## added for filing_date extraction
 
         text = matched_filing.text()
         if not text or not text.strip():
@@ -181,6 +211,7 @@ def acquire_filing(ticker: str, year: int) -> dict | None:
             "accession_number": accession_number,
             "filing_year": year,
             "local_path": str(local_path),
+            "filing_date": filing_date, ## added for filing_date extraction
         }
     except Exception as exc:
         logger.error(

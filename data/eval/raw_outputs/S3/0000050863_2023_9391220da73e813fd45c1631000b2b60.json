@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000050863",
+  "year": 2023,
+  "extraction": {
+    "company_name": "INTEL CORPORATION",
+    "fiscal_year_end": "2023-12-30",
+    "total_revenue": 54228000000.0,
+    "net_income": 1689000000.0,
+    "total_assets": 191572000000.0,
+    "total_liabilities": 81602000000.0,
+    "operating_cash_flow": 11471000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 54228000000.0,
+      "source_line": "Net revenue$54,228 $63,054 $79,024"
+    },
+    "net_income": {
+      "value": 1689000000.0,
+      "source_line": "Net income$1,675 $8,017 $19,868"
+    },
+    "total_assets": {
+      "value": 191572000000.0,
+      "source_line": "Total assets$191,572 $182,103"
+    },
+    "total_liabilities": {
+      "value": 81602000000.0,
+      "source_line": "Total liabilities and stockholders' equity$191,572 $182,103"
+    },
+    "operating_cash_flow": {
+      "value": 11471000000.0,
+      "source_line": "Net cash provided by operating activities11,471 15,433 29,456"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 37206,
+  "output_tokens": 204,
+  "parsing_error": null
+}

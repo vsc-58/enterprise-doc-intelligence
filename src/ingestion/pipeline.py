@@ -130,6 +130,7 @@ def acquire_corpus(targets: list[tuple[str, int]]) -> dict:
                 filing_year=acquired["filing_year"],
                 accession_number=acquired["accession_number"],
                 local_path=acquired["local_path"],
+                filing_date=acquired["filing_date"], ## added for filing_date extraction 
             )
 
             summary["acquired"] += 1

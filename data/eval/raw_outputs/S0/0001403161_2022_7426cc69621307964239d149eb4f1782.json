@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S0",
+  "cik": "0001403161",
+  "year": 2022,
+  "extraction": {
+    "company_name": "VISA INC.",
+    "fiscal_year_end": "2022-09-30",
+    "total_revenue": 29310.0,
+    "net_income": 14957.0,
+    "total_assets": 85501.0,
+    "total_liabilities": 49920.0,
+    "operating_cash_flow": 18849.0,
+    "business_description": "Visa is one of the world’s leaders in digital payments. Our purpose is to uplift everyone, everywhere by being the best way to pay and be paid. We facilitate global commerce and money movement across more than 200 countries and territories among a global set of consumers, merchants, financial institutions and government entities through innovative technologies.",
+    "primary_risk_factors": [
+      "Legal and regulatory risks",
+      "Competition in the payments industry",
+      "Cybersecurity risks"
+    ],
+    "auditor_name": "KPMG LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 42524,
+  "output_tokens": 161,
+  "parsing_error": null
+}

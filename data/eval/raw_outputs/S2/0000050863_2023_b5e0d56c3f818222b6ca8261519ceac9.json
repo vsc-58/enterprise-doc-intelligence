@@ -1,0 +1,22 @@
+{
+  "strategy_id": "S2",
+  "cik": "0000050863",
+  "year": 2023,
+  "extraction": {
+    "company_name": "INTEL CORPORATION",
+    "fiscal_year_end": "2023-12-30",
+    "total_revenue": 54228000000.0,
+    "net_income": 1689000000.0,
+    "total_assets": 191572000000.0,
+    "total_liabilities": 46078000000.0,
+    "operating_cash_flow": 11471000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 37349,
+  "output_tokens": 87,
+  "parsing_error": null
+}

@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S0",
+  "cik": "0000796343",
+  "year": 2022,
+  "extraction": {
+    "company_name": "ADOBE INC.",
+    "fiscal_year_end": "2022-12-02",
+    "total_revenue": 17606000.0,
+    "net_income": 4756000.0,
+    "total_assets": 27165000.0,
+    "total_liabilities": 13114000.0,
+    "operating_cash_flow": 7838000.0,
+    "business_description": "Adobe is one of the largest and most diversified software companies in the world, offering a line of products and services used by creative professionals, businesses, and consumers for creating, managing, delivering, measuring, optimizing, engaging, and transacting with compelling content and experiences across various digital media formats.",
+    "primary_risk_factors": [
+      "Market competition",
+      "Cybersecurity risks",
+      "Regulatory compliance"
+    ],
+    "auditor_name": "KPMG LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 29298,
+  "output_tokens": 157,
+  "parsing_error": null
+}

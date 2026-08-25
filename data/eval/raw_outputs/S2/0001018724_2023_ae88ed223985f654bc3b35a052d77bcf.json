@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S2",
+  "cik": "0001018724",
+  "year": 2023,
+  "extraction": {
+    "company_name": "AMAZON. COM, INC.",
+    "fiscal_year_end": "2023-12-31",
+    "total_revenue": 574785000000.0,
+    "net_income": 30425000000.0,
+    "total_assets": 527854000000.0,
+    "total_liabilities": 164917000000.0,
+    "operating_cash_flow": 84946000000.0,
+    "business_description": "We seek to be Earth’s most customer-centric company. We are guided by four principles: customer obsession rather than competitor focus, passion for invention, commitment to operational excellence, and long-term thinking. In each of our segments, we serve our primary customer sets, consisting of consumers, sellers, developers, enterprises, content creators, advertisers, and employees.",
+    "primary_risk_factors": [
+      "Risk Factors",
+      "Unresolved Staff Comments",
+      "Cybersecurity"
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 30332,
+  "output_tokens": 169,
+  "parsing_error": null
+}

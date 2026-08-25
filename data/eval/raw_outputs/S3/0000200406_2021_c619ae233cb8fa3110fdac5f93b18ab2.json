@@ -1,0 +1,48 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000200406",
+  "year": 2021,
+  "extraction": {
+    "company_name": "JOHNSON & JOHNSON",
+    "fiscal_year_end": "2021-01-03",
+    "total_revenue": 82584000000.0,
+    "net_income": 14714000000.0,
+    "total_assets": 174894000000.0,
+    "total_liabilities": 111616000000.0,
+    "operating_cash_flow": 23536000000.0,
+    "business_description": "The Company has approximately 134,500 employees worldwide engaged in the research and development, manufacture and sale of a broad range of products in the health care field. The Company conducts business in virtually all countries of the world and its primary focus is on products related to human health and well-being.",
+    "primary_risk_factors": [
+      "Product liability claims",
+      "Regulatory scrutiny",
+      "Market competition",
+      "Supply chain disruptions"
+    ],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 82584000000.0,
+      "source_line": "Sales to customers$82,584 82,059 81,581"
+    },
+    "net_income": {
+      "value": 14714000000.0,
+      "source_line": "Net earnings$14,714 15,119 15,297"
+    },
+    "total_assets": {
+      "value": 174894000000.0,
+      "source_line": "Total assets$174,894 157,728"
+    },
+    "total_liabilities": {
+      "value": 111616000000.0,
+      "source_line": "Total liabilities111,616 98,257"
+    },
+    "operating_cash_flow": {
+      "value": 23536000000.0,
+      "source_line": "Net cash flows from operating activities23,536 23,416 22,201"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 60802,
+  "output_tokens": 261,
+  "parsing_error": null
+}

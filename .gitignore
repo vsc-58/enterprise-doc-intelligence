@@ -232,3 +232,6 @@ db/
 #  ignored as a whole — git must be able to descend into data/ to see eval/.)
 !data/eval/
 !data/eval/**
+
+#file to keep track of decisions made - for later reference.
+docs/decisions.md

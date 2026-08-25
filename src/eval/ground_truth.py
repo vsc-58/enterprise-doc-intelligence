@@ -54,8 +54,8 @@ _FIELD_SPECS: dict[str, dict[str, object]] = {
     "total_revenue": {
         "statement": "income_statement",
         "concepts": [
-            "us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax",
             "us-gaap_Revenues",
+            "us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax",
         ],
     },
     "net_income": {

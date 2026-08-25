@@ -1,0 +1,24 @@
+{
+  "strategy_id": "S2",
+  "cik": "0000796343",
+  "year": 2022,
+  "extraction": {
+    "company_name": "ADOBE INC.",
+    "fiscal_year_end": "2022-12-02",
+    "total_revenue": 17606000000.0,
+    "net_income": 4756000000.0,
+    "total_assets": 27165000000.0,
+    "total_liabilities": 13114000000.0,
+    "operating_cash_flow": 7838000000.0,
+    "business_description": "Founded in 1982, Adobe is one of the largest and most diversified software companies in the world. We offer a line of products and services used by creative professionals, including photographers, video editors, graphic and experience designers and game developers; communicators, including content creators, students, marketers and knowledge workers; businesses of all sizes; and consumers for creating, managing, delivering, measuring, optimizing, engaging and transacting with compelling content and experiences across personal computers, smartphones, other electronic devices and digital media formats.",
+    "primary_risk_factors": [
+      "Risk Factors"
+    ],
+    "auditor_name": "KPMG LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 29726,
+  "output_tokens": 189,
+  "parsing_error": null
+}

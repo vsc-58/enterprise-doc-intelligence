@@ -1,0 +1,3667 @@
+{
+  "S0": {
+    "strategy_id": "S0",
+    "n_documents": 10,
+    "validation_failures": 0,
+    "input_tokens": 358030,
+    "output_tokens": 1529,
+    "grounding_rate": null,
+    "fields": {
+      "total_revenue": {
+        "correct": 5,
+        "wrong": 5,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "mean_rel_error": 0.49979969999999996
+      },
+      "net_income": {
+        "correct": 5,
+        "wrong": 5,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "mean_rel_error": 0.4988996983357957
+      },
+      "total_assets": {
+        "correct": 5,
+        "wrong": 5,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "mean_rel_error": 0.49979969999999996
+      },
+      "total_liabilities": {
+        "correct": 3,
+        "wrong": 4,
+        "missing": 0,
+        "n_a": 3,
+        "n_scored": 7,
+        "precision": 0.42857142857142855,
+        "recall": 0.42857142857142855,
+        "f1": 0.42857142857142855,
+        "mean_rel_error": 0.5711425714285714
+      },
+      "operating_cash_flow": {
+        "correct": 5,
+        "wrong": 5,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "mean_rel_error": 0.49979969999999996
+      },
+      "company_name": {
+        "correct": 8,
+        "wrong": 2,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "mean_rel_error": null
+      },
+      "fiscal_year_end": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": null
+      }
+    },
+    "by_provenance": {
+      "edgartools_item8": {
+        "total_revenue": {
+          "correct": 5,
+          "wrong": 4,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.5555555555555556,
+          "recall": 0.5555555555555556,
+          "f1": 0.5555555555555556,
+          "mean_rel_error": 0.444333
+        },
+        "net_income": {
+          "correct": 5,
+          "wrong": 4,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.5555555555555556,
+          "recall": 0.5555555555555556,
+          "f1": 0.5555555555555556,
+          "mean_rel_error": 0.444333
+        },
+        "total_assets": {
+          "correct": 5,
+          "wrong": 4,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.5555555555555556,
+          "recall": 0.5555555555555556,
+          "f1": 0.5555555555555556,
+          "mean_rel_error": 0.444333
+        },
+        "total_liabilities": {
+          "correct": 3,
+          "wrong": 3,
+          "missing": 0,
+          "n_a": 3,
+          "n_scored": 6,
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "mean_rel_error": 0.49983299999999997
+        },
+        "operating_cash_flow": {
+          "correct": 5,
+          "wrong": 4,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.5555555555555556,
+          "recall": 0.5555555555555556,
+          "f1": 0.5555555555555556,
+          "mean_rel_error": 0.444333
+        },
+        "company_name": {
+          "correct": 7,
+          "wrong": 2,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.7777777777777778,
+          "recall": 0.7777777777777778,
+          "f1": 0.7777777777777778,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      },
+      "fallback_fulltext": {
+        "total_revenue": {
+          "correct": 0,
+          "wrong": 1,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": null,
+          "mean_rel_error": 0.999
+        },
+        "net_income": {
+          "correct": 0,
+          "wrong": 1,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": null,
+          "mean_rel_error": 0.9899999833579574
+        },
+        "total_assets": {
+          "correct": 0,
+          "wrong": 1,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": null,
+          "mean_rel_error": 0.999
+        },
+        "total_liabilities": {
+          "correct": 0,
+          "wrong": 1,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": null,
+          "mean_rel_error": 0.999
+        },
+        "operating_cash_flow": {
+          "correct": 0,
+          "wrong": 1,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": null,
+          "mean_rel_error": 0.999
+        },
+        "company_name": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      }
+    },
+    "per_document": {
+      "0000320193_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 365817000000.0,
+            "truth": 365817000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 94680000000.0,
+            "truth": 94680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 351002000000.0,
+            "truth": 351002000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 287912000000.0,
+            "truth": 287912000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 104038000000.0,
+            "truth": 104038000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Apple Inc.",
+            "truth": "Apple Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-09-25",
+            "truth": "2021-09-25",
+            "rel_error": null
+          }
+        }
+      },
+      "0000789019_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 198270000000.0,
+            "truth": 198270000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 72738000000.0,
+            "truth": 72738000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 364840000000.0,
+            "truth": 364840000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 198298000000.0,
+            "truth": 198298000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 89035000000.0,
+            "truth": 89035000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "MICROSOFT CORPORATION",
+            "truth": "MICROSOFT CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-06-30",
+            "truth": "2022-06-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0001652044_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 257637000000.0,
+            "truth": 257637000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 76033000000.0,
+            "truth": 76033000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 359268000000.0,
+            "truth": 359268000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 107633000000.0,
+            "truth": 107633000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 91652000000.0,
+            "truth": 91652000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Alphabet Inc.",
+            "truth": "Alphabet Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-12-31",
+            "truth": "2021-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001018724_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 574785000000.0,
+            "truth": 574785000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 30425000000.0,
+            "truth": 30425000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 527854000000.0,
+            "truth": 527854000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 164917000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 84946000000.0,
+            "truth": 84946000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "AMAZON. COM, INC.",
+            "truth": "AMAZON COM INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000104169_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 611289000000.0,
+            "truth": 611289000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 11680000000.0,
+            "truth": 11680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 243197000000.0,
+            "truth": 243197000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 134827000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 28841000000.0,
+            "truth": 28841000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "WALMART INC.",
+            "truth": "Walmart Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-01-31",
+            "truth": "2023-01-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000200406_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "wrong",
+            "extracted": 82584.0,
+            "truth": 82584000000.0,
+            "rel_error": 0.999999
+          },
+          "net_income": {
+            "outcome": "wrong",
+            "extracted": 14714.0,
+            "truth": 14714000000.0,
+            "rel_error": 0.999999
+          },
+          "total_assets": {
+            "outcome": "wrong",
+            "extracted": 174894.0,
+            "truth": 174894000000.0,
+            "rel_error": 0.999999
+          },
+          "total_liabilities": {
+            "outcome": "wrong",
+            "extracted": 111616.0,
+            "truth": 111616000000.0,
+            "rel_error": 0.999999
+          },
+          "operating_cash_flow": {
+            "outcome": "wrong",
+            "extracted": 23536.0,
+            "truth": 23536000000.0,
+            "rel_error": 0.999999
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "JOHNSON & JOHNSON",
+            "truth": "JOHNSON & JOHNSON",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-01-03",
+            "truth": "2021-01-03",
+            "rel_error": null
+          }
+        }
+      },
+      "0001065280_2023": {
+        "section_source": "fallback_fulltext",
+        "scores": {
+          "total_revenue": {
+            "outcome": "wrong",
+            "extracted": 33723297.0,
+            "truth": 33723297000.0,
+            "rel_error": 0.999
+          },
+          "net_income": {
+            "outcome": "wrong",
+            "extracted": 54079990.0,
+            "truth": 5407990000.0,
+            "rel_error": 0.9899999833579574
+          },
+          "total_assets": {
+            "outcome": "wrong",
+            "extracted": 48731992.0,
+            "truth": 48731992000.0,
+            "rel_error": 0.999
+          },
+          "total_liabilities": {
+            "outcome": "wrong",
+            "extracted": 28143679.0,
+            "truth": 28143679000.0,
+            "rel_error": 0.999
+          },
+          "operating_cash_flow": {
+            "outcome": "wrong",
+            "extracted": 7274301.0,
+            "truth": 7274301000.0,
+            "rel_error": 0.999
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Netflix, Inc.",
+            "truth": "NETFLIX INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001403161_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "wrong",
+            "extracted": 29310.0,
+            "truth": 29310000000.0,
+            "rel_error": 0.999999
+          },
+          "net_income": {
+            "outcome": "wrong",
+            "extracted": 14957.0,
+            "truth": 14957000000.0,
+            "rel_error": 0.999999
+          },
+          "total_assets": {
+            "outcome": "wrong",
+            "extracted": 85501.0,
+            "truth": 85501000000.0,
+            "rel_error": 0.999999
+          },
+          "total_liabilities": {
+            "outcome": "wrong",
+            "extracted": 49920.0,
+            "truth": 49920000000.0,
+            "rel_error": 0.999999
+          },
+          "operating_cash_flow": {
+            "outcome": "wrong",
+            "extracted": 18849.0,
+            "truth": 18849000000.0,
+            "rel_error": 0.999999
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "VISA INC.",
+            "truth": "VISA INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-09-30",
+            "truth": "2022-09-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0000796343_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "wrong",
+            "extracted": 17606000.0,
+            "truth": 17606000000.0,
+            "rel_error": 0.999
+          },
+          "net_income": {
+            "outcome": "wrong",
+            "extracted": 4756000.0,
+            "truth": 4756000000.0,
+            "rel_error": 0.999
+          },
+          "total_assets": {
+            "outcome": "wrong",
+            "extracted": 27165000.0,
+            "truth": 27165000000.0,
+            "rel_error": 0.999
+          },
+          "total_liabilities": {
+            "outcome": "wrong",
+            "extracted": 13114000.0,
+            "truth": 13114000000.0,
+            "rel_error": 0.999
+          },
+          "operating_cash_flow": {
+            "outcome": "wrong",
+            "extracted": 7838000.0,
+            "truth": 7838000000.0,
+            "rel_error": 0.999
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "ADOBE INC.",
+            "truth": "ADOBE INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-12-02",
+            "truth": "2022-12-02",
+            "rel_error": null
+          }
+        }
+      },
+      "0000050863_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "wrong",
+            "extracted": 54228.0,
+            "truth": 54228000000.0,
+            "rel_error": 0.999999
+          },
+          "net_income": {
+            "outcome": "wrong",
+            "extracted": 1689.0,
+            "truth": 1689000000.0,
+            "rel_error": 0.999999
+          },
+          "total_assets": {
+            "outcome": "wrong",
+            "extracted": 191572.0,
+            "truth": 191572000000.0,
+            "rel_error": 0.999999
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 85982.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "wrong",
+            "extracted": 11471.0,
+            "truth": 11471000000.0,
+            "rel_error": 0.999999
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "INTEL CORPORATION",
+            "truth": "INTEL CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-30",
+            "truth": "2023-12-30",
+            "rel_error": null
+          }
+        }
+      }
+    }
+  },
+  "S1": {
+    "strategy_id": "S1",
+    "n_documents": 10,
+    "validation_failures": 0,
+    "input_tokens": 360410,
+    "output_tokens": 1555,
+    "grounding_rate": null,
+    "fields": {
+      "total_revenue": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "net_income": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 1.6642042607327305e-07
+      },
+      "total_assets": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "total_liabilities": {
+        "correct": 7,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 3,
+        "n_scored": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "operating_cash_flow": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "company_name": {
+        "correct": 8,
+        "wrong": 2,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "mean_rel_error": null
+      },
+      "fiscal_year_end": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": null
+      }
+    },
+    "by_provenance": {
+      "edgartools_item8": {
+        "total_revenue": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_assets": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 6,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 3,
+          "n_scored": 6,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 7,
+          "wrong": 2,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.7777777777777778,
+          "recall": 0.7777777777777778,
+          "f1": 0.7777777777777778,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      },
+      "fallback_fulltext": {
+        "total_revenue": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 1.6642042607327306e-06
+        },
+        "total_assets": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      }
+    },
+    "per_document": {
+      "0000320193_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 365817000000.0,
+            "truth": 365817000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 94680000000.0,
+            "truth": 94680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 351002000000.0,
+            "truth": 351002000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 287912000000.0,
+            "truth": 287912000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 104038000000.0,
+            "truth": 104038000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Apple Inc.",
+            "truth": "Apple Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-09-25",
+            "truth": "2021-09-25",
+            "rel_error": null
+          }
+        }
+      },
+      "0000789019_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 198270000000.0,
+            "truth": 198270000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 72738000000.0,
+            "truth": 72738000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 364840000000.0,
+            "truth": 364840000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 198298000000.0,
+            "truth": 198298000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 89035000000.0,
+            "truth": 89035000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "MICROSOFT CORPORATION",
+            "truth": "MICROSOFT CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-06-30",
+            "truth": "2022-06-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0001652044_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 257637000000.0,
+            "truth": 257637000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 76033000000.0,
+            "truth": 76033000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 359268000000.0,
+            "truth": 359268000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 107633000000.0,
+            "truth": 107633000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 91652000000.0,
+            "truth": 91652000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Alphabet Inc.",
+            "truth": "Alphabet Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-12-31",
+            "truth": "2021-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001018724_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 574785000000.0,
+            "truth": 574785000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 30425000000.0,
+            "truth": 30425000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 527854000000.0,
+            "truth": 527854000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 164917000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 84946000000.0,
+            "truth": 84946000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "AMAZON. COM, INC.",
+            "truth": "AMAZON COM INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000104169_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 611289000000.0,
+            "truth": 611289000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 11680000000.0,
+            "truth": 11680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 243197000000.0,
+            "truth": 243197000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 126847000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 28841000000.0,
+            "truth": 28841000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "WALMART INC.",
+            "truth": "Walmart Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-01-31",
+            "truth": "2023-01-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000200406_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 82584000000.0,
+            "truth": 82584000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14714000000.0,
+            "truth": 14714000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 174894000000.0,
+            "truth": 174894000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 111616000000.0,
+            "truth": 111616000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 23536000000.0,
+            "truth": 23536000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "JOHNSON & JOHNSON",
+            "truth": "JOHNSON & JOHNSON",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-01-03",
+            "truth": "2021-01-03",
+            "rel_error": null
+          }
+        }
+      },
+      "0001065280_2023": {
+        "section_source": "fallback_fulltext",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 33723297000.0,
+            "truth": 33723297000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 5407999000.0,
+            "truth": 5407990000.0,
+            "rel_error": 1.6642042607327306e-06
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 48731992000.0,
+            "truth": 48731992000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 28143679000.0,
+            "truth": 28143679000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7274301000.0,
+            "truth": 7274301000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Netflix, Inc.",
+            "truth": "NETFLIX INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001403161_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 29310000000.0,
+            "truth": 29310000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14957000000.0,
+            "truth": 14957000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 85501000000.0,
+            "truth": 85501000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 49920000000.0,
+            "truth": 49920000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 18849000000.0,
+            "truth": 18849000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "VISA INC.",
+            "truth": "VISA INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-09-30",
+            "truth": "2022-09-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0000796343_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 17606000000.0,
+            "truth": 17606000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 4756000000.0,
+            "truth": 4756000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 27165000000.0,
+            "truth": 27165000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 13114000000.0,
+            "truth": 13114000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7838000000.0,
+            "truth": 7838000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "ADOBE INC.",
+            "truth": "ADOBE INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-12-02",
+            "truth": "2022-12-02",
+            "rel_error": null
+          }
+        }
+      },
+      "0000050863_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 54228000000.0,
+            "truth": 54228000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 1689000000.0,
+            "truth": 1689000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 191572000000.0,
+            "truth": 191572000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 46078000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 11471000000.0,
+            "truth": 11471000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "INTEL CORPORATION",
+            "truth": "INTEL CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-30",
+            "truth": "2023-12-30",
+            "rel_error": null
+          }
+        }
+      }
+    }
+  },
+  "S2": {
+    "strategy_id": "S2",
+    "n_documents": 10,
+    "validation_failures": 0,
+    "input_tokens": 362310,
+    "output_tokens": 1486,
+    "grounding_rate": null,
+    "fields": {
+      "total_revenue": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "net_income": {
+        "correct": 9,
+        "wrong": 1,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.9,
+        "recall": 0.9,
+        "f1": 0.9,
+        "mean_rel_error": 0.10000006642042607
+      },
+      "total_assets": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "total_liabilities": {
+        "correct": 7,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 3,
+        "n_scored": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "operating_cash_flow": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "company_name": {
+        "correct": 8,
+        "wrong": 2,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "mean_rel_error": null
+      },
+      "fiscal_year_end": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": null
+      }
+    },
+    "by_provenance": {
+      "edgartools_item8": {
+        "total_revenue": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 8,
+          "wrong": 1,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.8888888888888888,
+          "recall": 0.8888888888888888,
+          "f1": 0.8888888888888888,
+          "mean_rel_error": 0.111111
+        },
+        "total_assets": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 6,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 3,
+          "n_scored": 6,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 7,
+          "wrong": 2,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.7777777777777778,
+          "recall": 0.7777777777777778,
+          "f1": 0.7777777777777778,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      },
+      "fallback_fulltext": {
+        "total_revenue": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 1.6642042607327306e-06
+        },
+        "total_assets": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      }
+    },
+    "per_document": {
+      "0000320193_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 365817000000.0,
+            "truth": 365817000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 94680000000.0,
+            "truth": 94680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 351002000000.0,
+            "truth": 351002000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 287912000000.0,
+            "truth": 287912000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 104038000000.0,
+            "truth": 104038000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Apple Inc.",
+            "truth": "Apple Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-09-25",
+            "truth": "2021-09-25",
+            "rel_error": null
+          }
+        }
+      },
+      "0000789019_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 198270000000.0,
+            "truth": 198270000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 72738000000.0,
+            "truth": 72738000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 364840000000.0,
+            "truth": 364840000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 198298000000.0,
+            "truth": 198298000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 89035000000.0,
+            "truth": 89035000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "MICROSOFT CORPORATION",
+            "truth": "MICROSOFT CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-06-30",
+            "truth": "2022-06-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0001652044_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 257637000000.0,
+            "truth": 257637000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 76033000000.0,
+            "truth": 76033000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 359268000000.0,
+            "truth": 359268000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 107633000000.0,
+            "truth": 107633000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 91652000000.0,
+            "truth": 91652000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Alphabet Inc.",
+            "truth": "Alphabet Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-12-31",
+            "truth": "2021-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001018724_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 574785000000.0,
+            "truth": 574785000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 30425000000.0,
+            "truth": 30425000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 527854000000.0,
+            "truth": 527854000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 164917000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 84946000000.0,
+            "truth": 84946000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "AMAZON. COM, INC.",
+            "truth": "AMAZON COM INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000104169_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 611289000000.0,
+            "truth": 611289000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "wrong",
+            "extracted": 11680.0,
+            "truth": 11680000000.0,
+            "rel_error": 0.999999
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 243197000000.0,
+            "truth": 243197000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 158847000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 28841000000.0,
+            "truth": 28841000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "WALMART INC.",
+            "truth": "Walmart Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-01-31",
+            "truth": "2023-01-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000200406_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 82584000000.0,
+            "truth": 82584000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14714000000.0,
+            "truth": 14714000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 174894000000.0,
+            "truth": 174894000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 111616000000.0,
+            "truth": 111616000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 23536000000.0,
+            "truth": 23536000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "JOHNSON & JOHNSON",
+            "truth": "JOHNSON & JOHNSON",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-01-03",
+            "truth": "2021-01-03",
+            "rel_error": null
+          }
+        }
+      },
+      "0001065280_2023": {
+        "section_source": "fallback_fulltext",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 33723297000.0,
+            "truth": 33723297000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 5407999000.0,
+            "truth": 5407990000.0,
+            "rel_error": 1.6642042607327306e-06
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 48731992000.0,
+            "truth": 48731992000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 28143679000.0,
+            "truth": 28143679000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7274301000.0,
+            "truth": 7274301000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Netflix, Inc.",
+            "truth": "NETFLIX INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001403161_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 29310000000.0,
+            "truth": 29310000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14957000000.0,
+            "truth": 14957000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 85501000000.0,
+            "truth": 85501000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 49920000000.0,
+            "truth": 49920000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 18849000000.0,
+            "truth": 18849000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "VISA INC.",
+            "truth": "VISA INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-09-30",
+            "truth": "2022-09-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0000796343_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 17606000000.0,
+            "truth": 17606000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 4756000000.0,
+            "truth": 4756000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 27165000000.0,
+            "truth": 27165000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 13114000000.0,
+            "truth": 13114000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7838000000.0,
+            "truth": 7838000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "ADOBE INC.",
+            "truth": "ADOBE INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-12-02",
+            "truth": "2022-12-02",
+            "rel_error": null
+          }
+        }
+      },
+      "0000050863_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 54228000000.0,
+            "truth": 54228000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 1689000000.0,
+            "truth": 1689000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 191572000000.0,
+            "truth": 191572000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 46078000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 11471000000.0,
+            "truth": 11471000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "INTEL CORPORATION",
+            "truth": "INTEL CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-30",
+            "truth": "2023-12-30",
+            "rel_error": null
+          }
+        }
+      }
+    }
+  },
+  "S3": {
+    "strategy_id": "S3",
+    "n_documents": 10,
+    "validation_failures": 0,
+    "input_tokens": 360880,
+    "output_tokens": 2541,
+    "grounding_rate": 1.0,
+    "fields": {
+      "total_revenue": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "net_income": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 1.6642042607327305e-07
+      },
+      "total_assets": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "total_liabilities": {
+        "correct": 7,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 3,
+        "n_scored": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "operating_cash_flow": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "company_name": {
+        "correct": 8,
+        "wrong": 2,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "mean_rel_error": null
+      },
+      "fiscal_year_end": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": null
+      }
+    },
+    "by_provenance": {
+      "edgartools_item8": {
+        "total_revenue": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_assets": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 6,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 3,
+          "n_scored": 6,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 7,
+          "wrong": 2,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.7777777777777778,
+          "recall": 0.7777777777777778,
+          "f1": 0.7777777777777778,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      },
+      "fallback_fulltext": {
+        "total_revenue": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 1.6642042607327306e-06
+        },
+        "total_assets": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      }
+    },
+    "per_document": {
+      "0000320193_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 365817000000.0,
+            "truth": 365817000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 94680000000.0,
+            "truth": 94680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 351002000000.0,
+            "truth": 351002000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 287912000000.0,
+            "truth": 287912000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 104038000000.0,
+            "truth": 104038000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Apple Inc.",
+            "truth": "Apple Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-09-25",
+            "truth": "2021-09-25",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0000789019_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 198270000000.0,
+            "truth": 198270000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 72738000000.0,
+            "truth": 72738000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 364840000000.0,
+            "truth": 364840000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 198298000000.0,
+            "truth": 198298000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 89035000000.0,
+            "truth": 89035000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "MICROSOFT CORPORATION",
+            "truth": "MICROSOFT CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-06-30",
+            "truth": "2022-06-30",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0001652044_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 257637000000.0,
+            "truth": 257637000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 76033000000.0,
+            "truth": 76033000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 359268000000.0,
+            "truth": 359268000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 107633000000.0,
+            "truth": 107633000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 91652000000.0,
+            "truth": 91652000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Alphabet Inc.",
+            "truth": "Alphabet Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-12-31",
+            "truth": "2021-12-31",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0001018724_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 574785000000.0,
+            "truth": 574785000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 30425000000.0,
+            "truth": 30425000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 527854000000.0,
+            "truth": 527854000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 325979000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 84946000000.0,
+            "truth": 84946000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "AMAZON. COM, INC.",
+            "truth": "AMAZON COM INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0000104169_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 611289000000.0,
+            "truth": 611289000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 11680000000.0,
+            "truth": 11680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 243197000000.0,
+            "truth": 243197000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 159443000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 28841000000.0,
+            "truth": 28841000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "WALMART INC.",
+            "truth": "Walmart Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-01-31",
+            "truth": "2023-01-31",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0000200406_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 82584000000.0,
+            "truth": 82584000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14714000000.0,
+            "truth": 14714000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 174894000000.0,
+            "truth": 174894000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 111616000000.0,
+            "truth": 111616000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 23536000000.0,
+            "truth": 23536000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "JOHNSON & JOHNSON",
+            "truth": "JOHNSON & JOHNSON",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-01-03",
+            "truth": "2021-01-03",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0001065280_2023": {
+        "section_source": "fallback_fulltext",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 33723297000.0,
+            "truth": 33723297000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 5407999000.0,
+            "truth": 5407990000.0,
+            "rel_error": 1.6642042607327306e-06
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 48731992000.0,
+            "truth": 48731992000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 28143679000.0,
+            "truth": 28143679000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7274301000.0,
+            "truth": 7274301000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Netflix, Inc.",
+            "truth": "NETFLIX INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0001403161_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 29310000000.0,
+            "truth": 29310000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14957000000.0,
+            "truth": 14957000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 85501000000.0,
+            "truth": 85501000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 49920000000.0,
+            "truth": 49920000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 18849000000.0,
+            "truth": 18849000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "VISA INC.",
+            "truth": "VISA INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-09-30",
+            "truth": "2022-09-30",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0000796343_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 17606000000.0,
+            "truth": 17606000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 4756000000.0,
+            "truth": 4756000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 27165000000.0,
+            "truth": 27165000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 13114000000.0,
+            "truth": 13114000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7838000000.0,
+            "truth": 7838000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "ADOBE INC.",
+            "truth": "ADOBE INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-12-02",
+            "truth": "2022-12-02",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      },
+      "0000050863_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 54228000000.0,
+            "truth": 54228000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 1689000000.0,
+            "truth": 1689000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 191572000000.0,
+            "truth": 191572000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 81602000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 11471000000.0,
+            "truth": 11471000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "INTEL CORPORATION",
+            "truth": "INTEL CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-30",
+            "truth": "2023-12-30",
+            "rel_error": null
+          }
+        },
+        "grounding": {
+          "total_revenue": true,
+          "net_income": true,
+          "total_assets": true,
+          "total_liabilities": true,
+          "operating_cash_flow": true
+        }
+      }
+    }
+  },
+  "S4": {
+    "strategy_id": "S4",
+    "n_documents": 10,
+    "validation_failures": 0,
+    "input_tokens": 361937,
+    "output_tokens": 1436,
+    "grounding_rate": null,
+    "fields": {
+      "total_revenue": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "net_income": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 1.6642042607327305e-07
+      },
+      "total_assets": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "total_liabilities": {
+        "correct": 7,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 3,
+        "n_scored": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "operating_cash_flow": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": 0.0
+      },
+      "company_name": {
+        "correct": 8,
+        "wrong": 2,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002,
+        "mean_rel_error": null
+      },
+      "fiscal_year_end": {
+        "correct": 10,
+        "wrong": 0,
+        "missing": 0,
+        "n_a": 0,
+        "n_scored": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "mean_rel_error": null
+      }
+    },
+    "by_provenance": {
+      "edgartools_item8": {
+        "total_revenue": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_assets": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 6,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 3,
+          "n_scored": 6,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 7,
+          "wrong": 2,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 0.7777777777777778,
+          "recall": 0.7777777777777778,
+          "f1": 0.7777777777777778,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 9,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 9,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      },
+      "fallback_fulltext": {
+        "total_revenue": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "net_income": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 1.6642042607327306e-06
+        },
+        "total_assets": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "total_liabilities": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "operating_cash_flow": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": 0.0
+        },
+        "company_name": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        },
+        "fiscal_year_end": {
+          "correct": 1,
+          "wrong": 0,
+          "missing": 0,
+          "n_a": 0,
+          "n_scored": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_rel_error": null
+        }
+      }
+    },
+    "per_document": {
+      "0000320193_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 365817000000.0,
+            "truth": 365817000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 94680000000.0,
+            "truth": 94680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 351002000000.0,
+            "truth": 351002000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 287912000000.0,
+            "truth": 287912000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 104038000000.0,
+            "truth": 104038000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Apple Inc.",
+            "truth": "Apple Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-09-25",
+            "truth": "2021-09-25",
+            "rel_error": null
+          }
+        }
+      },
+      "0000789019_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 198270000000.0,
+            "truth": 198270000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 72738000000.0,
+            "truth": 72738000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 364840000000.0,
+            "truth": 364840000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 198298000000.0,
+            "truth": 198298000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 89035000000.0,
+            "truth": 89035000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "MICROSOFT CORPORATION",
+            "truth": "MICROSOFT CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-06-30",
+            "truth": "2022-06-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0001652044_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 257637000000.0,
+            "truth": 257637000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 76033000000.0,
+            "truth": 76033000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 359268000000.0,
+            "truth": 359268000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 107633000000.0,
+            "truth": 107633000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 91652000000.0,
+            "truth": 91652000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Alphabet Inc.",
+            "truth": "Alphabet Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-12-31",
+            "truth": "2021-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001018724_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 574785000000.0,
+            "truth": 574785000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 30425000000.0,
+            "truth": 30425000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 527854000000.0,
+            "truth": 527854000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 164917000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 84946000000.0,
+            "truth": 84946000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "AMAZON. COM, INC.",
+            "truth": "AMAZON COM INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000104169_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 611289000000.0,
+            "truth": 611289000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 11680000000.0,
+            "truth": 11680000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 243197000000.0,
+            "truth": 243197000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 159443000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 28841000000.0,
+            "truth": 28841000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "WALMART INC.",
+            "truth": "Walmart Inc.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-01-31",
+            "truth": "2023-01-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0000200406_2021": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 82584000000.0,
+            "truth": 82584000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14714000000.0,
+            "truth": 14714000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 174894000000.0,
+            "truth": 174894000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 111616000000.0,
+            "truth": 111616000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 23536000000.0,
+            "truth": 23536000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "JOHNSON & JOHNSON",
+            "truth": "JOHNSON & JOHNSON",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2021-01-03",
+            "truth": "2021-01-03",
+            "rel_error": null
+          }
+        }
+      },
+      "0001065280_2023": {
+        "section_source": "fallback_fulltext",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 33723297000.0,
+            "truth": 33723297000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 5407999000.0,
+            "truth": 5407990000.0,
+            "rel_error": 1.6642042607327306e-06
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 48731992000.0,
+            "truth": 48731992000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 28143679000.0,
+            "truth": 28143679000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7274301000.0,
+            "truth": 7274301000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "Netflix, Inc.",
+            "truth": "NETFLIX INC",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-31",
+            "truth": "2023-12-31",
+            "rel_error": null
+          }
+        }
+      },
+      "0001403161_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 29310000000.0,
+            "truth": 29310000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 14957000000.0,
+            "truth": 14957000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 85501000000.0,
+            "truth": 85501000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 49920000000.0,
+            "truth": 49920000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 18849000000.0,
+            "truth": 18849000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "VISA INC.",
+            "truth": "VISA INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-09-30",
+            "truth": "2022-09-30",
+            "rel_error": null
+          }
+        }
+      },
+      "0000796343_2022": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 17606000000.0,
+            "truth": 17606000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 4756000000.0,
+            "truth": 4756000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 27165000000.0,
+            "truth": 27165000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "correct",
+            "extracted": 13114000000.0,
+            "truth": 13114000000.0,
+            "rel_error": 0.0
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 7838000000.0,
+            "truth": 7838000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "correct",
+            "extracted": "ADOBE INC.",
+            "truth": "ADOBE INC.",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2022-12-02",
+            "truth": "2022-12-02",
+            "rel_error": null
+          }
+        }
+      },
+      "0000050863_2023": {
+        "section_source": "edgartools_item8",
+        "scores": {
+          "total_revenue": {
+            "outcome": "correct",
+            "extracted": 54228000000.0,
+            "truth": 54228000000.0,
+            "rel_error": 0.0
+          },
+          "net_income": {
+            "outcome": "correct",
+            "extracted": 1689000000.0,
+            "truth": 1689000000.0,
+            "rel_error": 0.0
+          },
+          "total_assets": {
+            "outcome": "correct",
+            "extracted": 191572000000.0,
+            "truth": 191572000000.0,
+            "rel_error": 0.0
+          },
+          "total_liabilities": {
+            "outcome": "n_a",
+            "extracted": 46078000000.0,
+            "truth": null,
+            "rel_error": null
+          },
+          "operating_cash_flow": {
+            "outcome": "correct",
+            "extracted": 11471000000.0,
+            "truth": 11471000000.0,
+            "rel_error": 0.0
+          },
+          "company_name": {
+            "outcome": "wrong",
+            "extracted": "INTEL CORPORATION",
+            "truth": "INTEL CORP",
+            "rel_error": null
+          },
+          "fiscal_year_end": {
+            "outcome": "correct",
+            "extracted": "2023-12-30",
+            "truth": "2023-12-30",
+            "rel_error": null
+          }
+        }
+      }
+    }
+  }
+}

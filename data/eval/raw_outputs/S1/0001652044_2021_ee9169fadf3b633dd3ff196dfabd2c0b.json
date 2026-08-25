@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S1",
+  "cik": "0001652044",
+  "year": 2021,
+  "extraction": {
+    "company_name": "Alphabet Inc.",
+    "fiscal_year_end": "2021-12-31",
+    "total_revenue": 257637000000.0,
+    "net_income": 76033000000.0,
+    "total_assets": 359268000000.0,
+    "total_liabilities": 107633000000.0,
+    "operating_cash_flow": 91652000000.0,
+    "business_description": "Alphabet Inc. is a holding company that provides a diverse range of products and services, primarily through its subsidiaries, including Google, which offers search, advertising, operating systems, and platforms, as well as hardware and cloud services.",
+    "primary_risk_factors": [
+      "Regulatory scrutiny and antitrust investigations",
+      "Competition in the technology sector",
+      "Cybersecurity threats"
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 30289,
+  "output_tokens": 146,
+  "parsing_error": null
+}

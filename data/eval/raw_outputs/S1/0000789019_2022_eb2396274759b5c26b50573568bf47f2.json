@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S1",
+  "cik": "0000789019",
+  "year": 2022,
+  "extraction": {
+    "company_name": "MICROSOFT CORPORATION",
+    "fiscal_year_end": "2022-06-30",
+    "total_revenue": 198270000000.0,
+    "net_income": 72738000000.0,
+    "total_assets": 364840000000.0,
+    "total_liabilities": 198298000000.0,
+    "operating_cash_flow": 89035000000.0,
+    "business_description": "Microsoft is a technology company whose mission is to empower every person and every organization on the planet to achieve more. We strive to create local opportunity, growth, and impact in every country around the world. Our platforms and tools help drive small business productivity, large business competitiveness, and public-sector efficiency. We are creating the tools and platforms that deliver better, faster, and more effective solutions to support new startups, improve educational and health outcomes, and empower human ingenuity.",
+    "primary_risk_factors": [
+      "Risk Factors",
+      "Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+      "Quantitative and Qualitative Disclosures about Market Risk"
+    ],
+    "auditor_name": "DELOITTE & TOUCHE LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 27691,
+  "output_tokens": 210,
+  "parsing_error": null
+}

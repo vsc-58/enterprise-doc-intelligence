@@ -1,0 +1,47 @@
+{
+  "strategy_id": "S3",
+  "cik": "0001065280",
+  "year": 2023,
+  "extraction": {
+    "company_name": "Netflix, Inc.",
+    "fiscal_year_end": "2023-12-31",
+    "total_revenue": 33723297000.0,
+    "net_income": 5407999000.0,
+    "total_assets": 48731992000.0,
+    "total_liabilities": 28143679000.0,
+    "operating_cash_flow": 7274301000.0,
+    "business_description": "Netflix, Inc. (the “Company”) was incorporated on August 29, 1997 and began operations on April 14, 1998. The Company is one of the world’s leading entertainment services with over 260 million paid memberships in over 190 countries enjoying TV series, films and games across a wide variety of genres and languages.",
+    "primary_risk_factors": [
+      "If our efforts to attract and retain members are not successful, our business will be adversely affected.",
+      "Changes in competitive offerings for entertainment video could adversely impact our business.",
+      "If we fail to maintain a positive reputation concerning our service and the content we offer, we may not be able to attract or retain members."
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 33723297000.0,
+      "source_line": "Total revenues                                     $                                                                  33,723,297      $         31,615,550      $         29,697,844"
+    },
+    "net_income": {
+      "value": 5407999000.0,
+      "source_line": "Net income                                                $                             5,407,990      $          4,491,924      $          5,116,228"
+    },
+    "total_assets": {
+      "value": 48731992000.0,
+      "source_line": "Total assets                                                                                                                                                                                              $                         48,731,992      $         48,594,768"
+    },
+    "total_liabilities": {
+      "value": 28143679000.0,
+      "source_line": "Total liabilities                                                                                                                                                                                                                   28,143,679                27,817,367"
+    },
+    "operating_cash_flow": {
+      "value": 7274301000.0,
+      "source_line": "Net cash provided by operating activities                                                                               7,274,301                    2,026,257                      392,610"
+    }
+  },
+  "section_source": "fallback_fulltext",
+  "input_tokens": 52791,
+  "output_tokens": 371,
+  "parsing_error": null
+}

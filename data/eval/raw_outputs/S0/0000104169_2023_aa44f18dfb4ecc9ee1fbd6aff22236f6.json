@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S0",
+  "cik": "0000104169",
+  "year": 2023,
+  "extraction": {
+    "company_name": "WALMART INC.",
+    "fiscal_year_end": "2023-01-31",
+    "total_revenue": 611289000000.0,
+    "net_income": 11680000000.0,
+    "total_assets": 243197000000.0,
+    "total_liabilities": 134827000000.0,
+    "operating_cash_flow": 28841000000.0,
+    "business_description": "Walmart Inc. is a people-led, technology-powered omni-channel retailer dedicated to help people around the world save money and live better – anytime and anywhere – by providing the opportunity to shop in both retail stores and through eCommerce.",
+    "primary_risk_factors": [
+      "Macroeconomic conditions",
+      "Legal proceedings",
+      "Supply chain challenges"
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 27481,
+  "output_tokens": 144,
+  "parsing_error": null
+}

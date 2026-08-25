@@ -73,6 +73,7 @@ class Document(Base):
     ticker: Mapped[str] = mapped_column(String, nullable=False)
     cik: Mapped[str] = mapped_column(String, nullable=False)
     filing_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    filing_date: Mapped[str | None] = mapped_column(String, nullable=True) ## added for filing_date extraction
     accession_number: Mapped[str | None] = mapped_column(String, nullable=True)
     local_path: Mapped[str | None] = mapped_column(String, nullable=True)
     is_extracted: Mapped[bool] = mapped_column(
@@ -162,6 +163,7 @@ def create_document(
     filing_year: int,
     accession_number: str | None,
     local_path: str,
+    filing_date: str | None = None, ## added for filing_date extraction
 ) -> int:
     """
     Persist one Document tracking row and return its primary key.
@@ -197,6 +199,7 @@ def create_document(
             filing_year=filing_year,
             accession_number=accession_number,
             local_path=local_path,
+            filing_date=filing_date ## added for filing_date extraction
         )
         session.add(doc)
         session.flush()  # assigns the autoincrement id within the transaction

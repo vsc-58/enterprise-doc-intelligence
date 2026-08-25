@@ -1,0 +1,47 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000796343",
+  "year": 2022,
+  "extraction": {
+    "company_name": "ADOBE INC.",
+    "fiscal_year_end": "2022-12-02",
+    "total_revenue": 17606000000.0,
+    "net_income": 4756000000.0,
+    "total_assets": 27165000000.0,
+    "total_liabilities": 13114000000.0,
+    "operating_cash_flow": 7838000000.0,
+    "business_description": "Founded in 1982, Adobe is one of the largest and most diversified software companies in the world. We offer a line of products and services used by creative professionals, including photographers, video editors, graphic and experience designers and game developers; communicators, including content creators, students, marketers and knowledge workers; businesses of all sizes; and consumers for creating, managing, delivering, measuring, optimizing, engaging and transacting with compelling content and experiences across personal computers, smartphones, other electronic devices and digital media formats.",
+    "primary_risk_factors": [
+      "Fluctuations in foreign currency exchange rates",
+      "Impacts on business from the ongoing COVID-19 pandemic",
+      "Competition in the software industry"
+    ],
+    "auditor_name": "KPMG LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 17606000000.0,
+      "source_line": "Total revenue17,606 15,785 12,868"
+    },
+    "net_income": {
+      "value": 4756000000.0,
+      "source_line": "Net income$4,756 $4,822 $5,260"
+    },
+    "total_assets": {
+      "value": 27165000000.0,
+      "source_line": "Total assets$27,165 $27,241"
+    },
+    "total_liabilities": {
+      "value": 13114000000.0,
+      "source_line": "Total liabilities13,114 12,444"
+    },
+    "operating_cash_flow": {
+      "value": 7838000000.0,
+      "source_line": "Net cash provided by operating activities7,838 7,230 5,727"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 29583,
+  "output_tokens": 320,
+  "parsing_error": null
+}

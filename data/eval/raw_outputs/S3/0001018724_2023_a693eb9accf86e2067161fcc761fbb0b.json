@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0001018724",
+  "year": 2023,
+  "extraction": {
+    "company_name": "AMAZON. COM, INC.",
+    "fiscal_year_end": "2023-12-31",
+    "total_revenue": 574785000000.0,
+    "net_income": 30425000000.0,
+    "total_assets": 527854000000.0,
+    "total_liabilities": 325979000000.0,
+    "operating_cash_flow": 84946000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 574785000000.0,
+      "source_line": "Total net sales469,822 513,983 574,785"
+    },
+    "net_income": {
+      "value": 30425000000.0,
+      "source_line": "Net income (loss)$33,364 $(2,722)$30,425"
+    },
+    "total_assets": {
+      "value": 527854000000.0,
+      "source_line": "Total assets$462,675 $527,854"
+    },
+    "total_liabilities": {
+      "value": 325979000000.0,
+      "source_line": "Total liabilities and stockholders’ equity$462,675 $527,854"
+    },
+    "operating_cash_flow": {
+      "value": 84946000000.0,
+      "source_line": "Net cash provided by (used in) operating activities46,327 46,752 84,946"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 30189,
+  "output_tokens": 202,
+  "parsing_error": null
+}

@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S1",
+  "cik": "0001065280",
+  "year": 2023,
+  "extraction": {
+    "company_name": "Netflix, Inc.",
+    "fiscal_year_end": "2023-12-31",
+    "total_revenue": 33723297000.0,
+    "net_income": 5407999000.0,
+    "total_assets": 48731992000.0,
+    "total_liabilities": 28143679000.0,
+    "operating_cash_flow": 7274301000.0,
+    "business_description": "Netflix, Inc. (“Netflix”, “the Company”, “registrant”, “we”, or “us”) is one of the world’s leading entertainment services with over 260 million paid memberships in over 190 countries enjoying TV series, films and games across a wide variety of genres and languages.",
+    "primary_risk_factors": [
+      "Competition in the entertainment video market",
+      "Regulatory changes affecting content delivery",
+      "Risks associated with content production and licensing"
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": null,
+  "section_source": "fallback_fulltext",
+  "input_tokens": 52744,
+  "output_tokens": 176,
+  "parsing_error": null
+}

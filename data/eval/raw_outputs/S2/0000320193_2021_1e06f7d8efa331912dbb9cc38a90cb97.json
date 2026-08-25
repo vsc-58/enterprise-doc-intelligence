@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S2",
+  "cik": "0000320193",
+  "year": 2021,
+  "extraction": {
+    "company_name": "Apple Inc.",
+    "fiscal_year_end": "2021-09-25",
+    "total_revenue": 365817000000.0,
+    "net_income": 94680000000.0,
+    "total_assets": 351002000000.0,
+    "total_liabilities": 287912000000.0,
+    "operating_cash_flow": 104038000000.0,
+    "business_description": "The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories, and sells a variety of related services.",
+    "primary_risk_factors": [
+      "Risk Factors",
+      "Unresolved Staff Comments",
+      "Legal Proceedings"
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 21803,
+  "output_tokens": 121,
+  "parsing_error": null
+}

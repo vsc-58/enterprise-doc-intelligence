@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000789019",
+  "year": 2022,
+  "extraction": {
+    "company_name": "MICROSOFT CORPORATION",
+    "fiscal_year_end": "2022-06-30",
+    "total_revenue": 198270000000.0,
+    "net_income": 72738000000.0,
+    "total_assets": 364840000000.0,
+    "total_liabilities": 198298000000.0,
+    "operating_cash_flow": 89035000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "DELOITTE & TOUCHE LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 198270000000.0,
+      "source_line": "Total revenue\n198,270\n168,088\n143,015"
+    },
+    "net_income": {
+      "value": 72738000000.0,
+      "source_line": "Net income\n$ 72,738\n$ 61,271\n$ 44,281"
+    },
+    "total_assets": {
+      "value": 364840000000.0,
+      "source_line": "Total assets\n$ 364,840\n$ 333,779"
+    },
+    "total_liabilities": {
+      "value": 198298000000.0,
+      "source_line": "Total liabilities\n198,298\n191,791"
+    },
+    "operating_cash_flow": {
+      "value": 89035000000.0,
+      "source_line": "Net cash from operations\n89,035\n76,740\n60,675"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 27738,
+  "output_tokens": 203,
+  "parsing_error": null
+}

@@ -1,0 +1,26 @@
+{
+  "strategy_id": "S2",
+  "cik": "0000200406",
+  "year": 2021,
+  "extraction": {
+    "company_name": "JOHNSON & JOHNSON",
+    "fiscal_year_end": "2021-01-03",
+    "total_revenue": 82584000000.0,
+    "net_income": 14714000000.0,
+    "total_assets": 174894000000.0,
+    "total_liabilities": 111616000000.0,
+    "operating_cash_flow": 23536000000.0,
+    "business_description": "The Company has approximately 134,500 employees worldwide engaged in the research and development, manufacture and sale of a broad range of products in the health care field. The Company conducts business in virtually all countries of the world and its primary focus is on products related to human health and well-being.",
+    "primary_risk_factors": [
+      "Risk Factors",
+      "Unresolved Staff Comments",
+      "Legal Proceedings"
+    ],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": null,
+  "section_source": "edgartools_item8",
+  "input_tokens": 60945,
+  "output_tokens": 157,
+  "parsing_error": null
+}
