@@ -43,13 +43,20 @@ class Settings(BaseSettings):
 
     # Secion characters upper and lower limits
     ITEM8_MIN_CHARS: int = 26136             # edgartools' floor; below = truncated heading
-    ITEM8_MAX_TOKENS: int = 60000            # above = over-capture; GS hit 119591
+    # removed in full extraction to incorporate GS, BAC and PFE
+    # ITEM8_MAX_TOKENS: int = 60000            # above = over-capture; GS hit 119591
     MODEL_INPUT_TOKEN_BUDGET: int = 120000   # leave headroom under gpt-4o-mini's 128k for output
     COVER_MAX_CHARS: int = 12000
 
     # error tolerance threshold
     NUMERIC_REL_TOLERANCE: float = 1e-5   # tight: catches digit-level misreads, absorbs true rounding
 
+    # Tolerance for matching an extracted value against the numbers printed in
+    # its cited line. Looser than NUMERIC_REL_TOLERANCE (1e-5) on purpose: that
+    # one compares two full-precision figures, this one compares a full value
+    # against a figure the filing printed rounded to millions, so a legitimate
+    # rounding gap of a few parts per million is expected.
+    EVIDENCE_MATCH_REL_TOLERANCE: float = 1e-3
 
 # Singleton instance — import this everywhere
 # from src.utils.config import settings

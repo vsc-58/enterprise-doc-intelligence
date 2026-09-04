@@ -1,0 +1,48 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000804328",
+  "year": 2021,
+  "extraction": {
+    "company_name": "QUALCOMM Incorporated",
+    "fiscal_year_end": "2021-09-26",
+    "total_revenue": 33566000000.0,
+    "net_income": 9043000000.0,
+    "total_assets": 41240000000.0,
+    "total_liabilities": 31290000000.0,
+    "operating_cash_flow": 10536000000.0,
+    "business_description": "We are a global leader in the development and commercialization of foundational technologies for the wireless industry. Our technologies and products are used in mobile devices and other wireless products, and are sold across industries and applications beyond mobile handsets, including automotive and the internet of things (IoT).",
+    "primary_risk_factors": [
+      "Our business is subject to numerous risks and uncertainties, including those described in 'Part I, Item 1A, Risk Factors' of this Annual Report.",
+      "We derive a significant portion of our revenues from a small number of customers and licensees, and particularly from their sale of premium tier devices.",
+      "Our business, particularly our semiconductor business, may suffer as a result of our customers vertically integrating (i.e., developing their own integrated circuit products).",
+      "A significant portion of our business is concentrated in China, and the risks of such concentration are exacerbated by U.S./China trade and national security tensions."
+    ],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 33566000000.0,
+      "source_line": "Total revenues 33,566 23,531"
+    },
+    "net_income": {
+      "value": 9043000000.0,
+      "source_line": "Net income 9,043 5,198"
+    },
+    "total_assets": {
+      "value": 41240000000.0,
+      "source_line": "Total assets 41,240 35,594"
+    },
+    "total_liabilities": {
+      "value": 31290000000.0,
+      "source_line": "Total liabilities 31,290 29,517"
+    },
+    "operating_cash_flow": {
+      "value": 10536000000.0,
+      "source_line": "Net cash provided by operating activities 10,536 5,814"
+    }
+  },
+  "section_source": "fallback_fulltext",
+  "input_tokens": 84587,
+  "output_tokens": 350,
+  "parsing_error": null
+}

@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000019617",
+  "year": 2023,
+  "extraction": {
+    "company_name": "JPMorgan Chase & Co.",
+    "fiscal_year_end": "2023-12-31",
+    "total_revenue": 158104000000.0,
+    "net_income": 49552000000.0,
+    "total_assets": 3875393000000.0,
+    "total_liabilities": 3547515000000.0,
+    "operating_cash_flow": 12974000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 158104000000.0,
+      "source_line": "Total net revenue                                                                         $        158,104          $        128,695          $        121,649"
+    },
+    "net_income": {
+      "value": 49552000000.0,
+      "source_line": "Net income                                                                                $         49,552          $         37,676          $         48,334"
+    },
+    "total_assets": {
+      "value": 3875393000000.0,
+      "source_line": "Total assets                                                                                     3,875,393                 3,665,743                 3,743,567"
+    },
+    "total_liabilities": {
+      "value": 3547515000000.0,
+      "source_line": "Total liabilities                                                                                3,547,515                3,373,411           3,743,567"
+    },
+    "operating_cash_flow": {
+      "value": 12974000000.0,
+      "source_line": "Net cash provided by operating activities                                                                 12,974                       107,119                        78,084"
+    }
+  },
+  "section_source": "fallback_fulltext",
+  "input_tokens": 105605,
+  "output_tokens": 243,
+  "parsing_error": null
+}

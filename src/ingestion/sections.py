@@ -4,16 +4,16 @@ Deterministic section slicing for extraction input.
 
 Produces the text blocks fed to the extraction prompts BEFORE any LLM call, so
 every strategy in the bake-off receives byte-identical input (the controlled
-input the experiment depends on). Two sections for the Phase 2 financial
-bake-off:
+input the experiment depends on). Two sections:
 
   - cover                : head of the on-disk filing text; source for the
                            cover-page scored fields (company_name,
                            fiscal_year_end).
-  - financial_statements : Item 8 via edgartools, guarded by a plausibility
-                           gate; falls back to the full filing text when the
-                           slice is implausibly small (edgartools silently
-                           truncates Item 8 to a heading on ~25% of filings).
+  - financial_statements : Item 8 via edgartools, guarded on two sides — a char
+                           floor (edgartools silently truncates Item 8 to a
+                           heading on ~25% of filings) and the model input
+                           budget. Either failure falls back to the full filing
+                           text, tagged distinctly.
 
 Every section carries provenance (`section_source`) so scoring can later
 attribute a result to input quality vs prompt quality.
@@ -66,7 +66,8 @@ class Section(BaseModel):
         text: the section text, verbatim.
         token_count: token count under the gpt-4o-mini tokeniser (budget info).
         section_source: how this text was obtained — 'cover_head',
-            'edgartools_item8', or 'fallback_fulltext'.
+            'edgartools_item8', 'fallback_fulltext', or
+            'fallback_fulltext_oversize'.
     """
 
     model_config = ConfigDict(str_strip_whitespace=False)
@@ -107,19 +108,20 @@ def _try_item8(filing: FilingLike) -> str | None:
         return None
 
 
-def _passes_plausibility_gate(text: str | None) -> bool:
+def _passes_floor(text: str | None) -> bool:
     """
     True if the Item 8 slice is present and at least the char floor long.
 
     The floor (settings.ITEM8_MIN_CHARS) is edgartools' own empirical minimum
     for a 10-K Item 8. A slice below it is a truncated heading, not the
-    statements — the gate rejects it so the caller can fall back.
+    statements — the gate rejects it so the caller can fall back. Confirmed true
+    positives in this corpus: JPM (92 tokens), QCOM (83), XOM (153), NFLX (54).
 
     Args:
         text: candidate Item 8 text, or None.
 
     Returns:
-        Whether the slice is trustworthy.
+        Whether the slice is long enough to be the statements.
     """
     return bool(text) and len(text) >= settings.ITEM8_MIN_CHARS
 
@@ -145,64 +147,89 @@ def _build_cover(raw_text: str) -> Section:
         section_source="cover_head",
     )
 
-
-def _build_financial_statements(filing: FilingLike, raw_text: str) -> Section:
+# Modified - the ceiling becomes a budget check that includes cover, 
+# the tag is renamed, and the margin is logged so GS's 781 tokens is visible in the run output. 
+def _build_financial_statements(
+    filing: FilingLike, raw_text: str, cover_tokens: int
+) -> Section:
     """
     Build the financial-statements section: gated Item 8, else full-text fallback.
 
-    Item 8 must be plausible on BOTH sides: at least the char floor (else it is a
-    truncated heading) and no more than the token ceiling (else edgartools has
-    over-captured, its boundary overshooting into later items — observed on GS,
-    where Item 8 came back larger than the entire filing). Either failure falls
-    back to the full on-disk filing text, but the two are tagged distinctly:
+    Item 8 is accepted when it clears the char floor AND the assembled input
+    (Item 8 + cover) fits the model input budget. The budget test replaces an
+    earlier absolute token ceiling: that ceiling fired on three documents in this
+    corpus (PFE, GS, BAC) and boundary inspection showed all three slices were
+    genuine Item 8 — correct start at the auditor's report / statement index,
+    tail inside the notes. The observation that motivated it (GS's Item 8
+    appearing 'larger than its whole filing') was a rendering artifact: the item
+    view line-breaks every table cell, so the same content tokenises ~58% higher
+    than filing.text(). In characters the slice is a proper subset, as it must be.
 
-      - 'fallback_fulltext'     : Item 8 truncated/missing (below the floor)
-      - 'fallback_overcapture'  : Item 8 over-captured (above the ceiling)
+    What is left is the constraint that actually matters — whether the assembled
+    input fits the window. Fallback tags:
 
-    so the two failure modes are separable at scoring time. If even the fallback
-    text exceeds the model input budget, it is used but logged as oversized — the
-    caller/extractor must handle truncation rather than silently sending an
-    over-window prompt.
+      - 'fallback_fulltext'          : Item 8 truncated/missing (below the floor)
+      - 'fallback_fulltext_oversize' : Item 8 + cover exceeds the input budget
+
+    so the two failure modes stay separable at scoring time. If the fallback text
+    ALSO exceeds the budget, it is returned but logged at ERROR — the caller must
+    resolve it rather than silently sending an over-window prompt.
 
     Args:
         filing: the resolved filing object (for Item 8).
         raw_text: the on-disk filing text (single source for the fallback).
+        cover_tokens: token count of the cover slice, which shares the budget.
 
     Returns:
         The financial-statements Section.
     """
     item8 = _try_item8(filing)
 
-    if _passes_plausibility_gate(item8):
-        assert item8 is not None  # floor gate guarantees non-None
+    if not _passes_floor(item8) or item8 is None:
+        logger.warning(
+            "item8_below_floor_fallback",
+            item8_chars=len(item8) if item8 else 0,
+            floor_chars=settings.ITEM8_MIN_CHARS,
+        )
+        fallback_source = "fallback_fulltext"
+    else:
         item8_tokens = _n_tokens(item8)
-        if item8_tokens <= settings.ITEM8_MAX_TOKENS:
+        assembled_tokens = item8_tokens + cover_tokens
+        margin = settings.MODEL_INPUT_TOKEN_BUDGET - assembled_tokens
+
+        if margin >= 0:
+            logger.info(
+                "item8_accepted",
+                item8_tokens=item8_tokens,
+                cover_tokens=cover_tokens,
+                assembled_tokens=assembled_tokens,
+                budget=settings.MODEL_INPUT_TOKEN_BUDGET,
+                margin_tokens=margin,
+            )
             return Section(
                 text=item8,
                 token_count=item8_tokens,
                 section_source="edgartools_item8",
             )
-        # Over-captured: boundary overshoot into later items. Fall back to the
-        # (smaller) full text, tagged distinctly from the truncation case.
+
         logger.warning(
-            "item8_over_ceiling_fallback",
+            "item8_over_budget_fallback",
             item8_tokens=item8_tokens,
-            ceiling_tokens=settings.ITEM8_MAX_TOKENS,
+            cover_tokens=cover_tokens,
+            assembled_tokens=assembled_tokens,
+            budget=settings.MODEL_INPUT_TOKEN_BUDGET,
+            overflow_tokens=-margin,
         )
-        fallback_source = "fallback_overcapture"
-    else:
-        logger.warning(
-            "item8_gate_failed_fallback",
-            item8_chars=len(item8) if item8 else 0,
-            floor_chars=settings.ITEM8_MIN_CHARS,
-        )
-        fallback_source = "fallback_fulltext"
+        fallback_source = "fallback_fulltext_oversize"
 
     fallback_tokens = _n_tokens(raw_text)
-    if fallback_tokens > settings.MODEL_INPUT_TOKEN_BUDGET:
+    fallback_assembled = fallback_tokens + cover_tokens
+    if fallback_assembled > settings.MODEL_INPUT_TOKEN_BUDGET:
         logger.error(
             "fallback_exceeds_model_budget",
             fallback_tokens=fallback_tokens,
+            cover_tokens=cover_tokens,
+            assembled_tokens=fallback_assembled,
             budget=settings.MODEL_INPUT_TOKEN_BUDGET,
             fallback_source=fallback_source,
         )
@@ -215,12 +242,16 @@ def _build_financial_statements(filing: FilingLike, raw_text: str) -> Section:
 
 def get_sections(filing: FilingLike, raw_text: str) -> dict[str, Section]:
     """
-    Slice a filing into the sections the Phase 2 extraction prompts consume.
+    Slice a filing into the sections the extraction prompts consume.
 
     Pure logic: takes the resolved filing (for Item 8) and the on-disk filing
     text (for the cover slice and the fallback), and returns the section dict.
     All disk I/O lives in the calling script, so this is unit-testable with a
     fake filing and an in-memory string.
+
+    Cover is built first because its token count is part of the budget the Item 8
+    gate tests against — the constraint is on the assembled input, not on Item 8
+    in isolation.
 
     Args:
         filing: the resolved edgartools filing object.
@@ -229,7 +260,10 @@ def get_sections(filing: FilingLike, raw_text: str) -> dict[str, Section]:
     Returns:
         Mapping with keys 'cover' and 'financial_statements'.
     """
+    cover = _build_cover(raw_text)
     return {
-        "cover": _build_cover(raw_text),
-        "financial_statements": _build_financial_statements(filing, raw_text),
+        "cover": cover,
+        "financial_statements": _build_financial_statements(
+            filing, raw_text, cover.token_count
+        ),
     }

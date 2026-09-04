@@ -1,0 +1,49 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000027419",
+  "year": 2021,
+  "extraction": {
+    "company_name": "TARGET CORP",
+    "fiscal_year_end": "2021-01-30",
+    "total_revenue": 93561000000.0,
+    "net_income": 4368000000.0,
+    "total_assets": 51248000000.0,
+    "total_liabilities": 20308000000.0,
+    "operating_cash_flow": 10525000000.0,
+    "business_description": "Target Corporation (Target, the Corporation or the Company) was incorporated in Minnesota in 1902. We offer to our customers, referred to as \"guests,\" everyday essentials and fashionable, differentiated merchandise at discounted prices. Our ability to deliver a preferred shopping experience to our guests is supported by our supply chain and technology, our devotion to innovation, our loyalty offerings and suite of fulfillment options, and our disciplined approach to managing our business and investing in future growth. We operate as a single segment designed to enable guests to purchase products seamlessly in stores or through our digital channels. Since 1946, we have given 5 percent of our profit to communities.",
+    "primary_risk_factors": [
+      "Seasonality",
+      "Changes in consumer preferences",
+      "Competition in the retail market",
+      "Economic conditions affecting consumer spending",
+      "Supply chain disruptions"
+    ],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 93561000000.0,
+      "source_line": "Total revenue93,561 78,112 75,356"
+    },
+    "net_income": {
+      "value": 4368000000.0,
+      "source_line": "Net earnings$4,368 $3,281 $2,937"
+    },
+    "total_assets": {
+      "value": 51248000000.0,
+      "source_line": "Total assets$51,248 $42,779"
+    },
+    "total_liabilities": {
+      "value": 20308000000.0,
+      "source_line": "Total liabilities and shareholders' investment$51,248 $42,779"
+    },
+    "operating_cash_flow": {
+      "value": 10525000000.0,
+      "source_line": "Cash provided by operating activities—continuing operations10,525 7,099 5,970"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 21337,
+  "output_tokens": 354,
+  "parsing_error": null
+}

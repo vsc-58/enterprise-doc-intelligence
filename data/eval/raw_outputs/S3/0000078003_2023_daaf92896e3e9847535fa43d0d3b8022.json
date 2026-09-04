@@ -1,0 +1,49 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000078003",
+  "year": 2023,
+  "extraction": {
+    "company_name": "PFIZER INC",
+    "fiscal_year_end": "2023-12-31",
+    "total_revenue": 58496000000.0,
+    "net_income": 2119000000.0,
+    "total_assets": 226501000000.0,
+    "total_liabilities": 137213000000.0,
+    "operating_cash_flow": 8700000000.0,
+    "business_description": "Pfizer Inc. is a global biopharmaceutical company that discovers, develops, manufactures, and markets innovative medicines and vaccines.",
+    "primary_risk_factors": [
+      "Patent litigation",
+      "Product liability claims",
+      "Regulatory compliance risks",
+      "Market competition",
+      "Supply chain disruptions"
+    ],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 58496000000.0,
+      "source_line": "Total revenues 58,496 100,330 81,288"
+    },
+    "net_income": {
+      "value": 2119000000.0,
+      "source_line": "Net income attributable to Pfizer Inc. common shareholders $2,119 $31,372 $21,979"
+    },
+    "total_assets": {
+      "value": 226501000000.0,
+      "source_line": "Total assets $226,501 $197,205"
+    },
+    "total_liabilities": {
+      "value": 137213000000.0,
+      "source_line": "Total liabilities 137,213 101,288"
+    },
+    "operating_cash_flow": {
+      "value": 8700000000.0,
+      "source_line": "Net cash provided by/(used in) operating activities 8,700 29,267 32,922"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 67575,
+  "output_tokens": 241,
+  "parsing_error": null
+}

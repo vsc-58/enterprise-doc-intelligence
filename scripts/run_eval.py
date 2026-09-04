@@ -33,18 +33,18 @@ logger = get_logger(__name__)
 
 # The evaluation set, mirroring scripts/build_sections.py. Kept as (ticker,
 # year); CIK is resolved from the Document row so the key is never re-derived.
-EVAL_SET: list[tuple[str, int]] = [
-    ("AAPL", 2021),
-    ("MSFT", 2022),
-    ("GOOGL", 2021),
-    ("AMZN", 2023),
-    ("WMT", 2023),
-    ("JNJ", 2021),
-    ("NFLX", 2023),
-    ("V", 2022),
-    ("ADBE", 2022),
-    ("INTC", 2023),
-]
+# EVAL_SET: list[tuple[str, int]] = [
+#     ("AAPL", 2021),
+#     ("MSFT", 2022),
+#     ("GOOGL", 2021),
+#     ("AMZN", 2023),
+#     ("WMT", 2023),
+#     ("JNJ", 2021),
+#     ("NFLX", 2023),
+#     ("V", 2022),
+#     ("ADBE", 2022),
+#     ("INTC", 2023),
+# ]
 
 # GPT-4o-mini pricing, USD per 1M tokens. Used for the cost axis only.
 _INPUT_COST_PER_M = 0.15

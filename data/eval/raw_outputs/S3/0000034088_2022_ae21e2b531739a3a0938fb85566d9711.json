@@ -1,0 +1,51 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000034088",
+  "year": 2022,
+  "extraction": {
+    "company_name": "Exxon Mobil Corporation",
+    "fiscal_year_end": "2022-12-31",
+    "total_revenue": 398675000000.0,
+    "net_income": 55740000000.0,
+    "total_assets": 369067000000.0,
+    "total_liabilities": 166594000000.0,
+    "operating_cash_flow": 76797000000.0,
+    "business_description": "Exxon Mobil Corporation was incorporated in the State of New Jersey in 1882. Divisions and affiliated companies of ExxonMobil operate or market products in the United States and most other countries of the world. Our principal business involves exploration for, and production of, crude oil and natural gas; manufacture, trade, transport and sale of crude oil, natural gas, petroleum products, petrochemicals, and a wide variety of specialty products; and pursuit of lower-emission business opportunities including carbon capture and storage, hydrogen, and lower-emission fuels.",
+    "primary_risk_factors": [
+      "Supply and Demand",
+      "Economic conditions",
+      "Other demand-related factors",
+      "Other supply-related factors",
+      "Other market factors",
+      "Government and Political Factors",
+      "Climate Change and the Energy Transition"
+    ],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 398675000000.0,
+      "source_line": "Sales and other operating revenue 398,675 276,692"
+    },
+    "net_income": {
+      "value": 55740000000.0,
+      "source_line": "Net income (loss) attributable to ExxonMobil 55,740 23,040"
+    },
+    "total_assets": {
+      "value": 369067000000.0,
+      "source_line": "Total Assets 369,067 338,923"
+    },
+    "total_liabilities": {
+      "value": 166594000000.0,
+      "source_line": "Total Liabilities 166,594 163,240"
+    },
+    "operating_cash_flow": {
+      "value": 76797000000.0,
+      "source_line": "Net cash provided by operating activities 76,797 48,129"
+    }
+  },
+  "section_source": "fallback_fulltext",
+  "input_tokens": 100159,
+  "output_tokens": 328,
+  "parsing_error": null
+}

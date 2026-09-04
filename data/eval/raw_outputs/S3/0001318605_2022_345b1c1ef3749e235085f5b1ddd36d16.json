@@ -1,0 +1,48 @@
+{
+  "strategy_id": "S3",
+  "cik": "0001318605",
+  "year": 2022,
+  "extraction": {
+    "company_name": "Tesla, Inc.",
+    "fiscal_year_end": "2022-12-31",
+    "total_revenue": 81462000000.0,
+    "net_income": 12556000000.0,
+    "total_assets": 82338000000.0,
+    "total_liabilities": 36440000000.0,
+    "operating_cash_flow": 14724000000.0,
+    "business_description": "We design, develop, manufacture, sell and lease high-performance fully electric vehicles and energy generation and storage systems, and offer services related to our products.",
+    "primary_risk_factors": [
+      "Risks related to supply chain constraints",
+      "Risks related to competition",
+      "Risks related to regulatory changes",
+      "Risks related to market acceptance of our products"
+    ],
+    "auditor_name": "PricewaterhouseCoopers LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 81462000000.0,
+      "source_line": "Total revenues 81,462 53,823 31,536"
+    },
+    "net_income": {
+      "value": 12556000000.0,
+      "source_line": "Net income 12,587 5,644 862"
+    },
+    "total_assets": {
+      "value": 82338000000.0,
+      "source_line": "Total assets 82,338 62,131"
+    },
+    "total_liabilities": {
+      "value": 36440000000.0,
+      "source_line": "Total liabilities 36,440 30,548"
+    },
+    "operating_cash_flow": {
+      "value": 14724000000.0,
+      "source_line": "Net cash provided by operating activities 14,724 11,497 5,943"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 45539,
+  "output_tokens": 245,
+  "parsing_error": null
+}

@@ -32,12 +32,26 @@ from src.extraction.schemas import FilingExtraction, FilingExtractionWithEvidenc
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
+from sqlalchemy import select
+
+from src.eval.grounding import check_evidence_consistency, check_grounding
+from src.storage.metadata_store import (
+    EVIDENCE_FIELDS,
+    Document,
+    ExtractionStatus,
+    create_extracted_record,
+    get_session,
+)
+
 logger = get_logger(__name__)
 
 _SECTION_LABELS: dict[str, str] = {
     "edgartools_item8": "Item 8 (Financial Statements) from a 10-K",
     "fallback_fulltext": "the full text of a 10-K filing",
+    # Kept so pre-rename cached artifacts still resolve; superseded by
+    # fallback_fulltext_oversize (the ceiling was replaced by a budget check).
     "fallback_overcapture": "the full text of a 10-K filing",
+    "fallback_fulltext_oversize": "the full text of a 10-K filing",
 }
 
 
@@ -279,18 +293,14 @@ def extract_with_strategy(
     evidence: dict[str, dict[str, str | float | None]] | None = None
 
     if parsed is None:
-        logger.warning(
-            "extraction_validation_failed",
-            strategy=strategy_id,
-            cik=cik,
-            year=year,
-            error=str(parsing_error),
-        )
+        logger.warning("extraction_validation_failed", strategy=strategy_id, cik=cik, year=year, error=str(parsing_error))
     elif is_evidence:
-        extraction = parsed.to_extraction()
-        evidence = {
-            name: ev.model_dump() for name, ev in parsed.evidence_map().items()
-        }
+        try:
+            extraction = parsed.to_extraction()
+            evidence = {name: ev.model_dump() for name, ev in parsed.evidence_map().items()}
+        except Exception as exc:
+            logger.error("evidence_projection_failed", strategy=strategy_id, cik=cik, year=year, error=str(exc))
+            parsing_error = f"projection failed: {exc}"
     else:
         extraction = parsed
 
@@ -310,3 +320,288 @@ def extract_with_strategy(
         _write_cache(path, result)
 
     return result
+
+# Fields written to extracted_records. business_description and
+# primary_risk_factors are DELIBERATELY absent: with only cover + Item 8 in the
+# input they have no source, and inspection of the eval-10 showed the model
+# returning Item 8 note headings ("Uncertain tax positions") under
+# primary_risk_factors — real text, correct location, wrong field. Storing that
+# under a column named for Item 1A would misrepresent it. They remain in the
+# schema (removing them would change the tool definition sent to the model and
+# silently invalidate every cached response) and are dropped at the write.
+PERSISTED_FIELDS: tuple[str, ...] = (
+    "company_name",
+    "fiscal_year_end",
+    "auditor_name",
+    *EVIDENCE_FIELDS,
+)
+
+
+def prompt_version(strategy_id: str) -> str:
+    """
+    Return a short, derived identifier for a strategy's prompt template.
+
+    Derived from the template text rather than hand-maintained, so it cannot
+    drift from the prompt it names — a manually bumped version is the kind of
+    thing that silently does not get bumped. Shares the hash input with the
+    response cache, so a record's prompt_version joins to the cached raw output
+    that produced it.
+
+    Args:
+        strategy_id: one of the keys in prompts.STRATEGIES.
+
+    Returns:
+        The first 12 hex chars of the template's SHA-256.
+
+    Raises:
+        KeyError: if strategy_id is not a known strategy.
+    """
+    if strategy_id not in STRATEGIES:
+        raise KeyError(f"Unknown strategy: {strategy_id}")
+    digest = hashlib.sha256(str(STRATEGIES[strategy_id]).encode("utf-8"))
+    return digest.hexdigest()[:12]
+
+
+def _split_evidence(
+    evidence: dict[str, dict] | None,
+) -> dict[str, str | None]:
+    """
+    Flatten an evidence map to field -> cited source line.
+
+    Args:
+        evidence: the per-field evidence map, or None.
+
+    Returns:
+        Cited line per evidence field; None where the field carried no citation.
+    """
+    evidence = evidence or {}
+    return {
+        field: (evidence.get(field) or {}).get("source_line")
+        for field in EVIDENCE_FIELDS
+    }
+
+
+def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, bool]:
+    """
+    Run one document through extraction and persist exactly one record.
+
+    Grounding runs at write time, not at read time, so a figure's lineage verdict
+    is stored beside the figure and no consumer has to recompute it. Both checks
+    run: check_grounding (is the cited line real?) and check_evidence_consistency
+    (does the cited line contain the value?). Neither failing fails the record —
+    they mark individual figures unverified, because discarding four verified
+    figures over one bad citation loses more than it protects.
+
+    Args:
+        document_id: the document to extract.
+        strategy_id: the winning strategy to apply.
+
+    Returns:
+        (status value, input tokens, output tokens, whether the result was cached).
+        Token counts are the tokens the response cost when it was FIRST made — a
+        cached result reports the same numbers it reported originally, so the
+        caller must use the cached flag to separate spend from replay.
+
+    Raises:
+        ValueError: if document_id does not exist.
+    """
+    with get_session() as session:
+        row = session.execute(
+            select(
+                Document.cik,
+                Document.filing_year,
+                Document.ticker,
+                Document.company_name,
+            ).where(Document.id == document_id)
+        ).first()
+    if row is None:
+        raise ValueError(f"no document with id {document_id}")
+    cik, year, ticker, company = row
+
+    version = prompt_version(strategy_id)
+
+    try:
+        result = extract_with_strategy(strategy_id, cik, year)
+    except Exception as exc:
+        # The call never completed: transport error, missing section artifact,
+        # context-length rejection. Not a statement about the model, so it is
+        # recorded as technical and the document stays pending for a re-run.
+        logger.error(
+            "extraction_technical_failure",
+            document_id=document_id,
+            ticker=ticker,
+            year=year,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        create_extracted_record(
+            document_id=document_id,
+            extraction_status=ExtractionStatus.TECHNICAL_FAILED,
+            extraction_strategy_used=strategy_id,
+            prompt_version=version,
+            model_name=settings.OPENAI_MODEL,
+            failure_reason=f"{type(exc).__name__}: {exc}",
+        )
+        return ExtractionStatus.TECHNICAL_FAILED.value, 0, 0, False
+
+    if result.extraction is None:
+        # The call completed and was billed, but the output failed validation.
+        # The row is written so the failure is diagnosable rather than lost.
+        logger.warning(
+            "extraction_validation_failure",
+            document_id=document_id,
+            ticker=ticker,
+            year=year,
+            error=result.parsing_error,
+        )
+        create_extracted_record(
+            document_id=document_id,
+            extraction_status=ExtractionStatus.EXTRACTION_FAILED,
+            extraction_strategy_used=strategy_id,
+            prompt_version=version,
+            model_name=settings.OPENAI_MODEL,
+            section_source=result.section_source,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            failure_reason=result.parsing_error or "schema validation failed",
+        )
+        return ExtractionStatus.EXTRACTION_FAILED.value, result.input_tokens, result.output_tokens, result.from_cache
+
+    source_text, _ = assemble_input(load_sections(cik, year))
+    present = check_grounding(result.evidence, source_text)
+    consistent = check_evidence_consistency(result.evidence)
+
+    dumped = result.extraction.model_dump()
+    fields = {name: dumped.get(name) for name in PERSISTED_FIELDS if name in dumped}
+
+    create_extracted_record(
+        document_id=document_id,
+        extraction_status=ExtractionStatus.SUCCESS,
+        extraction_strategy_used=strategy_id,
+        prompt_version=version,
+        model_name=settings.OPENAI_MODEL,
+        fields=fields,
+        source_lines=_split_evidence(result.evidence),
+        evidence_present=present,
+        evidence_consistent=consistent,
+        evidence_json=(
+            json.dumps(result.evidence, indent=2) if result.evidence else None
+        ),
+        section_source=result.section_source,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+    )
+
+    ungrounded = [f for f, ok in present.items() if ok is False]
+    inconsistent = [f for f, ok in consistent.items() if ok is False]
+    if ungrounded or inconsistent:
+        logger.warning(
+            "extraction_evidence_flags",
+            document_id=document_id,
+            ticker=ticker,
+            year=year,
+            ungrounded=ungrounded or None,
+            inconsistent=inconsistent or None,
+        )
+
+    logger.info(
+        "extraction_succeeded",
+        document_id=document_id,
+        ticker=ticker,
+        company=company,
+        year=year,
+        section_source=result.section_source,
+        from_cache=result.from_cache,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+    )
+    return ExtractionStatus.SUCCESS.value, result.input_tokens, result.output_tokens, result.from_cache
+
+
+def run_extraction_pipeline(
+    document_ids: list[int], strategy_id: str = "S3"
+) -> dict[str, object]:
+    """
+    Extract a batch of documents, writing one record per attempt.
+
+    Per-item error handling: any failure is caught, recorded with the document's
+    identity, and the batch continues. Zero silent drops — every id in
+    document_ids leaves either a persisted record or a logged failure, and the
+    returned counts sum to len(document_ids).
+
+    Token counts include cached results, whose tokens were billed on an earlier
+    run; cached_hits reports how many of the totals were not paid for again.
+
+    Args:
+        document_ids: documents to process, in order.
+        strategy_id: the strategy to apply. Defaults to the Phase 2 winner.
+
+    Returns:
+        Summary with processed, succeeded, extraction_failed, technical_failed,
+        input_tokens, output_tokens, and cached_hits.
+
+    Raises:
+        KeyError: if strategy_id is not a known strategy (raised before any work
+            begins, so a typo cannot half-run a batch).
+    """
+    version = prompt_version(strategy_id)  # fails fast on an unknown strategy
+    logger.info(
+        "extraction_pipeline_start",
+        documents=len(document_ids),
+        strategy=strategy_id,
+        prompt_version=version,
+        model=settings.OPENAI_MODEL,
+    )
+
+    counts = {"success": 0, "extraction_failed": 0, "technical_failed": 0}
+    billed_input, billed_output = 0, 0
+    cached_input, cached_output = 0, 0
+    cached_hits = 0
+
+    for document_id in document_ids:
+        try:
+            status, in_tok, out_tok, cached = _extract_one(document_id, strategy_id)
+            counts[status] += 1
+            if cached:
+                cached_hits += 1
+                cached_input += in_tok
+                cached_output += out_tok
+            else:
+                billed_input += in_tok
+                billed_output += out_tok
+        except Exception as exc:
+            # The record write itself failed (dangling FK, disk, DB lock). The
+            # document stays pending; the batch continues.
+            counts["technical_failed"] += 1
+            logger.error(
+                "extraction_record_write_failed",
+                document_id=document_id,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+
+    logger.info(
+        "extraction_pipeline_summary",
+        processed=len(document_ids),
+        succeeded=counts["success"],
+        extraction_failed=counts["extraction_failed"],
+        technical_failed=counts["technical_failed"],
+        cached_hits=cached_hits,
+        billed_input_tokens=billed_input,
+        billed_output_tokens=billed_output,
+        replayed_input_tokens=cached_input,
+        replayed_output_tokens=cached_output,
+        strategy=strategy_id,
+        prompt_version=version,
+    )
+    return {
+        "processed": len(document_ids),
+        "succeeded": counts["success"],
+        "extraction_failed": counts["extraction_failed"],
+        "technical_failed": counts["technical_failed"],
+        "cached_hits": cached_hits,
+        "billed_input_tokens": billed_input,
+        "billed_output_tokens": billed_output,
+        "replayed_input_tokens": cached_input,
+        "replayed_output_tokens": cached_output,
+    }

@@ -1,0 +1,47 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000070858",
+  "year": 2022,
+  "extraction": {
+    "company_name": "Bank of America Corporation",
+    "fiscal_year_end": "2022-12-31",
+    "total_revenue": 94950000000.0,
+    "net_income": 27528000000.0,
+    "total_assets": 3051375000.0,
+    "total_liabilities": 2778178000.0,
+    "operating_cash_flow": null,
+    "business_description": "Bank of America Corporation, a bank holding company and a financial holding company, provides a diverse range of financial services and products throughout the U.S. and in certain international markets.",
+    "primary_risk_factors": [
+      "Economic downturns affecting credit quality",
+      "Regulatory changes impacting operations",
+      "Market volatility affecting trading and investment activities"
+    ],
+    "auditor_name": "PricewaterhouseCoopers, LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 94950000000.0,
+      "source_line": "Total revenue, net of interest expense94,950 89,113 85,528"
+    },
+    "net_income": {
+      "value": 27528000000.0,
+      "source_line": "Net income$27,528 $31,978 $17,894"
+    },
+    "total_assets": {
+      "value": 3051375000.0,
+      "source_line": "Total assets$3,051,375 $3,169,495"
+    },
+    "total_liabilities": {
+      "value": 2778178000.0,
+      "source_line": "Total liabilities2,778,178 2,899,429"
+    },
+    "operating_cash_flow": {
+      "value": null,
+      "source_line": null
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 95711,
+  "output_tokens": 234,
+  "parsing_error": null
+}

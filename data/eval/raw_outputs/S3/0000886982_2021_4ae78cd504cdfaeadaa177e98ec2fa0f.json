@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0000886982",
+  "year": 2021,
+  "extraction": {
+    "company_name": "The Goldman Sachs Group, Inc.",
+    "fiscal_year_end": "2021-12-31",
+    "total_revenue": 59339000000.0,
+    "net_income": 21635000000.0,
+    "total_assets": 1463988000000.0,
+    "total_liabilities": 1354062000000.0,
+    "operating_cash_flow": 921000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": null
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 59339000000.0,
+      "source_line": "Total net revenues                                  59,339      44,560      36,546"
+    },
+    "net_income": {
+      "value": 21635000000.0,
+      "source_line": "Net earnings                                        21,635          9,459        8,466"
+    },
+    "total_assets": {
+      "value": 1463988000000.0,
+      "source_line": "Total assets                                                                                                     $ 1,463,988      $ 1,163,028"
+    },
+    "total_liabilities": {
+      "value": 1354062000000.0,
+      "source_line": "Total liabilities                                                                                                1,354,062          1,067,096"
+    },
+    "operating_cash_flow": {
+      "value": 921000.0,
+      "source_line": "Net cash provided by/(used for) operating activities                                                 921                     ( 13,728         23,868"
+    }
+  },
+  "section_source": "fallback_fulltext_oversize",
+  "input_tokens": 104750,
+  "output_tokens": 215,
+  "parsing_error": null
+}

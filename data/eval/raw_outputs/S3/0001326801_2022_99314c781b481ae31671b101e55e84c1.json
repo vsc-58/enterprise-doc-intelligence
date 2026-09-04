@@ -1,0 +1,43 @@
+{
+  "strategy_id": "S3",
+  "cik": "0001326801",
+  "year": 2022,
+  "extraction": {
+    "company_name": "Meta Platforms, Inc.",
+    "fiscal_year_end": "2022-12-31",
+    "total_revenue": 116609000000.0,
+    "net_income": 23200000000.0,
+    "total_assets": 185727000000.0,
+    "total_liabilities": 60014000000.0,
+    "operating_cash_flow": 50475000000.0,
+    "business_description": null,
+    "primary_risk_factors": [],
+    "auditor_name": "Ernst & Young LLP"
+  },
+  "evidence": {
+    "total_revenue": {
+      "value": 116609000000.0,
+      "source_line": "Total revenue$116,609 $117,929 $85,965"
+    },
+    "net_income": {
+      "value": 23200000000.0,
+      "source_line": "Net income$23,200 $39,370 $29,146"
+    },
+    "total_assets": {
+      "value": 185727000000.0,
+      "source_line": "Total assets$185,727 $165,987"
+    },
+    "total_liabilities": {
+      "value": 60014000000.0,
+      "source_line": "Total liabilities60,014 41,108"
+    },
+    "operating_cash_flow": {
+      "value": 50475000000.0,
+      "source_line": "Net cash provided by operating activities50,475 57,683 38,747"
+    }
+  },
+  "section_source": "edgartools_item8",
+  "input_tokens": 28573,
+  "output_tokens": 197,
+  "parsing_error": null
+}
