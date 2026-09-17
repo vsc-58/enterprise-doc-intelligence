@@ -58,6 +58,50 @@ class Settings(BaseSettings):
     # rounding gap of a few parts per million is expected.
     EVIDENCE_MATCH_REL_TOLERANCE: float = 1e-3
 
+    # Floor rejecting collapsed item slices. Set from measurement, not judgment:
+    # observed collapses are 45-157 tokens; the smallest real section is 596.
+    # Nothing sits between, so the threshold is in a genuine gap rather than
+    # tuned until the alarm stopped (the Phase 3 D14 lesson). Also rejects
+    # legitimate cross-references — BAC/GS/JPM incorporate Item 7A into Item 7,
+    # so their 45-63 token 7A is a pointer, not a truncation. Same handling,
+    # different meaning.
+    NARRATIVE_MIN_TOKENS: int = 200
+
+    # Mid-slice sample size for the section overlap test. Sampled from the
+    # middle because adjacent items legitimately share a boundary sentence — an
+    # edge match proves nothing, a mid-slice match means real containment.
+    # Fires on 3/20: QCOM Item 1, META Item 1, TSLA Item 7A.
+    SECTION_OVERLAP_PROBE_CHARS: int = 400
+
+    # --- Phase 4: narrative sections, chunking & vector store -----------------
+    # Section artifacts written by scripts/build_narrative_sections.py. Kept
+    # separate from RAW_DATA_PATH because these are the item view's rendering of
+    # the filing, not filing.text() — the two differ (Phase 3 D14) and must not
+    # be confused for each other.
+    PROCESSED_DATA_PATH: str = "data/processed"
+
+    # Chunk target and overlap, in TOKENS under cl100k_base — the encoding
+    # text-embedding-3-small uses. Note this differs from the o200k_base used in
+    # sections.py / narrative_sections.py, which budget against gpt-4o-mini's
+    # context window. Different consumers, different encodings.
+    # RecursiveCharacterTextSplitter counts CHARACTERS by default, so the
+    # chunker must build it via from_tiktoken_encoder or 500 silently means 500
+    # chars (~125 tokens).
+    CHUNK_SIZE_TOKENS: int = 500
+    CHUNK_OVERLAP_TOKENS: int = 50
+
+    # Length floor dropping fragments too short to retrieve usefully (heading
+    # remnants, stray table rows). LENGTH ONLY, deliberately: any content-based
+    # filter — digit density, symbol ratio — is the filter that would delete
+    # real financial text.
+    CHUNK_MIN_CHARS: int = 100
+
+    # Embedding batch size and inter-batch pause. Batching bounds the blast
+    # radius of a failed call; the pause keeps a ~1,750-chunk run inside rate
+    # limits.
+    EMBED_BATCH_SIZE: int = 100
+    EMBED_BATCH_SLEEP_SECONDS: float = 0.5
+
 # Singleton instance — import this everywhere
 # from src.utils.config import settings
 settings = Settings()

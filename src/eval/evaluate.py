@@ -36,11 +36,7 @@ from src.extraction.schemas import FilingExtraction
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
-from src.eval.grounding import (
-    _flatten_for_grounding,
-    check_evidence_consistency,
-    check_grounding,
-)
+from src.eval.grounding import check_evidence_consistency, check_grounding
 
 logger = get_logger(__name__)
 
