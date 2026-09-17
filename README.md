@@ -253,3 +253,181 @@ python -m scripts.run_heldout_eval
 - `evidence_consistent` cannot detect unit errors, by construction.
 - `evidence_present` proves a line exists, not that it supports the value attached to it.
 - A ground-truth value that is wrong in the same way the model is wrong would score correct and stay invisible. The harness catches disagreement, not shared error.
+
+## Phase 4 — Chunking, Embeddings & Vector Store
+
+Built the retrieval half of the system: the narrative sections of all 20 filings
+are sliced, chunked, embedded and indexed in ChromaDB, ready for the RAG path in
+Phase 5. 1,958 chunks, 820,742 tokens embedded, $0.016 spent.
+
+This phase is independent of Phases 2–3. Extraction reads cover + Item 8;
+retrieval reads Item 1A, 7, 1 and 7A. The two consume different views of the
+same filings on purpose — they answer different questions.
+
+### What was built
+
+| File | Purpose |
+|---|---|
+| `src/ingestion/narrative_sections.py` | Slices Item 1A / 7 / 1 / 7A with a token floor and overlap rejection |
+| `src/ingestion/chunker.py` | Token-aware recursive-character chunking, deterministic ids |
+| `src/storage/vector_store.py` | ChromaDB wrapper: cosine, batched inserts, metadata-filtered delete |
+| `scripts/probe_sections.py` | Diagnostic — measures every item boundary across the corpus |
+| `scripts/build_narrative_sections.py` | Writes section artifacts to `data/processed/` |
+| `scripts/inspect_chunks.py` | Diagnostic — chunk size distribution and boundary quality |
+| `scripts/embed_documents.py` | Chunks and embeds pending documents; flips `is_embedded` |
+| `scripts/test_similarity_search.py` | Diagnostic — six tagged retrieval queries |
+
+### Running it
+
+```bash
+python -m scripts.build_narrative_sections    # slice, once (hits SEC via edgartools)
+python -m scripts.inspect_chunks              # verify chunk sizes, no spend
+python -m scripts.embed_documents --dry-run   # cost estimate before spending
+python -m scripts.embed_documents             # embed
+python -m scripts.test_similarity_search      # validate retrieval
+```
+
+`--reset` drops the collection and clears every `is_embedded` flag together;
+required after any chunk-parameter or embedding-model change, since Chroma fixes
+the distance function and collection metadata at creation.
+
+### The corpus, and why it is what it is
+
+Sliced sections, in acceptance priority: **Item 1A** (risk factors), **Item 7**
+(MD&A), **Item 1** (business), **Item 7A** (market risk).
+
+| Section | Chunks | Share |
+|---|---|---|
+| Item 1A | 831 | 42% |
+| Item 7 | 724 | 37% |
+| Item 1 | 346 | 18% |
+| Item 7A | 57 | 3% |
+
+**Item 8 is deliberately excluded.** The financial statements belong to the
+structured store. A narrative question mis-routed to the SQL path hits a clean
+bounded-capability refusal; a financial question mis-routed to RAG would retrieve
+a balance sheet and have the LLM *synthesise* a figure — correctly formatted,
+correctly cited, and outside every guarantee the parameterized SQL path exists to
+provide. The design boundary: **the vector store holds narrative sections only;
+financial figures come from the structured store or not at all.**
+
+That boundary is stated honestly rather than claimed as airtight. The Phase 4
+retrieval test showed MD&A summary tables carry revenue figures anyway — "What
+was Apple's total revenue in 2022?" retrieved an Item 7 chunk containing
+`Total net sales$365,817`. Excluding Item 8 narrows the hole; it does not close
+it. Phase 5's RAG prompt therefore refuses specific-figure questions explicitly,
+even when a figure sits in the retrieved context.
+
+### Section boundaries: measured, not assumed
+
+Phase 3 found edgartools' item detection silently failing on 4 of 20 filings for
+Item 8 — collapsed to a heading, paired with an adjacent item over-captured by
+87k–298k characters. The plan for this phase assumed Item 1A would fail the same
+way and specified a full-text fallback so no document could vanish.
+
+A zero-cost probe across all 20 documents killed that assumption:
+**Item 1A is present and uncollapsed on 20/20**, including the four whose Item 8
+collapsed. The front-of-document boundary is more reliable than the back. The
+fallback was removed — it would only have duplicated good slices into the same
+collection.
+
+Two guards replaced it, both set from the probe's numbers:
+
+- **200-token floor.** Observed collapses are 45–157 tokens; the smallest real
+  section is 596. The threshold sits in a genuine gap, not at a value tuned until
+  the alarm stopped.
+- **Bidirectional overlap rejection.** Over-capture runs both ways — META's
+  Item 1 sits inside its Item 1A, while QCOM's Item 1 *contains* its Item 1A. A
+  one-directional test catches one and misses the other. Fires on 3 of 20.
+
+**Accepted gaps, logged not papered over:** INTC, JPM and XOM have no usable
+Item 7, so the system refuses MD&A questions about those three rather than
+answering from the wrong section. Six documents lack Item 7A — but those are
+legitimate cross-references, not truncations: BAC, GS, JPM, PFE, XOM and JNJ
+incorporate market-risk disclosure into Item 7.
+
+### Chunking
+
+`RecursiveCharacterTextSplitter` via `from_tiktoken_encoder` (the default
+constructor counts *characters*, so a 500 target would silently mean ~125
+tokens). 500-token target, 50 overlap, `cl100k_base` — the encoding
+`text-embedding-3-small` uses, not the `o200k_base` used elsewhere for
+gpt-4o-mini budgeting.
+
+Chunks never span a section boundary: each section is split independently, so
+every chunk's `source_section` is exact rather than inferred.
+
+Measured distribution: median 445 tokens against a 500 target, max 498, zero
+over 520, two under 50 across 1,958 chunks. The splitter prefers paragraph
+breaks over filling the budget, which is correct — Item 1A risk headings are
+paragraph-separated, so a heading stays attached to the text it introduces.
+Overlap cost 4% (820,742 embedded vs 788,163 sliced).
+
+Chunk ids hash document, section, position **and** content. Re-chunking replaces
+by metadata filter rather than by id overwrite: a content-only hash collides on
+boilerplate repeated across filings, and a position-only hash orphans the tail
+whenever a re-chunk produces fewer chunks. A derived `chunk_params_hash` (size,
+overlap, separators, embedding model, encoding) is stored in the collection
+metadata and checked on every open — derived rather than hand-maintained,
+because a manually bumped version is the kind that silently does not get bumped.
+
+### Vector store
+
+ChromaDB, persistent, **cosine set explicitly** via
+`collection_metadata={"hnsw:space": "cosine"}`. Chroma defaults to L2 and the
+distance function cannot be changed after creation — a collection built without
+this stays L2 permanently.
+
+Cosine was originally chosen partly to keep a distance-threshold out-of-scope
+guard available. **That benefit was measured and withdrawn:**
+
+| Query | Best distance |
+|---|---|
+| Amazon business segments (in scope) | 0.3168 |
+| Apple supply chain (in scope) | 0.3413 |
+| **Apple total revenue 2022 (wrong store)** | **0.3446** |
+| Interest rate risk (in scope, headline demo) | 0.4046 |
+| Apple stock price (absent from corpus) | 0.4955 |
+
+The wrong-store question scores third-closest of six. Any threshold rejecting it
+also rejects the headline demo query. Refusal therefore rests entirely on the
+prompt instruction. Cosine is kept — on OpenAI's unit-length vectors all metrics
+rank identically, and a bounded score stays more interpretable for logging.
+
+### Retrieval validation
+
+Six tagged queries, top-3 each. Five of six expectations met; the one miss was a
+**bad expected-source tag, not a bad retrieval** — "which companies flagged
+interest rate risk?" was tagged Item 1A and correctly returned Item 7A, which is
+literally titled *Quantitative and Qualitative Disclosures About Market Risk*.
+
+That is a finding, not a footnote: Phase 5's retrieval hit-rate metric depends on
+expected-source tags, and a tag intuited rather than derived from document
+structure measures the tagger instead of the retriever. Every tag in Phase 5 is
+verified against where the content actually lives, and QCOM and META are tagged
+at company granularity because their Item 1 content carries an Item 1A label.
+
+Also observed: Item 7A is 3% of the corpus and won the top two slots on a query
+aimed at it. Corpus share does not disadvantage small sections.
+
+### Known limitations
+
+- **Section-level citations on large sections.** A chunk from the middle of BAC's
+  Item 1A — 40 printed pages — cites as "Bank of America, FY2022, Item 1A". The
+  chunk text is available to the reader, but finer provenance would need heading
+  propagation into chunk metadata, which is the boundary-detection problem one
+  level down.
+- **XOM contributes 6,233 tokens** against a corpus median near 34,000. Its
+  filing is misattributed into Item 16 (298,411 chars over-captured) — the same
+  both-ends boundary bug Phase 3 flagged. Answers about XOM are thin. Recovering
+  content from Item 16 is a new heuristic with untested failure modes and was not
+  built.
+- **Corpus is bank-weighted.** GS and BAC are 26% of it; BAC alone is 11.5%.
+  Generic risk and MD&A queries skew toward financial-sector chunks.
+- **edgartools legacy-parser deprecation.** `tenk["Item 7"]` is the legacy
+  lookup; the library warns it is removed in v6.0. Affects `sections.py` too.
+  `requirements.txt` is pip-frozen, so the pin holds — an unpinned rebuild breaks
+  both slicers silently.
+- **`store._collection` private-attribute use** in `vector_store.py` for metadata
+  read, filtered delete and count. `langchain-chroma` exposes none of the three
+  publicly.
