@@ -281,10 +281,10 @@ same filings on purpose — they answer different questions.
 
 ```bash
 python -m scripts.build_narrative_sections    # slice, once (hits SEC via edgartools)
-python -m scripts.inspect_chunks              # verify chunk sizes, no spend
+python -m scripts.diagnostic.inspect_chunks              # verify chunk sizes, no spend
 python -m scripts.embed_documents --dry-run   # cost estimate before spending
 python -m scripts.embed_documents             # embed
-python -m scripts.test_similarity_search      # validate retrieval
+python -m scripts.diagnostic.test_similarity_search      # validate retrieval
 ```
 
 `--reset` drops the collection and clears every `is_embedded` flag together;
