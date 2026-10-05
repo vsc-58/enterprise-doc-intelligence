@@ -14,20 +14,16 @@ pipeline call them, and importing evaluate.py from extractor.py is circular
 callers, no cycle — a second copy would mean two calibrations of one instrument,
 which is the failure D12 was about.
 
-Dependencies: src.utils.config, src.utils.logger.
+Dependencies: src.utils.config, src.utils.logger, src.utils.numbers.
 """
 
 import re
-
+from src.utils.numbers import SCALE_MULTIPLIERS, numbers_in_line
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Scale multipliers tried when matching a value against its cited line. A filing
-# printing "in millions" shows 54,228 for 54,228,000,000; the model is instructed
-# to return actual dollars, so the printed token must be scaled up to compare.
-_EVIDENCE_SCALES: tuple[float, ...] = (1.0, 1e3, 1e6, 1e9)
 
 _EVIDENCE_NUMBER = re.compile(r"\d[\d,]*\.?\d*")
 
@@ -77,32 +73,6 @@ def check_grounding(
     return results
 
 
-def _numbers_in_line(line: str) -> list[float]:
-    """
-    Pull every numeric token out of a cited source line.
-
-    Currency symbols, non-breaking spaces and thousands separators are removed
-    before parsing. Sign is discarded: accounting statements print negatives in
-    parentheses, and the comparison is on magnitude, so a value of -6,327,000,000
-    still matches a printed "(6,327)".
-
-    Args:
-        line: the model's cited source line, verbatim.
-
-    Returns:
-        The magnitudes of every number found, in order of appearance.
-    """
-    cleaned = line.replace("\u00a0", " ").replace("$", " ")
-    numbers: list[float] = []
-    for token in _EVIDENCE_NUMBER.findall(cleaned):
-        stripped = token.replace(",", "").rstrip(".")
-        if not stripped:
-            continue
-        try:
-            numbers.append(float(stripped))
-        except ValueError:
-            continue
-    return numbers
 
 
 def check_evidence_consistency(
@@ -146,10 +116,10 @@ def check_evidence_consistency(
 
         target = abs(float(value))
         tolerance = max(target * settings.EVIDENCE_MATCH_REL_TOLERANCE, 1e-6)
-        printed = _numbers_in_line(str(line))
+        printed = numbers_in_line(str(line))
         results[field] = any(
             abs(number * scale - target) <= tolerance
             for number in printed
-            for scale in _EVIDENCE_SCALES
+            for scale in SCALE_MULTIPLIERS
         )
     return results

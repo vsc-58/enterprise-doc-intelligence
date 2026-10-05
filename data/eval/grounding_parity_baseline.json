@@ -1,0 +1,142 @@
+{
+  "S3/0000019617_2023": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000027419_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": false,
+    "total_revenue": true
+  },
+  "S3/0000034088_2022": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000050863_2023": {
+    "net_income": false,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": false,
+    "total_revenue": true
+  },
+  "S3/0000070858_2022": {
+    "net_income": true,
+    "operating_cash_flow": null,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000078003_2023": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000104169_2023": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": false,
+    "total_revenue": true
+  },
+  "S3/0000200406_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000320193_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000789019_2022": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000796343_2022": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000804328_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0000886982_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0001018724_2023": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": false,
+    "total_revenue": true
+  },
+  "S3/0001065280_2023": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0001108524_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0001318605_2022": {
+    "net_income": false,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0001326801_2022": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0001403161_2022": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  },
+  "S3/0001652044_2021": {
+    "net_income": true,
+    "operating_cash_flow": true,
+    "total_assets": true,
+    "total_liabilities": true,
+    "total_revenue": true
+  }
+}

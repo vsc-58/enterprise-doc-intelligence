@@ -102,6 +102,18 @@ class Settings(BaseSettings):
     EMBED_BATCH_SIZE: int = 100
     EMBED_BATCH_SLEEP_SECONDS: float = 0.5
 
+    # Minimum number of fields with a checkable citation before the scale-coherence
+    # check runs (D29). Below this, one anomalous field could define the document
+    # scale by itself, so the check abstains rather than asserting. Three is the
+    # smallest count where a single minority field is still a minority; INTC, the
+    # thinnest record in the corpus, has exactly three.
+    SCALE_COHERENCE_MIN_FIELDS: int = 3
+
+    # Hard ceiling on rows a ranking or filter may return. The corpus holds 20
+    # companies, so this is not a performance guard — it stops a malformed plan
+    # from rendering an answer longer than anyone will read.
+    SQL_RESULT_LIMIT_CAP: int = 20
+    
 # Singleton instance — import this everywhere
 # from src.utils.config import settings
 settings = Settings()

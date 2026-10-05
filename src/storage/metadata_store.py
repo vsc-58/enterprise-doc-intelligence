@@ -28,8 +28,9 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     select,
+    Select,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, aliased, mapped_column, sessionmaker
 
 from src.utils.config import settings
 from src.utils.logger import get_logger
@@ -613,36 +614,51 @@ def create_extracted_record(
         )
         return record.id
 
+def latest_successful_stmt() -> Select[tuple[Document, ExtractedRecord]]:
+    """
+    Build the composable SELECT over the latest SUCCESS attempt per document.
+
+    THE definition of "current answer" under one-row-per-attempt, in one place.
+    Returned unexecuted and without ordering so callers can attach their own
+    WHERE, ORDER BY and LIMIT and have them run as bound SQL rather than as
+    Python filtering over a materialised list — which is what the query path's
+    parameterized-read design requires (D31).
+
+    "Latest" is resolved by a correlated subquery picking one extracted_records
+    id per document: extracted_at descending, id descending for rows written
+    inside the same clock tick. A correlated subquery rather than a window
+    function so the statement does not depend on the SQLite version bundled
+    with whichever Python builds the image.
+
+    Callers must not redefine latest themselves. Filtering this statement is
+    safe; replacing its WHERE on ExtractedRecord.id is not.
+
+    Returns:
+        A Select yielding (Document, ExtractedRecord) pairs, one per document
+        that has at least one successful attempt, in unspecified order.
+    """
+    attempt = aliased(ExtractedRecord)
+    latest_id = (
+        select(attempt.id)
+        .where(
+            attempt.document_id == Document.id,
+            attempt.extraction_status == ExtractionStatus.SUCCESS.value,
+        )
+        .order_by(attempt.extracted_at.desc(), attempt.id.desc())
+        .limit(1)
+        .correlate(Document)
+        .scalar_subquery()
+    )
+    return (
+        select(Document, ExtractedRecord)
+        .join(ExtractedRecord, ExtractedRecord.document_id == Document.id)
+        .where(ExtractedRecord.id == latest_id)
+    )
 
 def latest_successful_records() -> list[tuple[Document, ExtractedRecord]]:
     """
-    Return the most recent SUCCESS attempt for every extracted document.
-
-    THE canonical read for /export, /query, and any spot-check. Under
-    one-row-per-attempt, selecting from extracted_records directly would return
-    superseded attempts and failure rows alongside current answers — this is the
-    function that resolves that, so consumers never re-implement the rule
-    differently.
-
-    "Most recent" is by extracted_at, falling back to id for rows written inside
-    the same clock tick.
-
-    Returns:
-        (Document, ExtractedRecord) pairs, one per document, ordered by ticker.
-        Documents with no successful attempt are omitted.
+    A thin caller of latest_successful_stmt(), which holds the definition of latest.
     """
     with get_session() as session:
-        stmt = (
-            select(Document, ExtractedRecord)
-            .join(ExtractedRecord, ExtractedRecord.document_id == Document.id)
-            .where(ExtractedRecord.extraction_status == ExtractionStatus.SUCCESS.value)
-            .order_by(
-                Document.ticker,
-                ExtractedRecord.extracted_at.desc(),
-                ExtractedRecord.id.desc(),
-            )
-        )
-        latest: dict[int, tuple[Document, ExtractedRecord]] = {}
-        for doc, record in session.execute(stmt).all():
-            latest.setdefault(doc.id, (doc, record))
-        return list(latest.values())
+        stmt = latest_successful_stmt().order_by(Document.ticker)
+        return [(doc, record) for doc, record in session.execute(stmt).all()]
