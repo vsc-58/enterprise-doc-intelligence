@@ -19,24 +19,21 @@ class Intent(str, Enum):
     mapping lives in intents.py and is applied by the executor, so a task never
     carries a tool the planner chose (D25).
 
-    The nine narrative intents outnumber the four corpus sections deliberately.
-    Each carries its own section policy and retrieval phrasing, so intents that
-    share a section still execute differently; an intent that changed neither
-    would be a label the system cannot act on (D28).
+    Every narrative intent maps to a distinct set of corpus sections. Two
+    intents searching the same set would execute identically, and a label the
+    system cannot act on only adds disagreement to the routing eval, so such
+    intents are merged (D28, D38). A test enforces this.
     """
 
     FINANCIAL_METRIC = "financial_metric"
     FINANCIAL_RANKING = "financial_ranking"
     FINANCIAL_FILTER = "financial_filter"
 
-    COMPANY_DESCRIPTION = "company_description"
-    SEGMENTS_AND_PRODUCTS = "segments_and_products"
+    COMPANY_OVERVIEW = "company_overview"
     STRATEGY = "strategy"
-    COMPETITION = "competition"
+    COMPETITION_AND_REGULATION = "competition_and_regulation"
     RISK_FACTORS = "risk_factors"
-    REGULATORY_AND_LEGAL = "regulatory_and_legal"
     MANAGEMENT_COMMENTARY = "management_commentary"
-    LIQUIDITY_AND_CAPITAL = "liquidity_and_capital"
     MARKET_RISK = "market_risk"
 
 
@@ -395,22 +392,113 @@ class SourceRef(BaseModel):
     distance: float
 
 
-class NarrativeResult(BaseModel):
+class NarrativeRefusal(str, Enum):
     """
-    The RAG tool's output.
+    Why a narrative task produced no answer. Each has one fixed sentence,
+    written in Python (src.rag.chain.refusal_message), so the refusal metric
+    compares enums rather than parsing model prose.
 
-    Never carries a figure: the chain is instructed to refuse specific financial
-    values even when the retrieved context contains one, because MD&A text does
-    carry revenue figures and the structured store is the only authority for them
-    (D19, D27). A figure appearing here is a tool violation, counted as such.
+    SECTION_ABSENT: the company holds none of the intent's sections (INTC, JPM
+        and XOM have no Item 7). Decided by retrieval, before any LLM call.
+    NOT_ADDRESSED: the retrieved passages do not answer the question. Judged by
+        the chain.
+    FIGURE_REQUESTED: the question asks for one of the five stored metrics,
+        which only the SQL tool may state (D27, D41).
+    UNCITED: the chain answered, but no claim survived citation validation.
+        Separate from NOT_ADDRESSED because it is a model fault, not a fact
+        about the filing.
+    FAILED: retrieval, the figure guard's data, or the LLM call broke.
+    """
+
+    SECTION_ABSENT = "section_absent"
+    NOT_ADDRESSED = "not_addressed"
+    FIGURE_REQUESTED = "figure_requested"
+    UNCITED = "uncited"
+    FAILED = "failed"
+
+
+class CitedClaim(BaseModel):
+    """
+    One sentence of a narrative answer and the chunks it cites.
+
+    Citations are a typed field, not markers parsed out of prose, and every
+    source here was cited by the model for this sentence and validated to exist
+    in the retrieved set. Sources are therefore not "everything retrieved",
+    which is what keeps the attribution check meaningful (D41).
     """
 
     model_config = ConfigDict(frozen=True)
 
-    answer: str
-    sources: list[SourceRef] = Field(default_factory=list)
-    refused: bool = False
-    refusal_reason: str | None = None
+    text: str
+    sources: list[SourceRef] = Field(min_length=1)
+
+
+class FindingStatus(str, Enum):
+    """
+    One company's result in a corpus-wide narrative task (D39).
+
+    SUPPORTED: a retrieved passage discusses the topic for this company.
+    NOT_FOUND: no supporting passage in the retrieved text — NOT a claim that
+        the filing is silent.
+    NOT_SEARCHABLE: the company holds none of the intent's sections.
+    FAILED: retrieval or the verdict call broke for this company.
+    """
+
+    SUPPORTED = "supported"
+    NOT_FOUND = "not_found"
+    NOT_SEARCHABLE = "not_searchable"
+    FAILED = "failed"
+
+
+class CompanyFinding(BaseModel):
+    """One company's verdict in a corpus-wide narrative task."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ticker: str
+    company_name: str
+    fiscal_year: int
+    status: FindingStatus
+    claim: CitedClaim | None = None
+
+
+class NarrativeResult(BaseModel):
+    """
+    The RAG tool's output. Structured, not prose: the synthesizer renders it.
+
+    A single-company task fills claims; a corpus-wide task fills findings. A
+    refusal leaves both empty. Never carries a stored figure: matching values
+    are masked in the context before the model sees it and redacted from claims
+    if one still appears (D27, D41); the counters make both measurable in 5C.
+
+    Attributes:
+        claims: Cited sentences, in the model's order.
+        findings: One per corpus company, in corpus order.
+        refusal: Why there is no answer, or None.
+        figures_masked: Stored-metric values withheld from the context.
+        figures_redacted: Stored-metric values removed from claims — the
+        backstop firing, i.e. masking missed one.
+        invalid_citations: Cited block numbers that did not exist.
+        sections_searched: Stored section labels a single-company task filtered
+        on, after aliases — carried so a refusal can name what was searched
+        ("no MD&A (Item 7) text") rather than a generic "narrative". Empty
+        for corpus-wide tasks, whose sections are per company.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    claims: list[CitedClaim] = Field(default_factory=list)
+    findings: list[CompanyFinding] = Field(default_factory=list)
+    refusal: NarrativeRefusal | None = None
+    figures_masked: int = 0
+    figures_redacted: int = 0
+    invalid_citations: int = 0
+    sections_searched: frozenset[str] = frozenset()
+
+    @property
+    def refused(self) -> bool:
+        """Whether the task produced no answer."""
+        return self.refusal is not None
 
 
 class TaskStatus(str, Enum):

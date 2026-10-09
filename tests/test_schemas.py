@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.query.intents import INTENT_POLICY
+from src.query.intents import CORPUS_SECTIONS, INTENT_POLICY
 from src.query.schemas import (
     Intent,
     MetricField,
@@ -24,18 +24,25 @@ def test_metric_fields_match_the_evidence_columns() -> None:
     assert {m.value for m in MetricField} == set(EVIDENCE_FIELDS)
 
 
-def test_required_sections_belong_to_rag_intents_with_one_section() -> None:
-    for intent, policy in INTENT_POLICY.items():
-        if policy.required:
-            assert policy.tool is Tool.RAG
-            assert len(policy.sections) == 1, intent
-
-
-def test_rag_intents_carry_a_retrieval_hint() -> None:
-    """An intent that changes neither filter nor phrasing would be a label only (D28)."""
+def test_rag_intents_search_known_sections() -> None:
     for intent, policy in INTENT_POLICY.items():
         if policy.tool is Tool.RAG:
-            assert policy.retrieval_hint, intent
+            assert policy.sections, intent
+            assert policy.sections <= CORPUS_SECTIONS, intent
+        else:
+            assert not policy.sections, intent
+
+
+def test_no_two_rag_intents_share_a_section_set() -> None:
+    """Two intents over the same union execute identically: merge them (D28, D38)."""
+    seen: dict[frozenset[str], Intent] = {}
+    for intent, policy in INTENT_POLICY.items():
+        if policy.tool is not Tool.RAG:
+            continue
+        assert policy.sections not in seen, (
+            f"{intent.value} duplicates {seen[policy.sections].value}"
+        )
+        seen[policy.sections] = intent
 
 
 def _metric_task(task_id: str = "t1") -> Task:
