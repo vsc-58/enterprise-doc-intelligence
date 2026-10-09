@@ -15,6 +15,7 @@ from src.rag.chain import (
     DraftClaim,
     DraftVerdict,
     VerdictOutcome,
+    clean_claim,
     refusal_message,
 )
 from src.rag.figure_guard import PLACEHOLDER
@@ -180,3 +181,25 @@ def test_every_refusal_has_its_own_sentence() -> None:
     assert len(sentences) == len(NarrativeRefusal)
     assert "MD&A (Item 7)" in refusal_message(
         NarrativeRefusal.SECTION_ABSENT, "Intel", frozenset({"Item 7"}))
+
+@pytest.mark.parametrize("raw,clean", [
+    ("Goldman flags conduct risk (passage 1).", "Goldman flags conduct risk."),
+    ("Risk from counterparties (passages 2 and 3), notably banks.",
+     "Risk from counterparties, notably banks."),
+    ("Cyber risk [4] is rising.", "Cyber risk is rising."),
+    ("Clearing failures [1, 2].", "Clearing failures."),
+    ("Conduct risk can cause losses (1).", "Conduct risk can cause losses."),
+    ("Credit concentration (2, 3) is material.", "Credit concentration is material."),
+    ("Rates were raised in (2021) twice.", "Rates were raised in (2021) twice."),
+    ("Sales fell (10%) in Europe.", "Sales fell (10%) in Europe."),
+    ("Rates rose 1.5 percentage points (Item 7A).", "Rates rose 1.5 percentage points (Item 7A)."),
+])
+def test_clean_claim_strips_only_passage_references(raw: str, clean: str) -> None:
+    assert clean_claim(raw) == clean
+
+
+def test_inline_passage_reference_is_stripped_from_answers(wired: dict) -> None:
+    result = _answer(wired, DraftAnswer(outcome=AnswerOutcome.ANSWERED, claims=[
+        DraftClaim(text="Growth came from iPhone (passage 1).", passages=[1]),
+    ]))
+    assert result.claims[0].text == "Growth came from iPhone."

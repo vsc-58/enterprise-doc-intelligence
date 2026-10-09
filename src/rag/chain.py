@@ -20,6 +20,7 @@
 import asyncio
 import hashlib
 import json
+import re
 from collections.abc import Sequence
 from enum import Enum
 
@@ -65,6 +66,22 @@ FIGURE_WITHHELD_NOTE = (
 )
 
 _llm: ChatOpenAI | None = None
+
+# Passage references the model writes into a sentence: "(passage 1)",
+# "(passages 2 and 3)", "(1)", "(2, 3)", "[2]", "[1, 3]". Block numbers are local
+# to one chain call while the synthesizer renumbers citations answer-wide, so a
+# reference left in the text would point at the wrong source in any hybrid or
+# corpus-wide answer. Stripped in code, not only forbidden in the prompt: the
+# first end-to-end run showed "(passage 1)"; once the prompt forbade that, the
+# next run showed "(1)". The prompt changes the form, only code removes it.
+#
+# A bare number counts only at one or two digits — passage numbers never exceed
+# RAG_TOP_K — so a year such as "(2021)" or a figure such as "(10%)" survives.
+_REF_LIST = r"\d{1,2}(?:\s*(?:,|and|&|-|–)\s*\d{1,2})*"
+_INLINE_REF = re.compile(
+    rf"\s*(?:\((?:(?:passages?|blocks?|sources?)\s+)?{_REF_LIST}\)|\[{_REF_LIST}\])",
+    re.IGNORECASE,
+)
 
 
 # --- Structured outputs ------------------------------------------------------
@@ -195,7 +212,14 @@ def refusal_message(
     """
     where = _section_phrase(sections)
     if refusal is NarrativeRefusal.SECTION_ABSENT:
-        return f"The filing held for {subject} has no {where} text to answer this from."
+        # "Not captured", not "has no": every company here files an MD&A, but
+        # some place it outside an Item 7 heading or in an incorporated exhibit
+        # (INTC, JPM, XOM), where section slicing could not recover it. The
+        # sentence states what the corpus lacks, not what the filing lacks.
+        return (
+            f"The {where} section of {subject}'s filing was not captured in this "
+            "corpus, so this part can't be answered from the filing text."
+        )
     if refusal is NarrativeRefusal.NOT_ADDRESSED:
         return f"The {where} passages retrieved for {subject} do not address this question."
     if refusal is NarrativeRefusal.FIGURE_REQUESTED:
@@ -206,6 +230,22 @@ def refusal_message(
     if refusal is NarrativeRefusal.UNCITED:
         return f"I couldn't produce an answer about {subject} that is supported by cited passages."
     return f"I couldn't retrieve or read the narrative text for {subject} just now."
+
+
+def clean_claim(text: str) -> str:
+    """
+    Strip passage references the model wrote into a sentence.
+
+    Args:
+        text: A model-written claim.
+
+    Returns:
+        The sentence without inline references, whitespace normalised. The
+        citation itself survives in the claim's structured passages field.
+    """
+    cleaned = _INLINE_REF.sub("", text.strip())
+    cleaned = re.sub(r"\s+([.,;:])", r"\1", cleaned)
+    return re.sub(r"\s{2,}", " ", cleaned).strip()
 
 
 def _cite(numbers: Sequence[int], context: CompanyContext) -> tuple[list[SourceRef], int]:
@@ -367,7 +407,7 @@ async def answer_for_company(
         invalid_total += invalid
         if not sources:
             continue
-        text, redacted = withhold_figures(draft_claim.text.strip(), targets)
+        text, redacted = withhold_figures(clean_claim(draft_claim.text), targets)
         redacted_total += redacted
         claims.append(CitedClaim(text=text, sources=sources))
 
@@ -480,7 +520,7 @@ async def _judge(
             finding=_finding(context, FindingStatus.NOT_FOUND), masked=masked, invalid=invalid
         )
 
-    text, redacted = withhold_figures(draft.claim.strip(), targets)
+    text, redacted = withhold_figures(clean_claim(draft.claim), targets)
     return _Verdict(
         finding=_finding(context, FindingStatus.SUPPORTED, CitedClaim(text=text, sources=sources)),
         masked=masked,

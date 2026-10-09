@@ -19,6 +19,9 @@ liabilities or operating cash flow as an amount — those figures come from a \
 separate structured source. Percent changes, segment figures and other numbers \
 are fine. Some passages show [figure withheld]: never guess or reconstruct what \
 it was.
+
+Passage numbers go only in the passages field. Never write them in a \
+sentence — no "(passage 2)", no "[2]".
 """
 
 ANSWER_SYSTEM = f"""\
