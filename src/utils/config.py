@@ -113,6 +113,32 @@ class Settings(BaseSettings):
     # companies, so this is not a performance guard — it stops a malformed plan
     # from rendering an answer longer than anyone will read.
     SQL_RESULT_LIMIT_CAP: int = 20
+
+    # --- Phase 5B: narrative retrieval ----------------------------------------
+    # Chunks per single-company narrative task. Fixed across intents: an
+    # intent's sections are a union ranked by distance alone, so k does not grow
+    # with section count (D38). At ~402 tokens/chunk this is ~2k tokens of
+    # context, about a quarter of a typical company's Item 1 — the constraint is
+    # distraction, not cost.
+    RAG_TOP_K: int = 5
+
+    # Chunks per company for corpus-wide narrative tasks ("which companies...").
+    # Each eligible company is searched separately so the largest filers cannot
+    # crowd the rest out: plain top-50 reached 16 companies with BAC+GS holding
+    # 28 of the 50 slots; per-company reached every company holding the
+    # sections (D39).
+    RAG_PER_COMPANY_K: int = 2
+
+    # Ceiling on concurrent per-company verdict calls. Twenty unbounded calls
+    # work today; the cap is what keeps a larger corpus inside OpenAI's
+    # per-minute limits rather than failing on them.
+    RAG_VERDICT_CONCURRENCY: int = 5
+
+    # Relative tolerance for recognising a stored metric value in text (D41).
+    # Wide enough for an answer's rounding ("$365.8 billion" vs 365,817,000,000
+    # is 0.005%); narrow enough that a different figure rarely falls inside it,
+    # since matching is scoped to one company's five values.
+    FIGURE_GUARD_REL_TOLERANCE: float = 0.005
     
 # Singleton instance — import this everywhere
 # from src.utils.config import settings

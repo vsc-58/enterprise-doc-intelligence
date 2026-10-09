@@ -44,18 +44,18 @@ Figures:
   financial_filter       companies passing one threshold on a figure
 
 Narrative:
-  company_description    what the company does, its principal activities
-  segments_and_products  reportable segments, product lines, services, markets
-  strategy               strategy, priorities, where it is investing
-  competition            competitors, competitive pressure, market position
-  risk_factors           risks and uncertainties the company discloses
-  regulatory_and_legal   regulation, compliance, legal proceedings
-  management_commentary  why results moved; management's explanation of change
-  liquidity_and_capital  liquidity, cash position, capital resources, capex
-  market_risk            interest rate, currency and commodity exposure
+  company_overview             what the company does: principal activities, \
+segments, products, services, markets served
+  strategy                     strategy, priorities, where it is investing
+  competition_and_regulation   competitors and market position; regulation, \
+compliance, legal proceedings
+  risk_factors                 risks and uncertainties the company discloses
+  management_commentary        management's explanation of results: why they \
+moved, liquidity, cash position, capital resources, capex
+  market_risk                  interest rate, currency and commodity exposure
 
 DECOMPOSITION. A question asking for both narrative and a figure is two tasks, \
-not one. "What does X do and what was its revenue?" is company_description plus \
+not one. "What does X do and what was its revenue?" is company_overview plus \
 financial_metric. Asking about two companies is one task per company. Emit at \
 most three tasks.
 
