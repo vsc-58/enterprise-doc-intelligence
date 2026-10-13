@@ -1,0 +1,1188 @@
+{
+  "generated_at": "2026-10-13T06:04:23+00:00",
+  "chunk_params_hash": "86d30e6abdf3",
+  "total_chunks": 1958,
+  "chunks_by_section": {
+    "Item 1": 346,
+    "Item 1A": 831,
+    "Item 7": 724,
+    "Item 7A": 57
+  },
+  "documents": {
+    "AAPL": {
+      "cik": "0000320193",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1": 7,
+        "Item 1A": 28,
+        "Item 7": 10,
+        "Item 7A": 3
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 7,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 17,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 35,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 28,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 10,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 13,
+          "expected": "answerable"
+        }
+      }
+    },
+    "ADBE": {
+      "cik": "0000796343",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1": 36,
+        "Item 1A": 32,
+        "Item 7": 25,
+        "Item 7A": 4
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 36,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 61,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 68,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 32,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 25,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 29,
+          "expected": "answerable"
+        }
+      }
+    },
+    "AMZN": {
+      "cik": "0001018724",
+      "filing_year": 2023,
+      "stored_sections": {
+        "Item 1": 7,
+        "Item 1A": 27,
+        "Item 7": 23,
+        "Item 7A": 4
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 7,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 30,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 34,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 27,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 23,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 27,
+          "expected": "answerable"
+        }
+      }
+    },
+    "BAC": {
+      "cik": "0000070858",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1": 17,
+        "Item 1A": 50,
+        "Item 7": 158
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 17,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 175,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 67,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 50,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 158,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 158,
+          "expected": "answerable"
+        }
+      }
+    },
+    "CRM": {
+      "cik": "0001108524",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1": 13,
+        "Item 1A": 57,
+        "Item 7": 33,
+        "Item 7A": 8
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 13,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 46,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 70,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 57,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 33,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 41,
+          "expected": "answerable"
+        }
+      }
+    },
+    "GOOGL": {
+      "cik": "0001652044",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1": 12,
+        "Item 1A": 34,
+        "Item 7": 25,
+        "Item 7A": 5
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 12,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 37,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 46,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 34,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 25,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 30,
+          "expected": "answerable"
+        }
+      }
+    },
+    "GS": {
+      "cik": "0000886982",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1": 65,
+        "Item 1A": 59,
+        "Item 7": 142
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 65,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 207,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 124,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 59,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 142,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 142,
+          "expected": "answerable"
+        }
+      }
+    },
+    "INTC": {
+      "cik": "0000050863",
+      "filing_year": 2023,
+      "stored_sections": {
+        "Item 1": 2,
+        "Item 1A": 52,
+        "Item 7A": 12
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 2,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 2,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 54,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 52,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 0,
+          "expected": "section_absent"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 12,
+          "expected": "answerable"
+        }
+      }
+    },
+    "JNJ": {
+      "cik": "0000200406",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1": 16,
+        "Item 1A": 16,
+        "Item 7": 39
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 16,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 55,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 32,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 16,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 39,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 39,
+          "expected": "answerable"
+        }
+      }
+    },
+    "JPM": {
+      "cik": "0000019617",
+      "filing_year": 2023,
+      "stored_sections": {
+        "Item 1": 21,
+        "Item 1A": 55
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 21,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 21,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 76,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 55,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 0,
+          "expected": "section_absent"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 0,
+          "expected": "section_absent"
+        }
+      }
+    },
+    "META": {
+      "cik": "0001326801",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1A": 82,
+        "Item 7": 37,
+        "Item 7A": 3
+      },
+      "aliases": {
+        "Item 1": [
+          "Item 1A"
+        ]
+      },
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 82,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1A",
+            "Item 7"
+          ],
+          "eligible_chunks": 119,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 82,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 82,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 37,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 40,
+          "expected": "answerable"
+        }
+      }
+    },
+    "MSFT": {
+      "cik": "0000789019",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1": 32,
+        "Item 1A": 32,
+        "Item 7": 25,
+        "Item 7A": 1
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 32,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 57,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 64,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 32,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 25,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 26,
+          "expected": "answerable"
+        }
+      }
+    },
+    "NFLX": {
+      "cik": "0001065280",
+      "filing_year": 2023,
+      "stored_sections": {
+        "Item 1": 5,
+        "Item 1A": 35,
+        "Item 7": 19,
+        "Item 7A": 3
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 5,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 24,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 40,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 35,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 19,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 22,
+          "expected": "answerable"
+        }
+      }
+    },
+    "PFE": {
+      "cik": "0000078003",
+      "filing_year": 2023,
+      "stored_sections": {
+        "Item 1": 43,
+        "Item 1A": 38,
+        "Item 7": 54
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 43,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 97,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 81,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 38,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 54,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 54,
+          "expected": "answerable"
+        }
+      }
+    },
+    "QCOM": {
+      "cik": "0000804328",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1A": 100,
+        "Item 7": 20,
+        "Item 7A": 4
+      },
+      "aliases": {
+        "Item 1": [
+          "Item 1A"
+        ]
+      },
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 100,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1A",
+            "Item 7"
+          ],
+          "eligible_chunks": 120,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 100,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 100,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 20,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 24,
+          "expected": "answerable"
+        }
+      }
+    },
+    "TGT": {
+      "cik": "0000027419",
+      "filing_year": 2021,
+      "stored_sections": {
+        "Item 1": 6,
+        "Item 1A": 15,
+        "Item 7": 22,
+        "Item 7A": 2
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 6,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 28,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 21,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 15,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 22,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 24,
+          "expected": "answerable"
+        }
+      }
+    },
+    "TSLA": {
+      "cik": "0001318605",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1": 18,
+        "Item 1A": 38,
+        "Item 7": 31
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 18,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 49,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 56,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 38,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 31,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 31,
+          "expected": "answerable"
+        }
+      }
+    },
+    "V": {
+      "cik": "0001403161",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1": 20,
+        "Item 1A": 32,
+        "Item 7": 27,
+        "Item 7A": 5
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 20,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 47,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 52,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 32,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 27,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 32,
+          "expected": "answerable"
+        }
+      }
+    },
+    "WMT": {
+      "cik": "0000104169",
+      "filing_year": 2023,
+      "stored_sections": {
+        "Item 1": 22,
+        "Item 1A": 37,
+        "Item 7": 34,
+        "Item 7A": 3
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 22,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 56,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 59,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 37,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 34,
+          "expected": "answerable"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 37,
+          "expected": "answerable"
+        }
+      }
+    },
+    "XOM": {
+      "cik": "0000034088",
+      "filing_year": 2022,
+      "stored_sections": {
+        "Item 1": 4,
+        "Item 1A": 12
+      },
+      "aliases": {},
+      "store_matches_artifact": true,
+      "intents": {
+        "company_overview": {
+          "sections": [
+            "Item 1"
+          ],
+          "eligible_chunks": 4,
+          "expected": "answerable"
+        },
+        "strategy": {
+          "sections": [
+            "Item 1",
+            "Item 7"
+          ],
+          "eligible_chunks": 4,
+          "expected": "answerable"
+        },
+        "competition_and_regulation": {
+          "sections": [
+            "Item 1",
+            "Item 1A"
+          ],
+          "eligible_chunks": 16,
+          "expected": "answerable"
+        },
+        "risk_factors": {
+          "sections": [
+            "Item 1A"
+          ],
+          "eligible_chunks": 12,
+          "expected": "answerable"
+        },
+        "management_commentary": {
+          "sections": [
+            "Item 7"
+          ],
+          "eligible_chunks": 0,
+          "expected": "section_absent"
+        },
+        "market_risk": {
+          "sections": [
+            "Item 7",
+            "Item 7A"
+          ],
+          "eligible_chunks": 0,
+          "expected": "section_absent"
+        }
+      }
+    }
+  },
+  "problems": []
+}

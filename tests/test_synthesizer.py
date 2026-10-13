@@ -151,3 +151,36 @@ def test_plans_without_tasks_render_their_fixed_text() -> None:
     assert "aggregates" in assemble(unsupported, []).text
     clarify = QueryPlan(plan_type=PlanType.CLARIFICATION, clarification_question="Which bank?")
     assert assemble(clarify, []).text == "Which bank?"
+
+# --- Section fallback (D44) ---------------------------------------------------
+
+
+def test_fallback_disclosure_precedes_the_answer() -> None:
+    plan = QueryPlan(plan_type=PlanType.SINGLE, tasks=[_rag_task("t1", "Rate risk?")])
+    claim = CitedClaim(text="Rates matter.", sources=[_ref("JPM", "Item 1A", 4)])
+    outcome = TaskOutcome(
+        task_id="t1", intent=Intent.MARKET_RISK, tool=Tool.RAG, status=TaskStatus.SUCCESS,
+        narrative_result=NarrativeResult(claims=[claim]), message="DISCLOSURE.",
+    )
+    text = assemble(plan, [outcome]).text
+    assert text.startswith("DISCLOSURE.\nRates matter. [1]")
+
+
+def test_corpus_wide_names_companies_judged_on_fallback_sections() -> None:
+    plan = QueryPlan(plan_type=PlanType.SINGLE, tasks=[
+        _rag_task("t1", "Which companies flagged interest rate risk?", None)])
+    claim = CitedClaim(text="JPM flags it.", sources=[_ref("JPM", "Item 1A", 2)])
+    result = NarrativeResult(findings=[
+        CompanyFinding(ticker="AAPL", company_name="AAPL Inc.", fiscal_year=2021,
+                       status=FindingStatus.NOT_FOUND,
+                       sections_searched=frozenset({"Item 7", "Item 7A"})),
+        CompanyFinding(ticker="JPM", company_name="JPM Inc.", fiscal_year=2023,
+                       status=FindingStatus.SUPPORTED, claim=claim,
+                       sections_searched=frozenset({"Item 1A"}),
+                       fallback_from=frozenset({"Item 7", "Item 7A"})),
+    ])
+    outcome = TaskOutcome(task_id="t1", intent=Intent.MARKET_RISK, tool=Tool.RAG,
+                          status=TaskStatus.SUCCESS, narrative_result=result)
+    text = assemble(plan, [outcome]).text
+    assert ("MD&A (Item 7) or Market Risk (Item 7A) not captured, so Risk Factors "
+            "(Item 1A) was searched instead: JPM") in text

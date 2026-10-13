@@ -102,3 +102,43 @@ def test_an_exception_outside_the_chain_fails_the_task_not_the_plan(
     outcome = asyncio.run(executor._execute_task(_task(None), None))
     assert outcome.status is TaskStatus.FAILED
     assert outcome.narrative_result.refusal is NarrativeRefusal.FAILED
+
+# --- Section fallback (D44) ---------------------------------------------------
+
+_ABSENT = frozenset({"Item 7", "Item 7A"})
+_USED = frozenset({"Item 1A"})
+
+
+def _market_risk_task() -> Task:
+    return Task(task_id="t1", intent=Intent.MARKET_RISK, company_mention="Intel",
+                question="How does Intel describe its interest rate risk?")
+
+
+def test_fallback_answer_carries_the_disclosure_as_its_message(calls: dict) -> None:
+    from src.query.schemas import CitedClaim, SourceRef
+    ref = SourceRef(ticker="INTC", company_name="INTEL CORP", fiscal_year=2022,
+                    section="Item 1A", chunk_index=3, distance=0.4)
+    calls["result"] = NarrativeResult(
+        claims=[CitedClaim(text="Rates affect returns.", sources=[ref])],
+        sections_searched=_USED, fallback_from=_ABSENT,
+    )
+    outcome = asyncio.run(executor._execute_task(_market_risk_task(), INDEX))
+    assert outcome.status is TaskStatus.SUCCESS
+    assert outcome.message.startswith("The MD&A (Item 7) or Market Risk (Item 7A) section")
+    assert "qualitatively" in outcome.message
+
+
+def test_fallback_not_addressed_states_what_was_searched_then_refuses(calls: dict) -> None:
+    calls["result"] = NarrativeResult(refusal=NarrativeRefusal.NOT_ADDRESSED,
+                                      sections_searched=_USED, fallback_from=_ABSENT)
+    outcome = asyncio.run(executor._execute_task(_market_risk_task(), INDEX))
+    assert outcome.status is TaskStatus.REFUSED
+    assert "was searched instead." in outcome.message
+    assert outcome.message.endswith("do not address this question.")
+
+
+def test_no_disclosure_without_a_fallback(calls: dict) -> None:
+    calls["result"] = NarrativeResult(refusal=NarrativeRefusal.NOT_ADDRESSED,
+                                      sections_searched=frozenset({"Item 7"}))
+    outcome = asyncio.run(executor._execute_task(_task("Intel"), INDEX))
+    assert "instead" not in outcome.message

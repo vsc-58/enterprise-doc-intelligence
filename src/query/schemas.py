@@ -451,7 +451,18 @@ class FindingStatus(str, Enum):
 
 
 class CompanyFinding(BaseModel):
-    """One company's verdict in a corpus-wide narrative task."""
+    """
+    One company's verdict in a corpus-wide narrative task.
+
+    Attributes:
+        ticker, company_name, fiscal_year: Which company.
+        status: Its finding status.
+        claim: The cited claim, for SUPPORTED.
+        sections_searched: Stored section labels this company was judged on.
+        fallback_from: The intent's own sections, when they were absent for
+            this company and the intent's fallback was searched instead (D44).
+            Empty when no fallback applied.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -460,6 +471,13 @@ class CompanyFinding(BaseModel):
     fiscal_year: int
     status: FindingStatus
     claim: CitedClaim | None = None
+    sections_searched: frozenset[str] = frozenset()
+    fallback_from: frozenset[str] = frozenset()
+
+    @property
+    def fallback_used(self) -> bool:
+        """Whether this company was judged on fallback sections."""
+        return bool(self.fallback_from)
 
 
 class NarrativeResult(BaseModel):
@@ -482,7 +500,12 @@ class NarrativeResult(BaseModel):
         sections_searched: Stored section labels a single-company task filtered
         on, after aliases — carried so a refusal can name what was searched
         ("no MD&A (Item 7) text") rather than a generic "narrative". Empty
-        for corpus-wide tasks, whose sections are per company.
+        for corpus-wide tasks, whose sections are per company. When a
+        fallback applied, these are the fallback sections.
+        fallback_from: The intent's own sections, when the company held none
+        of them and the intent's fallback was searched instead (D44). Empty
+        when no fallback applied. Carried so the answer discloses the
+        substitution and the eval can report fallback answers separately.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -494,6 +517,12 @@ class NarrativeResult(BaseModel):
     figures_redacted: int = 0
     invalid_citations: int = 0
     sections_searched: frozenset[str] = frozenset()
+    fallback_from: frozenset[str] = frozenset()
+
+    @property
+    def fallback_used(self) -> bool:
+        """Whether a single-company answer was drawn from fallback sections."""
+        return bool(self.fallback_from)
 
     @property
     def refused(self) -> bool:

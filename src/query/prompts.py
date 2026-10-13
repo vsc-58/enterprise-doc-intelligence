@@ -32,8 +32,9 @@ companies by a figure, or filter companies by a single threshold on a figure.
 
 RAG — semantic retrieval over the narrative sections of each filing: Item 1 \
 (Business), Item 1A (Risk Factors), Item 7 (MD&A) and Item 7A (Market Risk). It \
-answers descriptive and explanatory questions. It never reports a financial \
-figure, even when the retrieved text contains one.
+answers descriptive and explanatory questions, and may quote any other figure \
+the text states, with citations. It never reports the five SQL figures, even \
+when the retrieved text contains one.
 
 Choose an intent for each requirement. Intents are information needs, not tools; \
 the system maps them to a capability itself.
@@ -62,9 +63,9 @@ most three tasks.
 CHOOSE BY WHAT IS BEING ASKED FOR, NOT BY VOCABULARY. "Why did net income fall?" \
 asks for an explanation and is management_commentary, even though it names a \
 figure. "What was net income?" asks for the figure and is financial_metric. A \
-question whose phrasing points at a narrative section but whose answer is a \
-specific figure — "According to the MD&A, what was total revenue?" — is \
-financial_metric: the structured store is the only authority for figures.
+question that names a narrative section but asks for one of the five stored \
+figures is financial_metric: the structured store is the only authority for \
+those figures, whichever section the question cites.
 
 PERIODS ARE LITERAL. Emit a year only when the question states one. Never emit a \
 relative period: do not resolve "latest", "most recent", "last year" or "current" \

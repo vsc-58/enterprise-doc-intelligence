@@ -26,7 +26,12 @@ from src.query.schemas import (
     Tool,
 )
 from src.query.sql_path import SqlPathError, render, run_financial_task
-from src.rag.chain import answer_for_company, refusal_message, survey_companies
+from src.rag.chain import (
+    answer_for_company,
+    fallback_note,
+    refusal_message,
+    survey_companies,
+)
 from src.rag.retriever import CompanyRef
 from src.utils.logger import get_logger
 from src.utils.text import display_name
@@ -128,6 +133,12 @@ def _narrative_outcome(task: Task, result: NarrativeResult, subject: str) -> Tas
     A narrative FAILED is a fault and maps to FAILED; every other refusal is a
     correct statement about the corpus and maps to REFUSED.
 
+    When a single-company answer came from fallback sections (D44), the fixed
+    disclosure becomes the outcome's message: shown before the answer on
+    success, and before the refusal sentence when the fallback text did not
+    address the question. Not added to FAILED or FIGURE_REQUESTED, where the
+    section searched is not what the reader needs to know.
+
     Args:
         task: The narrative task.
         result: The chain's result.
@@ -136,8 +147,17 @@ def _narrative_outcome(task: Task, result: NarrativeResult, subject: str) -> Tas
     Returns:
         The outcome.
     """
+    note = (
+        fallback_note(
+            task.intent, subject, result.fallback_from, result.sections_searched,
+            answered=result.refusal is None,
+        )
+        if result.fallback_used
+        and result.refusal not in (NarrativeRefusal.FAILED, NarrativeRefusal.FIGURE_REQUESTED)
+        else None
+    )
     if result.refusal is None:
-        status, message = TaskStatus.SUCCESS, None
+        status, message = TaskStatus.SUCCESS, note
     else:
         status = (
             TaskStatus.FAILED if result.refusal is NarrativeRefusal.FAILED
@@ -147,6 +167,8 @@ def _narrative_outcome(task: Task, result: NarrativeResult, subject: str) -> Tas
             message = "No company in this corpus has a captured section that covers this."
         else:
             message = refusal_message(result.refusal, subject, result.sections_searched)
+        if note is not None:
+            message = f"{note} {message}"
     return TaskOutcome(
         task_id=task.task_id, intent=task.intent, tool=Tool.RAG,
         status=status, narrative_result=result, message=message,

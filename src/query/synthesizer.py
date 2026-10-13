@@ -30,7 +30,7 @@ from src.query.schemas import (
     Tool,
     UnsupportedReason,
 )
-from src.rag.chain import FIGURE_WITHHELD_NOTE, SECTION_NAMES
+from src.rag.chain import FIGURE_WITHHELD_NOTE, SECTION_NAMES, section_phrase
 from src.utils.logger import get_logger
 from src.utils.text import display_name
 
@@ -236,7 +236,34 @@ def _render_findings(result: NarrativeResult, citations: _Citations) -> str:
         tickers = _tickers(result, status)
         if tickers:
             lines.append(f"{label}: {tickers}")
+    lines.extend(_fallback_lines(result))
     return "\n".join(lines)
+
+
+def _fallback_lines(result: NarrativeResult) -> list[str]:
+    """
+    Coverage lines for companies judged on fallback sections (D44).
+
+    Grouped by which sections were absent and which were searched instead, so
+    each line states its own substitution. A supported company's own claim
+    already cites the fallback section; this line says why.
+
+    Args:
+        result: A corpus-wide NarrativeResult.
+
+    Returns:
+        Zero or more lines, in corpus order of first appearance.
+    """
+    groups: dict[tuple[frozenset[str], frozenset[str]], list[str]] = {}
+    for finding in result.findings:
+        if finding.fallback_used:
+            key = (finding.fallback_from, finding.sections_searched)
+            groups.setdefault(key, []).append(finding.ticker)
+    return [
+        f"{section_phrase(absent)} not captured, so {section_phrase(used)} was "
+        f"searched instead: {', '.join(tickers)}"
+        for (absent, used), tickers in groups.items()
+    ]
 
 
 def _render_narrative(result: NarrativeResult, citations: _Citations) -> str:
@@ -283,7 +310,10 @@ def _render_part(
     """
     if outcome.status is TaskStatus.SUCCESS:
         if outcome.tool is Tool.RAG and outcome.narrative_result is not None:
-            return _render_narrative(outcome.narrative_result, citations)
+            body = _render_narrative(outcome.narrative_result, citations)
+            # A successful narrative carries a message only for a fallback
+            # disclosure (D44), which must precede the answer it qualifies.
+            return f"{outcome.message}\n{body}" if outcome.message else body
         return outcome.message or _MISSING_PART_TEXT
 
     reason = outcome.message or _MISSING_PART_TEXT

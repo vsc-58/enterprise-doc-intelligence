@@ -1,0 +1,2614 @@
+{
+  "version": 1,
+  "description": "Phase 5C query-path eval set. alternatives[0] is the strict label; any alternative counts for lenient scoring. company is a ticker, NON_CORPUS, AMBIGUOUS, or null (no mention).",
+  "held_out_commitment": "Held-out rows are report-only. The planner and chain prompts are not revised in response to held-out results (D17 reasoning).",
+  "split_method": "Original rows: D17-style split with 5 contaminated held rows moved to dev. LLM-written rows: stratified by category, seed 5, held counts A5 B3 C8 D2 E3 F2 G1 H1. Hard cases: dev only.",
+  "questions": [
+    {
+      "id": "R01",
+      "question": "What was Apple's total revenue?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AAPL",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R02",
+      "question": "What was Microsoft's net income in 2022?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "MSFT",
+              "outcome": "answered",
+              "metric": "net_income",
+              "year": 2022
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R03",
+      "question": "What were Bank of America's total assets?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "BAC",
+              "outcome": "answered_flagged",
+              "metric": "total_assets"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Moved held->dev: used verbatim in 5A/5B probes. Served disputed (scale_ambiguous)."
+    },
+    {
+      "id": "R04",
+      "question": "What was Goldman Sachs' operating cash flow?",
+      "split": "held",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "GS",
+              "outcome": "answered_flagged",
+              "metric": "operating_cash_flow"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Served disputed (scale_disagreement)."
+    },
+    {
+      "id": "R05",
+      "question": "Which company had the highest total assets?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_ranking",
+              "company": null,
+              "outcome": "answered",
+              "metric": "total_assets",
+              "direction": "highest"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R06",
+      "question": "Which companies had net income above $50 billion?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_filter",
+              "company": null,
+              "outcome": "answered",
+              "metric": "net_income"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Rows span three fiscal years."
+    },
+    {
+      "id": "R07",
+      "question": "Which company had the lowest operating cash flow?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_ranking",
+              "company": null,
+              "outcome": "answered_flagged",
+              "metric": "operating_cash_flow",
+              "direction": "lowest"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Moved held->dev: used verbatim in 5A/5B probes. GS flagged; ordering caveat (D36)."
+    },
+    {
+      "id": "R08",
+      "question": "What was Target's revenue?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "TGT",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R09",
+      "question": "What was JPMorgan's total revenue?",
+      "split": "held",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "JPM",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R10",
+      "question": "What were Amazon's total liabilities?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AMZN",
+              "outcome": "answered_flagged",
+              "metric": "total_liabilities"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Derived value, evidence_mismatch."
+    },
+    {
+      "id": "R11",
+      "question": "According to the MD&A, what was Apple's total net sales?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AAPL",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Moved held->dev: used verbatim in 5A/5B probes. Figure asked as narrative; prompt example removed."
+    },
+    {
+      "id": "R12",
+      "question": "What was Nvidia's revenue?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "NON_CORPUS",
+              "outcome": "non_corpus_company",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R13",
+      "question": "What was Tesla's 2023 revenue?",
+      "split": "held",
+      "source": "original",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "TSLA",
+              "outcome": "year_not_held",
+              "metric": "total_revenue",
+              "year": 2023
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R14",
+      "question": "What does Johnson & Johnson do?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "JNJ",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R15",
+      "question": "What does Qualcomm's business consist of?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "QCOM",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Alias: Item 1 searched as Item 1A (D40)."
+    },
+    {
+      "id": "R16",
+      "question": "What are Amazon's main business segments?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "AMZN",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R17",
+      "question": "What products does Adobe sell?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "ADBE",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R18",
+      "question": "What is Walmart's growth strategy?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "strategy",
+              "company": "WMT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R19",
+      "question": "How does Netflix describe its approach to content investment?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "strategy",
+              "company": "NFLX",
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "NFLX",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": "Content spend is strategy or MD&A."
+    },
+    {
+      "id": "R20",
+      "question": "Who does Intel compete with?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "INTC",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R21",
+      "question": "How does Visa describe its competitive landscape?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "V",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R22",
+      "question": "What risks did Goldman Sachs flag?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "GS",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R23",
+      "question": "What are the main risks Tesla identified?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "TSLA",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R24",
+      "question": "What regulatory risks does Pfizer face?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "PFE",
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "PFE",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R25",
+      "question": "What legal proceedings did Meta disclose as a risk?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "META",
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "META",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": "Alias for competition_and_regulation."
+    },
+    {
+      "id": "R26",
+      "question": "Why did Microsoft's revenue grow in fiscal 2022?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "MSFT",
+              "outcome": "answered",
+              "year": 2022
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R27",
+      "question": "Why did Intel's margins decline?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "INTC",
+              "outcome": "section_absent"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Moved held->dev: used verbatim in 5A/5B probes. No Item 7; no fallback for MD&A (D44)."
+    },
+    {
+      "id": "R28",
+      "question": "How does Walmart describe its liquidity position?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "WMT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R29",
+      "question": "What did Exxon say about capital expenditure?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "XOM",
+              "outcome": "section_absent"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "strategy",
+              "company": "XOM",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "MD&A absent; strategy reaches 4 Item 1 chunks."
+    },
+    {
+      "id": "R30",
+      "question": "What market risks did Apple disclose?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "market_risk",
+              "company": "AAPL",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R31",
+      "question": "How does JPMorgan describe its interest rate risk?",
+      "split": "held",
+      "source": "original",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "market_risk",
+              "company": "JPM",
+              "outcome": "fallback_answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "JPM",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": "Market-risk fallback to Item 1A (D44)."
+    },
+    {
+      "id": "R32",
+      "question": "What does Amazon do and what was its net income?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "AMZN",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "AMZN",
+              "outcome": "answered",
+              "metric": "net_income"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R33",
+      "question": "Describe Tesla's business and give its total revenue.",
+      "split": "dev",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "TSLA",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "TSLA",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R34",
+      "question": "What risks did Pfizer flag, and what was its net income?",
+      "split": "held",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "PFE",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "PFE",
+              "outcome": "answered",
+              "metric": "net_income"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R35",
+      "question": "What was Bank of America's total revenue, and what risks did it disclose?",
+      "split": "held",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "BAC",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            },
+            {
+              "intent": "risk_factors",
+              "company": "BAC",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R36",
+      "question": "What are Walmart's segments and what were its total assets?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "WMT",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "WMT",
+              "outcome": "answered",
+              "metric": "total_assets"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R37",
+      "question": "Why did Microsoft's revenue grow, and what was that revenue?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "MSFT",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "MSFT",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R38",
+      "question": "What was Intel's net income, and why did its margins fall?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "INTC",
+              "outcome": "answered_flagged",
+              "metric": "net_income"
+            },
+            {
+              "intent": "management_commentary",
+              "company": "INTC",
+              "outcome": "section_absent"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Moved held->dev: used verbatim in 5A/5B probes. Partial answer."
+    },
+    {
+      "id": "R39",
+      "question": "What does Goldman Sachs do and what was its operating cash flow?",
+      "split": "held",
+      "source": "original",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "GS",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "GS",
+              "outcome": "answered_flagged",
+              "metric": "operating_cash_flow"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R40",
+      "question": "By what percentage did Apple's revenue change from 2020 to 2021?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "unsupported",
+      "alternatives": [
+        {
+          "plan_type": "unsupported",
+          "unsupported_reason": "cross_year",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R41",
+      "question": "What is the average revenue across all companies?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "unsupported",
+      "alternatives": [
+        {
+          "plan_type": "unsupported",
+          "unsupported_reason": "aggregation",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R42",
+      "question": "What was Microsoft's profit margin?",
+      "split": "held",
+      "source": "original",
+      "stratum": "unsupported",
+      "alternatives": [
+        {
+          "plan_type": "unsupported",
+          "unsupported_reason": "ratio_or_derived",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R43",
+      "question": "Which companies had revenue above $100 billion and net income below $20 billion?",
+      "split": "held",
+      "source": "original",
+      "stratum": "unsupported",
+      "alternatives": [
+        {
+          "plan_type": "unsupported",
+          "unsupported_reason": "multi_condition",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R44",
+      "question": "Who audits Apple's financial statements?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "unsupported",
+      "alternatives": [
+        {
+          "plan_type": "unsupported",
+          "unsupported_reason": "field_not_queryable",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R45",
+      "question": "What is Apple's current stock price?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R46",
+      "question": "What is Amazon's market capitalisation today?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R47",
+      "question": "What did Tesla announce last week?",
+      "split": "held",
+      "source": "original",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R48",
+      "question": "What do analysts rate Netflix stock?",
+      "split": "held",
+      "source": "original",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "R49",
+      "question": "What was the bank's net income?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "clarification",
+      "alternatives": [
+        {
+          "plan_type": "clarification",
+          "tasks": []
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AMBIGUOUS",
+              "outcome": "ambiguous_company",
+              "metric": "net_income"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Planner asks, or resolver refuses as ambiguous."
+    },
+    {
+      "id": "R50",
+      "question": "What was its total revenue?",
+      "split": "dev",
+      "source": "original",
+      "stratum": "clarification",
+      "alternatives": [
+        {
+          "plan_type": "clarification",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N01",
+      "question": "what was netflix's total revenue last year",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "NFLX",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Relative period: year must stay unset."
+    },
+    {
+      "id": "N02",
+      "question": "how much were amzn's total liabilites in 2023 cause im doing a report",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AMZN",
+              "outcome": "answered_flagged",
+              "metric": "total_liabilities",
+              "year": 2023
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N03",
+      "question": "Apple net income 2023",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AAPL",
+              "outcome": "year_not_held",
+              "metric": "net_income",
+              "year": 2023
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N04",
+      "question": "what's jpmorgan's operating cash flow look like",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "JPM",
+              "outcome": "answered",
+              "metric": "operating_cash_flow"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N05",
+      "question": "Walmart total revenue for 2021",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "WMT",
+              "outcome": "year_not_held",
+              "metric": "total_revenue",
+              "year": 2021
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N06",
+      "question": "msft total assets 2022 what were they",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "MSFT",
+              "outcome": "answered",
+              "metric": "total_assets",
+              "year": 2022
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N07",
+      "question": "tesla revenue 2020",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "TSLA",
+              "outcome": "year_not_held",
+              "metric": "total_revenue",
+              "year": 2020
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N08",
+      "question": "how much cash did xom pull in from ops last year",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "XOM",
+              "outcome": "answered",
+              "metric": "operating_cash_flow"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N09",
+      "question": "What was Ford's total revenue in their latest report?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "NON_CORPUS",
+              "outcome": "non_corpus_company",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N10",
+      "question": "Which of the big tech companies had the highest revenue, Apple, Microsoft, or Meta?",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_multi",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AAPL",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "MSFT",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "META",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Ranking over a named subset is not a capability: three lookups, no winner. Fiscal years differ (AAPL 2021, MSFT/META 2022). Subset ranking is backlog."
+    },
+    {
+      "id": "N11",
+      "question": "who made the most profit between amazon and walmart",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_multi",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "AMZN",
+              "outcome": "answered",
+              "metric": "net_income"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "WMT",
+              "outcome": "answered",
+              "metric": "net_income"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N12",
+      "question": "show me all companies whose operating cash flow was > 50b pls",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_filter",
+              "company": null,
+              "outcome": "answered",
+              "metric": "operating_cash_flow"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N13",
+      "question": "top assets comparison between jpmorgan chase and goldman sachs",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_multi",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "JPM",
+              "outcome": "answered",
+              "metric": "total_assets"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "GS",
+              "outcome": "answered",
+              "metric": "total_assets"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N14",
+      "question": "Which company had the lowest net income in their filing?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_ranking",
+              "company": null,
+              "outcome": "answered",
+              "metric": "net_income",
+              "direction": "lowest"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N15",
+      "question": "compare total debt for target and visa",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "sql_multi",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "TGT",
+              "outcome": "answered_flagged",
+              "metric": "total_liabilities"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "V",
+              "outcome": "answered",
+              "metric": "total_liabilities"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "'debt' read as total liabilities per writer intent."
+    },
+    {
+      "id": "N16",
+      "question": "What are Adobe's primary markets and customer segments?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "ADBE",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N17",
+      "question": "what does pfizer make and sell anyway",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "PFE",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N18",
+      "question": "What does Costco sell and what are its main business segments?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "NON_CORPUS",
+              "outcome": "non_corpus_company"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N19",
+      "question": "salesforce growth strategy",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "strategy",
+              "company": "CRM",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N20",
+      "question": "What is Intel's plan for turning things around?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "strategy",
+              "company": "INTC",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Thin pool: 2 eligible chunks (no Item 7)."
+    },
+    {
+      "id": "N21",
+      "question": "What is Netflix's core business strategy for streaming?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "strategy",
+              "company": "NFLX",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N22",
+      "question": "who are meta's main competitors and what rules are they facing",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "META",
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "META",
+              "outcome": "answered"
+            },
+            {
+              "intent": "competition_and_regulation",
+              "company": "META",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": "Split into two same-intent tasks accepted leniently."
+    },
+    {
+      "id": "N23",
+      "question": "who are qualcomm's rivals according to their filing",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "QCOM",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N24",
+      "question": "Pepsi regulatory environment and competitors",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "NON_CORPUS",
+              "outcome": "non_corpus_company"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N25",
+      "question": "jnj biggest risk factors what are they",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "JNJ",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N26",
+      "question": "What major legal or regulatory risks did Target disclose?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "TGT",
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "TGT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N27",
+      "question": "What risks did Alphabet highlight regarding its advertising business?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "GOOGL",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N28",
+      "question": "why did netflix say revenue changed in their latest report",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "NFLX",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N29",
+      "question": "How does Walmart discuss its inventory management and capital requirements?",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "WMT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N30",
+      "question": "visa exposure to foreign currency risk",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "market_risk",
+              "company": "V",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": true,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N31",
+      "question": "How does JPMorgan manage credit risk in its lending portfolio?",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "JPM",
+              "outcome": "section_absent"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "JPM",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Credit-risk management is MD&A (absent for JPM); risk_factors would answer from Item 1A."
+    },
+    {
+      "id": "N32",
+      "question": "any companies mentioning supply chain problems in their reports",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N33",
+      "question": "who mentions inflation as a major concern across these businesses",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N34",
+      "question": "Which companies discuss climate change or environmental regulations?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N35",
+      "question": "do any of them talk about AI risks",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "clarification",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "'them' is vague; corpus-wide or clarification both accepted."
+    },
+    {
+      "id": "N36",
+      "question": "what's salesforce business and what was rev",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "CRM",
+              "outcome": "answered"
+            },
+            {
+              "intent": "financial_metric",
+              "company": "CRM",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N37",
+      "question": "tesla total revenue and what their main risks are",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "TSLA",
+              "outcome": "answered",
+              "metric": "total_revenue"
+            },
+            {
+              "intent": "risk_factors",
+              "company": "TSLA",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N38",
+      "question": "Give me Microsoft's net income and explain why management says results changed.",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "MSFT",
+              "outcome": "answered",
+              "metric": "net_income"
+            },
+            {
+              "intent": "management_commentary",
+              "company": "MSFT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N39",
+      "question": "how much did alphabet make in profit and what's their business model",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "GOOGL",
+              "outcome": "answered",
+              "metric": "net_income"
+            },
+            {
+              "intent": "company_overview",
+              "company": "GOOGL",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N40",
+      "question": "walmart total assets plus their growth strategy",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "hybrid",
+      "alternatives": [
+        {
+          "plan_type": "hybrid",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "WMT",
+              "outcome": "answered",
+              "metric": "total_assets"
+            },
+            {
+              "intent": "strategy",
+              "company": "WMT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N41",
+      "question": "What was Apple's total research and development expense?",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "AAPL",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Non-stored figure stated in MD&A: RAG answers with citation (D45)."
+    },
+    {
+      "id": "N42",
+      "question": "How many total employees did Microsoft report having?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "MSFT",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Headcount is Item 1 human-capital text (D45)."
+    },
+    {
+      "id": "N43",
+      "question": "What was the total amount of dividends paid by Apple?",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "AAPL",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Non-stored figure stated in MD&A: RAG answers with citation (D45)."
+    },
+    {
+      "id": "N44",
+      "question": "What is Bank of America's debt-to-equity ratio?",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "unsupported",
+      "alternatives": [
+        {
+          "plan_type": "unsupported",
+          "unsupported_reason": "ratio_or_derived",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N45",
+      "question": "what did analysts on wall street say about amazon recently",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N46",
+      "question": "did netflix announce any new shows last week",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N47",
+      "question": "What do Wall Street analysts forecast for Apple next quarter?",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "out_of_scope",
+      "alternatives": [
+        {
+          "plan_type": "out_of_scope",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N48",
+      "question": "how much did it make",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "clarification",
+      "alternatives": [
+        {
+          "plan_type": "clarification",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N49",
+      "question": "what are the risk factors for that bank",
+      "split": "dev",
+      "source": "llm_written",
+      "stratum": "clarification",
+      "alternatives": [
+        {
+          "plan_type": "clarification",
+          "tasks": []
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "AMBIGUOUS",
+              "outcome": "ambiguous_company"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "N50",
+      "question": "tell me about its strategy",
+      "split": "held",
+      "source": "llm_written",
+      "stratum": "clarification",
+      "alternatives": [
+        {
+          "plan_type": "clarification",
+          "tasks": []
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": ""
+    },
+    {
+      "id": "H01",
+      "question": "Which companies hold bitcoin?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Known answer: TSLA holds bitcoin; only chunk is Item 7 #5. NOT_FOUND recall probe."
+    },
+    {
+      "id": "H02",
+      "question": "What market risks does Exxon disclose?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "market_risk",
+              "company": "XOM",
+              "outcome": "fallback_answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "XOM has no 7/7A; fallback to Item 1A (D44)."
+    },
+    {
+      "id": "H03",
+      "question": "What does Tesla say about its foreign currency exposure?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "market_risk",
+              "company": "TSLA",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "TSLA Item 7A not captured; union still reaches Item 7."
+    },
+    {
+      "id": "H04",
+      "question": "What does Intel do?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "company_overview",
+              "company": "INTC",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Thin pool: 2 Item 1 chunks."
+    },
+    {
+      "id": "H05",
+      "question": "What cybersecurity risks do companies flag?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Companyless narrative must stay corpus-wide, not clarification."
+    },
+    {
+      "id": "H06",
+      "question": "What does Pfizer's annual report say its net income was?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "sql_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "financial_metric",
+              "company": "PFE",
+              "outcome": "answered",
+              "metric": "net_income"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Figure asked as narrative; replaces R11's role in dev."
+    },
+    {
+      "id": "H07",
+      "question": "What did JPMorgan's management say about why net income changed?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "management_commentary",
+              "company": "JPM",
+              "outcome": "section_absent"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "No fallback for MD&A (D44)."
+    },
+    {
+      "id": "H08",
+      "question": "Which companies flagged interest rate risk?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "corpus_wide",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "market_risk",
+              "company": null,
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "5B headline; JPM/XOM now via fallback. Regression case."
+    },
+    {
+      "id": "H09",
+      "question": "What does Visa say about regulation of its fees?",
+      "split": "dev",
+      "source": "hard_case",
+      "stratum": "rag_single",
+      "alternatives": [
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "competition_and_regulation",
+              "company": "V",
+              "outcome": "answered"
+            }
+          ]
+        },
+        {
+          "plan_type": "single",
+          "tasks": [
+            {
+              "intent": "risk_factors",
+              "company": "V",
+              "outcome": "answered"
+            }
+          ]
+        }
+      ],
+      "narrative_set": false,
+      "needs_review": false,
+      "notes": "Two-intent ambiguity."
+    }
+  ],
+  "planner_version_at_freeze": "0ed3e740ddc022a3d9574c0a488647f7",
+  "reviewed": "All ambiguous rows confirmed by developer 2026-10-13."
+}
