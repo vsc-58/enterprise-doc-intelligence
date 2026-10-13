@@ -134,6 +134,28 @@ class Settings(BaseSettings):
     # per-minute limits rather than failing on them.
     RAG_VERDICT_CONCURRENCY: int = 5
 
+    # --- Phase 5C: query-path evaluation ---------------------------------------
+    # The frozen label file and its hash. The hash is of the file with line
+    # endings normalised to LF, so a Windows checkout converting to CRLF does not
+    # read as an edit. A mismatch means the labels changed after the freeze
+    # (commit a15727e); the harness refuses to score rather than report numbers
+    # against labels nobody committed to.
+    QUERY_EVAL_SET_FILE: str = "query_eval_set.json"
+    QUERY_EVAL_SET_SHA256: str = (
+        "c3af4d558c0c8b419102898137331bdd1ea3dea91b964d9d0a9838c7e31b603e"
+    )
+
+    # Runs per LLM-dependent measurement. temperature=0 is not deterministic
+    # (D35), so every metric is reported as a mean over runs plus per-question
+    # disagreement.
+    QUERY_EVAL_RUNS: int = 3
+
+    # Concurrent planner calls during the routing eval. Bounds requests per
+    # minute; the calls are independent, so concurrency changes no result.
+    QUERY_EVAL_CONCURRENCY: int = 4
+
+    ROUTING_RESULTS_FILE: str = "routing_results.json"
+
     # Relative tolerance for recognising a stored metric value in text (D41).
     # Wide enough for an answer's rounding ("$365.8 billion" vs 365,817,000,000
     # is 0.005%); narrow enough that a different figure rarely falls inside it,
