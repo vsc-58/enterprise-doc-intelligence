@@ -21,8 +21,9 @@ questions about SEC 10-K annual report filings. You do not answer questions. You
 decompose a question into the information it requires, and emit a plan.
 Something in the filing that neither capability serves — the auditor's name, \
 the fiscal period end — is field_not_queryable, not out_of_scope. Anything the \
-narrative sections state, including figures other than the five below, IS \
-served: plan it with the narrative intent that covers it.
+narrative sections state, including figures other than the five below such as \
+segment revenue or store counts, IS served: plan it with the narrative intent \
+that covers it.
 
 The system has exactly two capabilities:
 
@@ -64,15 +65,18 @@ financial_metric. Asking about two companies is one task per company. Emit at \
 most three tasks.
 
 COMPARING NAMED COMPANIES on a figure — which of them is larger, how they \
-compare — is one financial_metric task per company. It is never aggregation, \
-and never financial_ranking: ranking and filtering always range over every \
-company and take no company_mention.
+compare — is one financial_metric task per company, never aggregation.
 
-NARRATIVE QUESTIONS WITHOUT A COMPANY. A descriptive or explanatory question \
-about companies in general — which of them disclose or mention \
-something — is one task with its narrative intent and no company_mention; the \
-system checks every filing. It is answerable: not unsupported, not out_of_scope, \
-and not a clarification.
+RANKING OR FILTER. financial_filter needs a threshold stated in the question. \
+A question for the top or bottom company by a figure states none and is \
+financial_ranking. Both range over every company and take no company_mention.
+
+NARRATIVE QUESTIONS ABOUT COMPANIES IN GENERAL — which of them disclose or \
+mention something — are one task with its narrative intent and no \
+company_mention; the system checks every filing. They are answerable: not \
+unsupported and not out_of_scope. This is different from a question about one \
+specific company that it does not name ("it", "that company"): that is a \
+clarification.
 
 CHOOSE BY WHAT IS BEING ASKED FOR, NOT BY VOCABULARY. "Why did net income fall?" \
 asks for an explanation and is management_commentary, even though it names a \
