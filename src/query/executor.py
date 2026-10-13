@@ -227,6 +227,41 @@ async def _run_rag_task(
         )
 
 
+def scoped_to_company(task: Task) -> Task:
+    """
+    Turn a ranking or filter that names a company into that company's lookup.
+
+    A ranking or filter ranges over every company and ignores company_mention
+    (is_corpus_wide), so a planner that expresses "which of Apple, Microsoft or
+    Meta had the highest revenue?" as three rankings would get the corpus-wide
+    winner three times — a correct figure for a company nobody asked about,
+    looking fully verified. The contradiction is visible in the task itself, so
+    it is fixed here rather than left to the prompt (D27): the named company's
+    figure for the same metric and year is what such a task can honestly serve.
+
+    Args:
+        task: Any planned task.
+
+    Returns:
+        The task unchanged, or a financial_metric task for the named company.
+    """
+    if task.intent not in CORPUS_WIDE_INTENTS or not (task.company_mention or "").strip():
+        return task
+    logger.warning(
+        "scoped_ranking_rewritten",
+        task_id=task.task_id,
+        from_intent=task.intent.value,
+        company_mention=task.company_mention,
+    )
+    return Task(
+        task_id=task.task_id,
+        intent=Intent.FINANCIAL_METRIC,
+        company_mention=task.company_mention,
+        year=task.year,
+        metric=task.metric,
+    )
+
+
 async def _execute_task(task: Task, index: CorpusIndex | None) -> TaskOutcome:
     """
     Execute one task: enforce its tool, resolve its entity, dispatch it.
@@ -245,6 +280,7 @@ async def _execute_task(task: Task, index: CorpusIndex | None) -> TaskOutcome:
     Returns:
         A TaskOutcome.
     """
+    task = scoped_to_company(task)
     tool = policy_for(task.intent).tool
 
     resolution = await asyncio.to_thread(_resolve_for, task, index)

@@ -18,8 +18,9 @@ held-out results. Revisions are made against dev results only, and any
 revision changes planner_version, which is recorded in the results so a
 before/after comparison is explicit.
 
-Writes settings.EVAL_DATA_PATH / ROUTING_RESULTS_FILE (committed evidence)
-and a markdown summary beside it.
+Writes settings.EVAL_DATA_PATH / ROUTING_RESULTS_FILE with the planner_version
+prefix appended (routing_results_<version8>.json), so each prompt version's
+evidence is kept rather than overwritten, plus a markdown summary beside it.
 
 Run:  python -m scripts.run_routing_eval
       python -m scripts.run_routing_eval --runs 1 --ids R01,N10    (smoke test)
@@ -142,14 +143,29 @@ def _group_rows(
     return out, lines
 
 
-def main(runs: int, ids: set[str] | None, output: Path) -> int:
+def results_path(version: str, smoke: bool) -> Path:
+    """
+    Where one version's results are written.
+
+    Args:
+        version: planner_version.
+        smoke: Whether this is a subset run.
+
+    Returns:
+        A path under settings.EVAL_DATA_PATH named for the version.
+    """
+    stem = Path(settings.ROUTING_RESULTS_FILE).stem
+    suffix = "_smoke" if smoke else ""
+    return Path(settings.EVAL_DATA_PATH) / f"{stem}_{version[:8]}{suffix}.json"
+
+
+def main(runs: int, ids: set[str] | None) -> int:
     """
     Run the routing eval and write results.
 
     Args:
         runs: Number of runs.
         ids: Optional subset of question ids (smoke tests); None for all.
-        output: Results JSON path.
 
     Returns:
         Process exit code: 0 on completion, 1 if the eval set or index could not
@@ -164,6 +180,7 @@ def main(runs: int, ids: set[str] | None, output: Path) -> int:
 
     questions = [q for q in eval_set.questions if ids is None or q.id in ids]
     version = planner_version()
+    output = results_path(version, smoke=ids is not None)
     logger.info("routing_eval_started", questions=len(questions), runs=runs,
                 planner_version=version)
 
@@ -279,5 +296,4 @@ if __name__ == "__main__":
                         help="Comma-separated question ids, for a smoke test.")
     args = parser.parse_args()
     subset = {i.strip() for i in args.ids.split(",")} if args.ids else None
-    name = settings.ROUTING_RESULTS_FILE if subset is None else "routing_results_smoke.json"
-    raise SystemExit(main(args.runs, subset, Path(settings.EVAL_DATA_PATH) / name))
+    raise SystemExit(main(args.runs, subset))

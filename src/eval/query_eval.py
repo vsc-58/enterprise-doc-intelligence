@@ -182,10 +182,12 @@ class ObservedTask(BaseModel):
     metric: str | None = None
     year: int | None = None
     direction: str | None = None
+    question: str | None = None
 
     def key(self) -> TaskKey:
         """
-        The comparable identity of this task.
+        The comparable identity of this task. The rephrased question is recorded
+        for error analysis but not scored.
 
         Returns:
             (intent, company, metric, year, direction).
@@ -265,6 +267,7 @@ def observe(plan: QueryPlan, index: CorpusIndex) -> ObservedPlan:
                 metric=task.metric.value if task.metric else None,
                 year=task.year,
                 direction=task.direction.value if task.direction else None,
+                question=task.question,
             )
             for task in plan.tasks
         ],
