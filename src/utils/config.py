@@ -156,6 +156,13 @@ class Settings(BaseSettings):
 
     ROUTING_RESULTS_FILE: str = "routing_results.json"
 
+    # Filter thresholds for oracle plans. Kept outside the frozen label file
+    # because they were added after the freeze; each is copied verbatim from its
+    # question's own threshold phrase.
+    ORACLE_PARAMS_FILE: str = "oracle_params.json"
+
+    EXECUTION_RESULTS_FILE: str = "execution_results.json"
+
     # Relative tolerance for recognising a stored metric value in text (D41).
     # Wide enough for an answer's rounding ("$365.8 billion" vs 365,817,000,000
     # is 0.005%); narrow enough that a different figure rarely falls inside it,

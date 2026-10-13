@@ -1,0 +1,7 @@
+{
+  "note": "Filter thresholds for oracle plans, copied verbatim from each question's text. Added after the label freeze (a15727e); the frozen label file is unchanged.",
+  "filters": {
+    "R06": {"comparison": "gt", "threshold_text": "$50 billion"},
+    "N12": {"comparison": "gt", "threshold_text": "50b"}
+  }
+}
