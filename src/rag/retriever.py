@@ -7,7 +7,10 @@
 #             src.storage.vector_store, src.utils.config, src.utils.logger,
 #             src.utils.text
 #
-# Deterministic: no LLM call. Section policy is applied here and nowhere else.
+# Deterministic: no LLM call. Section policy is applied here and nowhere else,
+# including the one section fallback (D44): when a company holds none of an
+# intent's sections, the intent's fallback sections are searched instead. The
+# trigger is structural absence in the store, never the chain's judgment.
 #
 # Block numbers are LOCAL to one CompanyContext. The chain cites by number, and
 # the number maps back to a block by construction; but in a corpus-wide answer
@@ -19,7 +22,7 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.query.intents import sections_for
+from src.query.intents import fallback_for, sections_for
 from src.query.schemas import Intent, SourceRef
 from src.storage.vector_store import (
     RetrievalStatus,
@@ -94,11 +97,14 @@ class CompanyContext(BaseModel):
         company: Which company.
         sections_searched: Stored section labels filtered on, after aliases.
             Recorded so a refusal can say what was searched, and so the retrieval
-            eval can check the filter rather than infer it.
+            eval can check the filter rather than infer it. When a fallback
+            applied, these are the fallback sections.
         status: OK, NO_MATCHING_CHUNKS (the company holds none of the sections)
             or FAILED.
         blocks: Numbered from 1, nearest first. Empty unless status is OK.
         detail: Reason for a non-OK status.
+        fallback_from: The intent's own sections, when they were absent and the
+            fallback was searched instead. Empty when no fallback applied.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -108,6 +114,7 @@ class CompanyContext(BaseModel):
     status: RetrievalStatus
     blocks: list[ContextBlock] = Field(default_factory=list)
     detail: str | None = None
+    fallback_from: frozenset[str] = frozenset()
 
     def block(self, number: int) -> ContextBlock | None:
         """
@@ -147,6 +154,12 @@ def _retrieve(
     """
     Run one company's filtered search with a precomputed query vector.
 
+    If the company holds none of the intent's sections and the intent has a
+    fallback, the fallback sections are searched once with the same vector. The
+    fallback result is returned whatever its status, except a second
+    NO_MATCHING_CHUNKS: then the original absence is returned, so a refusal
+    names the sections the question actually needed.
+
     Args:
         vector: Query embedding.
         intent: Narrative intent, which fixes the canonical sections.
@@ -158,12 +171,38 @@ def _retrieve(
     """
     sections = sections_for(intent, company.ticker)
     result = query_by_vector(vector, k=k, ticker=company.ticker, sections=sections)
-    return CompanyContext(
+    primary = CompanyContext(
         company=company,
         sections_searched=sections,
         status=result.status,
         blocks=_number(result.chunks),
         detail=result.detail,
+    )
+
+    fallback = fallback_for(intent, company.ticker)
+    if result.status is not RetrievalStatus.NO_MATCHING_CHUNKS or fallback is None:
+        return primary
+
+    second = query_by_vector(vector, k=k, ticker=company.ticker, sections=fallback.sections)
+    if second.status is RetrievalStatus.NO_MATCHING_CHUNKS:
+        return primary
+
+    logger.info(
+        "narrative_section_fallback",
+        ticker=company.ticker,
+        intent=intent.value,
+        absent=sorted(sections),
+        searched=sorted(fallback.sections),
+        status=second.status.value,
+        blocks=len(second.chunks),
+    )
+    return CompanyContext(
+        company=company,
+        sections_searched=fallback.sections,
+        status=second.status,
+        blocks=_number(second.chunks),
+        detail=second.detail,
+        fallback_from=sections,
     )
 
 
@@ -226,6 +265,7 @@ def retrieve_for_company(
         ticker=company.ticker,
         intent=intent.value,
         sections=sorted(context.sections_searched),
+        fallback_from=sorted(context.fallback_from),
         status=context.status.value,
         blocks=len(context.blocks),
     )
@@ -274,6 +314,7 @@ def retrieve_corpus_wide(
         searchable=sum(c.status is RetrievalStatus.OK for c in contexts),
         not_searchable=[c.company.ticker for c in contexts
                         if c.status is RetrievalStatus.NO_MATCHING_CHUNKS],
+        fallback=[c.company.ticker for c in contexts if c.fallback_from],
         failed=[c.company.ticker for c in contexts if c.status is RetrievalStatus.FAILED],
     )
     return contexts

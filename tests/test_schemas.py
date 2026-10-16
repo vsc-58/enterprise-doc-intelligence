@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.query.intents import CORPUS_SECTIONS, INTENT_POLICY
+from src.query.intents import CORPUS_SECTIONS, INTENT_POLICY, SECTION_FALLBACKS
 from src.query.schemas import (
     Intent,
     MetricField,
@@ -31,6 +31,21 @@ def test_rag_intents_search_known_sections() -> None:
             assert policy.sections <= CORPUS_SECTIONS, intent
         else:
             assert not policy.sections, intent
+
+
+def test_fallbacks_are_narrative_known_and_new_sections() -> None:
+    """A fallback must add sections the intent does not already search (D44)."""
+    for intent, fallback in SECTION_FALLBACKS.items():
+        policy = INTENT_POLICY[intent]
+        assert policy.tool is Tool.RAG, intent
+        assert fallback.sections <= CORPUS_SECTIONS, intent
+        assert not fallback.sections & policy.sections, intent
+        assert fallback.caveat.strip(), intent
+
+
+def test_management_commentary_never_falls_back() -> None:
+    """Risk factors cannot explain what happened; D44's admission test fails."""
+    assert Intent.MANAGEMENT_COMMENTARY not in SECTION_FALLBACKS
 
 
 def test_no_two_rag_intents_share_a_section_set() -> None:

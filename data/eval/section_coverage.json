@@ -1,0 +1,1827 @@
+{
+  "generated_at": "2026-10-12T14:11:29+00:00",
+  "chunk_params_hash": "86d30e6abdf3",
+  "collection_count": 1958,
+  "documents": [
+    {
+      "ticker": "AAPL",
+      "filing_year": 2021,
+      "company_name": "Apple Inc.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 7,
+        "Item 1A": 28,
+        "Item 7": 10,
+        "Item 7A": 3
+      },
+      "unexpected_labels": [],
+      "chunk_total": 48,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "ADBE",
+      "filing_year": 2022,
+      "company_name": "ADOBE INC.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 36,
+        "Item 1A": 32,
+        "Item 7": 25,
+        "Item 7A": 4
+      },
+      "unexpected_labels": [],
+      "chunk_total": 97,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "AMZN",
+      "filing_year": 2023,
+      "company_name": "AMAZON COM INC",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 7,
+        "Item 1A": 27,
+        "Item 7": 23,
+        "Item 7A": 4
+      },
+      "unexpected_labels": [],
+      "chunk_total": 61,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "BAC",
+      "filing_year": 2022,
+      "company_name": "BANK OF AMERICA CORP /DE/",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 17,
+        "Item 1A": 50,
+        "Item 7": 158,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 225,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "CRM",
+      "filing_year": 2021,
+      "company_name": "Salesforce, Inc.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 13,
+        "Item 1A": 57,
+        "Item 7": 33,
+        "Item 7A": 8
+      },
+      "unexpected_labels": [],
+      "chunk_total": 111,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "GOOGL",
+      "filing_year": 2021,
+      "company_name": "Alphabet Inc.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 12,
+        "Item 1A": 34,
+        "Item 7": 25,
+        "Item 7A": 5
+      },
+      "unexpected_labels": [],
+      "chunk_total": 76,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "GS",
+      "filing_year": 2021,
+      "company_name": "GOLDMAN SACHS GROUP INC",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 65,
+        "Item 1A": 59,
+        "Item 7": 142,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 266,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "INTC",
+      "filing_year": 2023,
+      "company_name": "INTEL CORP",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 2,
+        "Item 1A": 52,
+        "Item 7": 0,
+        "Item 7A": 12
+      },
+      "unexpected_labels": [],
+      "chunk_total": 66,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "JNJ",
+      "filing_year": 2021,
+      "company_name": "JOHNSON & JOHNSON",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 16,
+        "Item 1A": 16,
+        "Item 7": 39,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 71,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "JPM",
+      "filing_year": 2023,
+      "company_name": "JPMORGAN CHASE & CO",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 21,
+        "Item 1A": 55,
+        "Item 7": 0,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 76,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "META",
+      "filing_year": 2022,
+      "company_name": "Meta Platforms, Inc.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 0,
+        "Item 1A": 82,
+        "Item 7": 37,
+        "Item 7A": 3
+      },
+      "unexpected_labels": [],
+      "chunk_total": 122,
+      "artifact_check": "match",
+      "aliases": {
+        "Item 1": [
+          "Item 1A"
+        ]
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "filing_year": 2022,
+      "company_name": "MICROSOFT CORP",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 32,
+        "Item 1A": 32,
+        "Item 7": 25,
+        "Item 7A": 1
+      },
+      "unexpected_labels": [],
+      "chunk_total": 90,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "NFLX",
+      "filing_year": 2023,
+      "company_name": "NETFLIX INC",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 5,
+        "Item 1A": 35,
+        "Item 7": 19,
+        "Item 7A": 3
+      },
+      "unexpected_labels": [],
+      "chunk_total": 62,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "PFE",
+      "filing_year": 2023,
+      "company_name": "PFIZER INC",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 43,
+        "Item 1A": 38,
+        "Item 7": 54,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 135,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "QCOM",
+      "filing_year": 2021,
+      "company_name": "QUALCOMM INC/DE",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 0,
+        "Item 1A": 100,
+        "Item 7": 20,
+        "Item 7A": 4
+      },
+      "unexpected_labels": [],
+      "chunk_total": 124,
+      "artifact_check": "match",
+      "aliases": {
+        "Item 1": [
+          "Item 1A"
+        ]
+      }
+    },
+    {
+      "ticker": "TGT",
+      "filing_year": 2021,
+      "company_name": "TARGET CORP",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 6,
+        "Item 1A": 15,
+        "Item 7": 22,
+        "Item 7A": 2
+      },
+      "unexpected_labels": [],
+      "chunk_total": 45,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "TSLA",
+      "filing_year": 2022,
+      "company_name": "Tesla, Inc.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 18,
+        "Item 1A": 38,
+        "Item 7": 31,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 87,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "V",
+      "filing_year": 2022,
+      "company_name": "VISA INC.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 20,
+        "Item 1A": 32,
+        "Item 7": 27,
+        "Item 7A": 5
+      },
+      "unexpected_labels": [],
+      "chunk_total": 84,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "WMT",
+      "filing_year": 2023,
+      "company_name": "Walmart Inc.",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 22,
+        "Item 1A": 37,
+        "Item 7": 34,
+        "Item 7A": 3
+      },
+      "unexpected_labels": [],
+      "chunk_total": 96,
+      "artifact_check": "match",
+      "aliases": {}
+    },
+    {
+      "ticker": "XOM",
+      "filing_year": 2022,
+      "company_name": "EXXON MOBIL CORP",
+      "is_embedded": true,
+      "stored_sections": {
+        "Item 1": 4,
+        "Item 1A": 12,
+        "Item 7": 0,
+        "Item 7A": 0
+      },
+      "unexpected_labels": [],
+      "chunk_total": 16,
+      "artifact_check": "match",
+      "aliases": {}
+    }
+  ],
+  "intent_reachability": {
+    "AAPL": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 7,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 17,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 35,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 28,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 10,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 13,
+        "expected_outcome": "searchable"
+      }
+    },
+    "ADBE": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 36,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 61,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 68,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 32,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 25,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 29,
+        "expected_outcome": "searchable"
+      }
+    },
+    "AMZN": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 7,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 30,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 34,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 27,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 23,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 27,
+        "expected_outcome": "searchable"
+      }
+    },
+    "BAC": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 17,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 175,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 67,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 50,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 158,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 158,
+        "expected_outcome": "searchable"
+      }
+    },
+    "CRM": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 13,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 46,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 70,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 57,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 33,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 41,
+        "expected_outcome": "searchable"
+      }
+    },
+    "GOOGL": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 12,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 37,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 46,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 34,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 25,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 30,
+        "expected_outcome": "searchable"
+      }
+    },
+    "GS": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 65,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 207,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 124,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 59,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 142,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 142,
+        "expected_outcome": "searchable"
+      }
+    },
+    "INTC": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 2,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 2,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 54,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 52,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [],
+        "chunks": 0,
+        "expected_outcome": "section_absent"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7A"
+        ],
+        "chunks": 12,
+        "expected_outcome": "searchable"
+      }
+    },
+    "JNJ": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 16,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 55,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 32,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 16,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 39,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 39,
+        "expected_outcome": "searchable"
+      }
+    },
+    "JPM": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 21,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 21,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 76,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 55,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [],
+        "chunks": 0,
+        "expected_outcome": "section_absent"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [],
+        "chunks": 0,
+        "expected_outcome": "section_absent"
+      }
+    },
+    "META": {
+      "company_overview": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 82,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1A",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1A",
+          "Item 7"
+        ],
+        "chunks": 119,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 82,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 82,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 37,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 40,
+        "expected_outcome": "searchable"
+      }
+    },
+    "MSFT": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 32,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 57,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 64,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 32,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 25,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 26,
+        "expected_outcome": "searchable"
+      }
+    },
+    "NFLX": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 5,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 24,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 40,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 35,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 19,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 22,
+        "expected_outcome": "searchable"
+      }
+    },
+    "PFE": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 43,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 97,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 81,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 38,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 54,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 54,
+        "expected_outcome": "searchable"
+      }
+    },
+    "QCOM": {
+      "company_overview": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 100,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1A",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1A",
+          "Item 7"
+        ],
+        "chunks": 120,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 100,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 100,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 20,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 24,
+        "expected_outcome": "searchable"
+      }
+    },
+    "TGT": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 6,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 28,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 21,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 15,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 22,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 24,
+        "expected_outcome": "searchable"
+      }
+    },
+    "TSLA": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 18,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 49,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 56,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 38,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 31,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 31,
+        "expected_outcome": "searchable"
+      }
+    },
+    "V": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 20,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 47,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 52,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 32,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 27,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 32,
+        "expected_outcome": "searchable"
+      }
+    },
+    "WMT": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 22,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 7"
+        ],
+        "chunks": 56,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 59,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 37,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 7"
+        ],
+        "chunks": 34,
+        "expected_outcome": "searchable"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "chunks": 37,
+        "expected_outcome": "searchable"
+      }
+    },
+    "XOM": {
+      "company_overview": {
+        "filter": [
+          "Item 1"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 4,
+        "expected_outcome": "searchable"
+      },
+      "strategy": {
+        "filter": [
+          "Item 1",
+          "Item 7"
+        ],
+        "reachable": [
+          "Item 1"
+        ],
+        "chunks": 4,
+        "expected_outcome": "searchable"
+      },
+      "competition_and_regulation": {
+        "filter": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1",
+          "Item 1A"
+        ],
+        "chunks": 16,
+        "expected_outcome": "searchable"
+      },
+      "risk_factors": {
+        "filter": [
+          "Item 1A"
+        ],
+        "reachable": [
+          "Item 1A"
+        ],
+        "chunks": 12,
+        "expected_outcome": "searchable"
+      },
+      "management_commentary": {
+        "filter": [
+          "Item 7"
+        ],
+        "reachable": [],
+        "chunks": 0,
+        "expected_outcome": "section_absent"
+      },
+      "market_risk": {
+        "filter": [
+          "Item 7",
+          "Item 7A"
+        ],
+        "reachable": [],
+        "chunks": 0,
+        "expected_outcome": "section_absent"
+      }
+    }
+  },
+  "corpus_wide": {
+    "company_overview": {
+      "searchable": [
+        "AAPL",
+        "ADBE",
+        "AMZN",
+        "BAC",
+        "CRM",
+        "GOOGL",
+        "GS",
+        "INTC",
+        "JNJ",
+        "JPM",
+        "META",
+        "MSFT",
+        "NFLX",
+        "PFE",
+        "QCOM",
+        "TGT",
+        "TSLA",
+        "V",
+        "WMT",
+        "XOM"
+      ],
+      "not_searchable": []
+    },
+    "strategy": {
+      "searchable": [
+        "AAPL",
+        "ADBE",
+        "AMZN",
+        "BAC",
+        "CRM",
+        "GOOGL",
+        "GS",
+        "INTC",
+        "JNJ",
+        "JPM",
+        "META",
+        "MSFT",
+        "NFLX",
+        "PFE",
+        "QCOM",
+        "TGT",
+        "TSLA",
+        "V",
+        "WMT",
+        "XOM"
+      ],
+      "not_searchable": []
+    },
+    "competition_and_regulation": {
+      "searchable": [
+        "AAPL",
+        "ADBE",
+        "AMZN",
+        "BAC",
+        "CRM",
+        "GOOGL",
+        "GS",
+        "INTC",
+        "JNJ",
+        "JPM",
+        "META",
+        "MSFT",
+        "NFLX",
+        "PFE",
+        "QCOM",
+        "TGT",
+        "TSLA",
+        "V",
+        "WMT",
+        "XOM"
+      ],
+      "not_searchable": []
+    },
+    "risk_factors": {
+      "searchable": [
+        "AAPL",
+        "ADBE",
+        "AMZN",
+        "BAC",
+        "CRM",
+        "GOOGL",
+        "GS",
+        "INTC",
+        "JNJ",
+        "JPM",
+        "META",
+        "MSFT",
+        "NFLX",
+        "PFE",
+        "QCOM",
+        "TGT",
+        "TSLA",
+        "V",
+        "WMT",
+        "XOM"
+      ],
+      "not_searchable": []
+    },
+    "management_commentary": {
+      "searchable": [
+        "AAPL",
+        "ADBE",
+        "AMZN",
+        "BAC",
+        "CRM",
+        "GOOGL",
+        "GS",
+        "JNJ",
+        "META",
+        "MSFT",
+        "NFLX",
+        "PFE",
+        "QCOM",
+        "TGT",
+        "TSLA",
+        "V",
+        "WMT"
+      ],
+      "not_searchable": [
+        "INTC",
+        "JPM",
+        "XOM"
+      ]
+    },
+    "market_risk": {
+      "searchable": [
+        "AAPL",
+        "ADBE",
+        "AMZN",
+        "BAC",
+        "CRM",
+        "GOOGL",
+        "GS",
+        "INTC",
+        "JNJ",
+        "META",
+        "MSFT",
+        "NFLX",
+        "PFE",
+        "QCOM",
+        "TGT",
+        "TSLA",
+        "V",
+        "WMT"
+      ],
+      "not_searchable": [
+        "JPM",
+        "XOM"
+      ]
+    }
+  },
+  "orphan_tickers": []
+}

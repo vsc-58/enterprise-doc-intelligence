@@ -1,0 +1,1912 @@
+{
+ "status": "verified",
+ "labelled_by": "Proposed by Claude with an evidence phrase per label; every label reviewed by the developer (one change: R18 WMT|Item 1|2 rel -> border)",
+ "relevance_rule": "rel: a reader could write at least one sentence answering the question from this chunk alone, for this company. border: on topic but generic, a summary-list fragment, hypothetical, or only partly about the question. Pooled chunks without a label are not relevant. Chunks outside the pool are UNJUDGED, not irrelevant.",
+ "pool_method": "Retriever top 10 for the original question, unioned with keyword hits (regexes written from the question, before reading retrieved text), keyword pool capped at 25 per question. Broad questions: no keyword pool; the top 10 of every query variant is labelled, for precision only. Round 2 added every chunk that entered a top 10 unjudged.",
+ "questions": [
+  {
+   "id": "R14",
+   "split": "dev",
+   "question": "What does Johnson & Johnson do?",
+   "ticker": "JNJ",
+   "intent": "company_overview",
+   "broad": true,
+   "audit": false,
+   "pool": [
+    "JNJ|Item 1|0",
+    "JNJ|Item 1|1",
+    "JNJ|Item 1|14",
+    "JNJ|Item 1|15",
+    "JNJ|Item 1|16",
+    "JNJ|Item 1|2",
+    "JNJ|Item 1|6",
+    "JNJ|Item 1|7",
+    "JNJ|Item 1|8",
+    "JNJ|Item 1|9"
+   ],
+   "labels": [
+    {
+     "key": "JNJ|Item 1|0",
+     "relevance": "rel",
+     "evidence": "engaged in the research and development, manufacture and sale of a broad range of products in the health care field ... three business segments: Consumer Health, Pharmaceutical and Medical Devices"
+    },
+    {
+     "key": "JNJ|Item 1|7",
+     "relevance": "rel",
+     "evidence": "The Medical Devices segment includes a broad range of products used in the Interventional Solutions, Orthopaedics, Surgery, and Vision fields"
+    },
+    {
+     "key": "JNJ|Item 1|1",
+     "relevance": "rel",
+     "evidence": "The Consumer Health segment includes a broad range of products focused on personal healthcare ... NEUTROGENA ... TYLENOL ... LISTERINE ... BAND-AID"
+    },
+    {
+     "key": "JNJ|Item 1|2",
+     "relevance": "rel",
+     "evidence": "The Pharmaceutical segment is focused on six therapeutic areas: Immunology ... Infectious Diseases ... Neuroscience ... Oncology"
+    },
+    {
+     "key": "JNJ|Item 1|8",
+     "relevance": "border",
+     "evidence": "Sales of the Company's largest product, STELARA ... accounted for approximately 9.3% of the Company's total revenues (patents; names key products)"
+    },
+    {
+     "key": "JNJ|Item 1|9",
+     "relevance": "border",
+     "evidence": "In all of their product lines, the Company's subsidiaries compete with companies both locally and globally (patents, trademarks, competition)"
+    },
+    {
+     "key": "JNJ|Item 1|6",
+     "relevance": "border",
+     "evidence": "Many of these medicines were developed in collaboration with strategic partners (fragment of the pharma description)"
+    }
+   ],
+   "notes": "Broad. Item 1 workforce/DEI (14, 15) and investor-website (16) chunks rank 3, 4 and 7 for 'what does J&J do'.",
+   "recheck": []
+  },
+  {
+   "id": "R16",
+   "split": "dev",
+   "question": "What are Amazon's main business segments?",
+   "ticker": "AMZN",
+   "intent": "company_overview",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "AMZN|Item 1|0",
+    "AMZN|Item 1|1",
+    "AMZN|Item 1|4",
+    "AMZN|Item 1|5",
+    "AMZN|Item 1|6",
+    "AMZN|Item 1|2",
+    "AMZN|Item 1|3"
+   ],
+   "labels": [
+    {
+     "key": "AMZN|Item 1|0",
+     "relevance": "rel",
+     "evidence": "We have organized our operations into three segments: North America, International, and Amazon Web Services (“AWS”)."
+    },
+    {
+     "key": "AMZN|Item 1|1",
+     "relevance": "border",
+     "evidence": "We serve developers and enterprises ... through AWS ... We provide advertising services to sellers, vendors ... (business lines, not the segment structure)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R17",
+   "split": "held",
+   "question": "What products does Adobe sell?",
+   "ticker": "ADBE",
+   "intent": "company_overview",
+   "broad": true,
+   "audit": false,
+   "pool": [
+    "ADBE|Item 1|1",
+    "ADBE|Item 1|10",
+    "ADBE|Item 1|14",
+    "ADBE|Item 1|17",
+    "ADBE|Item 1|18",
+    "ADBE|Item 1|2",
+    "ADBE|Item 1|22",
+    "ADBE|Item 1|23",
+    "ADBE|Item 1|25",
+    "ADBE|Item 1|5"
+   ],
+   "labels": [
+    {
+     "key": "ADBE|Item 1|1",
+     "relevance": "rel",
+     "evidence": "we focus our investments in two areas of strategic growth: Digital Media ... Our Digital Media segment is centered around Adobe Creative Cloud"
+    },
+    {
+     "key": "ADBE|Item 1|2",
+     "relevance": "rel",
+     "evidence": "Adobe Document Cloud, which include Adobe Express, Photoshop, Illustrator, Lightroom, Premiere Pro, Acrobat, Adobe Acrobat Sign ... Adobe Experience Cloud"
+    },
+    {
+     "key": "ADBE|Item 1|14",
+     "relevance": "rel",
+     "evidence": "Adobe Creative Cloud is a cloud-based subscription app ... Adobe Photoshop and Adobe Lightroom"
+    },
+    {
+     "key": "ADBE|Item 1|17",
+     "relevance": "rel",
+     "evidence": "Adobe After Effects ... Frame.io ... Behance ... Adobe Document Cloud ... Adobe Acrobat"
+    },
+    {
+     "key": "ADBE|Item 1|18",
+     "relevance": "rel",
+     "evidence": "Acrobat Web ... Adobe Acrobat Reader ... Adobe Scan ... Adobe Acrobat Sign ... Adobe Experience Cloud is a comprehensive collection of best-in-class products"
+    },
+    {
+     "key": "ADBE|Item 1|22",
+     "relevance": "rel",
+     "evidence": "Adobe Target ... Adobe Journey Optimizer ... Adobe Workfront"
+    },
+    {
+     "key": "ADBE|Item 1|10",
+     "relevance": "rel",
+     "evidence": "Adobe Experience Platform ... Our Publishing and Advertising segment contains legacy products and services ... eLearning solutions, technical document publishing, web conferencing"
+    },
+    {
+     "key": "ADBE|Item 1|5",
+     "relevance": "rel",
+     "evidence": "Substance 3D Modeler ... libraries of creative assets, such as Adobe Stock and Adobe Fonts; mobile-first apps, such as Lightroom Mobile"
+    },
+    {
+     "key": "ADBE|Item 1|23",
+     "relevance": "border",
+     "evidence": "We sell the majority of our products through a software subscription model ... We provide expert consulting, customer success management, technical support (how it sells; services)"
+    },
+    {
+     "key": "ADBE|Item 1|25",
+     "relevance": "border",
+     "evidence": "Adobe Digital Learning Services also has an extensive portfolio of fee-based learning programs (paid services, not products)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R18",
+   "split": "dev",
+   "question": "What is Walmart's growth strategy?",
+   "ticker": "WMT",
+   "intent": "strategy",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "WMT|Item 1|6",
+    "WMT|Item 1|0",
+    "WMT|Item 1|1",
+    "WMT|Item 1|8",
+    "WMT|Item 1|2",
+    "WMT|Item 1|10",
+    "WMT|Item 1|5",
+    "WMT|Item 1|9",
+    "WMT|Item 1|18",
+    "WMT|Item 1|17",
+    "WMT|Item 1|3",
+    "WMT|Item 7|6",
+    "WMT|Item 7|16",
+    "WMT|Item 7|2",
+    "WMT|Item 7|4",
+    "WMT|Item 7|1",
+    "WMT|Item 7|5",
+    "WMT|Item 7|13",
+    "WMT|Item 7|14",
+    "WMT|Item 7|17",
+    "WMT|Item 7|3",
+    "WMT|Item 1|13",
+    "WMT|Item 7|19",
+    "WMT|Item 1|12",
+    "WMT|Item 7|23",
+    "WMT|Item 7|32"
+   ],
+   "labels": [
+    {
+     "key": "WMT|Item 1|0",
+     "relevance": "rel",
+     "evidence": "Our strategy is to make every day easier for busy families, operate with discipline, sharpen our culture and become more digital, and make trust a competitive advantage."
+    },
+    {
+     "key": "WMT|Item 1|8",
+     "relevance": "rel",
+     "evidence": "Walmart International's strategy is to create strong local businesses powered by Walmart ... re-shape the portfolio to best enable long-term, sustainable and profitable growth."
+    },
+    {
+     "key": "WMT|Item 1|2",
+     "relevance": "border",
+     "evidence": "As we execute on our strategy globally, our flywheel is accelerating through offerings such as our Walmart Connect advertising business (describes what it has been doing, not the stated plan; developer review: rel -> border)"
+    },
+    {
+     "key": "WMT|Item 7|4",
+     "relevance": "rel",
+     "evidence": "Strong, Efficient Growth Our objective ... increasing comparable store and club sales through increasing membership at Sam's Club and through Walmart+, accelerating eCommerce sales growth and expanding omni-channel initiatives"
+    },
+    {
+     "key": "WMT|Item 7|6",
+     "relevance": "rel",
+     "evidence": "Strategic Capital Allocation Our strategy includes improving our customer-facing initiatives in stores and clubs and creating a seamless omni-channel experience"
+    },
+    {
+     "key": "WMT|Item 1|1",
+     "relevance": "border",
+     "evidence": "In recent years, we have heavily invested in omni-channel and eCommerce innovation (history, not stated strategy)"
+    },
+    {
+     "key": "WMT|Item 1|5",
+     "relevance": "border",
+     "evidence": "Consistent with its strategy, Walmart U.S. continues to develop technology tools and services ... pickup and delivery, Walmart+"
+    },
+    {
+     "key": "WMT|Item 1|9",
+     "relevance": "border",
+     "evidence": "Consistent with its strategy, Walmart International continues to build mutually reinforcing businesses in areas such as advertising, marketplace and fulfillment services"
+    },
+    {
+     "key": "WMT|Item 7|23",
+     "relevance": "border",
+     "evidence": "we project capital expenditures will be approximately $17 billion to $18 billion, with a focus on technology, supply chain, and customer-facing initiatives"
+    },
+    {
+     "key": "WMT|Item 1|6",
+     "relevance": "border",
+     "evidence": "We employ many strategies and programs designed to meet competitive pressures ... EDLP ... EDLC ... Omni-channel offerings such as pickup and delivery and our Walmart+ membership (competitive strategy, in the tail)"
+    },
+    {
+     "key": "WMT|Item 7|3",
+     "relevance": "border",
+     "evidence": "Merchandising strategies include ... working with our suppliers to reduce product costs (inflation response, not growth)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R19",
+   "split": "held",
+   "question": "How does Netflix describe its approach to content investment?",
+   "ticker": "NFLX",
+   "intent": "strategy",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "NFLX|Item 1|0",
+    "NFLX|Item 1|3",
+    "NFLX|Item 1|1",
+    "NFLX|Item 1|4",
+    "NFLX|Item 7|16",
+    "NFLX|Item 7|17",
+    "NFLX|Item 7|10",
+    "NFLX|Item 7|4",
+    "NFLX|Item 7|5",
+    "NFLX|Item 7|12",
+    "NFLX|Item 7|15",
+    "NFLX|Item 7|11",
+    "NFLX|Item 7|14"
+   ],
+   "labels": [
+    {
+     "key": "NFLX|Item 7|10",
+     "relevance": "rel",
+     "evidence": "We expect to continue to significantly invest in global content, particularly in original content ... Investments in original content ... require more cash upfront relative to licensed content."
+    },
+    {
+     "key": "NFLX|Item 7|16",
+     "relevance": "rel",
+     "evidence": "We acquire, license and produce content, including original programming, in order to offer our members unlimited viewing of video entertainment."
+    },
+    {
+     "key": "NFLX|Item 1|0",
+     "relevance": "border",
+     "evidence": "We strive to continuously improve our members' experience by offering compelling content that delights them and attracts new members."
+    },
+    {
+     "key": "NFLX|Item 7|12",
+     "relevance": "border",
+     "evidence": "these unknown obligations are expected to be significant and we believe could include approximately $1 billion to $4 billion over the next three years (content commitments)"
+    },
+    {
+     "key": "NFLX|Item 7|11",
+     "relevance": "border",
+     "evidence": "Content obligations (1)$21,713,349 (scale of content commitments, no approach)"
+    },
+    {
+     "key": "NFLX|Item 7|14",
+     "relevance": "border",
+     "evidence": "The payments for content assets decreased $3,519 million ... or 21%."
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R21",
+   "split": "held",
+   "question": "How does Visa describe its competitive landscape?",
+   "ticker": "V",
+   "intent": "competition_and_regulation",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "V|Item 1|12",
+    "V|Item 1|14",
+    "V|Item 1|8",
+    "V|Item 1|0",
+    "V|Item 1|13",
+    "V|Item 1A|12",
+    "V|Item 1A|15",
+    "V|Item 1|15",
+    "V|Item 1|9",
+    "V|Item 1|7",
+    "V|Item 1A|16",
+    "V|Item 1A|13",
+    "V|Item 1|17",
+    "V|Item 1A|11",
+    "V|Item 1A|8",
+    "V|Item 1A|18",
+    "V|Item 1|10",
+    "V|Item 1A|14",
+    "V|Item 1|18",
+    "V|Item 1A|7",
+    "V|Item 1A|1",
+    "V|Item 1A|5",
+    "V|Item 1A|0",
+    "V|Item 1A|24",
+    "V|Item 1A|9",
+    "V|Item 1A|6",
+    "V|Item 1A|28",
+    "V|Item 1A|30",
+    "V|Item 1A|31"
+   ],
+   "labels": [
+    {
+     "key": "V|Item 1|12",
+     "relevance": "rel",
+     "evidence": "COMPETITION The global payments industry continues to undergo dynamic change. Existing and emerging competitors compete with Visa’s network and payment solutions (section starts in the chunk's tail)"
+    },
+    {
+     "key": "V|Item 1|14",
+     "relevance": "rel",
+     "evidence": "Alternative Payments Providers: ... In some cases, these entities can be both a partner and a competitor to Visa. Real-time Payment (RTP) Networks ... can compete with Visa"
+    },
+    {
+     "key": "V|Item 1|13",
+     "relevance": "rel",
+     "evidence": "We compete against all forms of payment ... Our electronic payment competitors principally include: Global or Multi-Regional Networks ... Mastercard, American Express, Discover, JCB and UnionPay."
+    },
+    {
+     "key": "V|Item 1|15",
+     "relevance": "rel",
+     "evidence": "We believe Visa is well-positioned competitively due to our global brand, our broad set of payment products, new flows offerings and value added services"
+    },
+    {
+     "key": "V|Item 1A|12",
+     "relevance": "rel",
+     "evidence": "We face intense competition in our industry. The global payments space is intensely competitive."
+    },
+    {
+     "key": "V|Item 1A|15",
+     "relevance": "rel",
+     "evidence": "As the competitive landscape is quickly evolving, we may not be able to foresee or respond sufficiently to emerging risks"
+    },
+    {
+     "key": "V|Item 1A|16",
+     "relevance": "rel",
+     "evidence": "we face intense competitive pressure on the prices we charge our financial institution clients"
+    },
+    {
+     "key": "V|Item 1A|13",
+     "relevance": "rel",
+     "evidence": "Some of our competitors, including American Express, Discover, private-label card networks ... Alipay and WeChat Pay, operate closed-loop payments systems"
+    },
+    {
+     "key": "V|Item 1A|14",
+     "relevance": "rel",
+     "evidence": "We expect the competitive landscape to continue to shift and evolve ... Zelle, a bank-offered alternative network"
+    },
+    {
+     "key": "V|Item 1A|7",
+     "relevance": "rel",
+     "evidence": "alternative payments providers such as Alipay and WeChat Pay have rapidly expanded ... which could make it difficult for us to compete even if our license is approved in China"
+    },
+    {
+     "key": "V|Item 1A|6",
+     "relevance": "border",
+     "evidence": "Governments in a number of jurisdictions shield domestic payment card networks ... from international competition"
+    },
+    {
+     "key": "V|Item 1A|8",
+     "relevance": "border",
+     "evidence": "a group of European banks have announced their intent to launch a pan-European payment system, the European Payments Initiative"
+    },
+    {
+     "key": "V|Item 1A|11",
+     "relevance": "border",
+     "evidence": "Business Risks We face intense competition in our industry. (heading only, at the chunk's end)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R22",
+   "split": "dev",
+   "question": "What risks did Goldman Sachs flag?",
+   "ticker": "GS",
+   "intent": "risk_factors",
+   "broad": true,
+   "audit": false,
+   "pool": [
+    "GS|Item 1A|1",
+    "GS|Item 1A|16",
+    "GS|Item 1A|20",
+    "GS|Item 1A|21",
+    "GS|Item 1A|23",
+    "GS|Item 1A|27",
+    "GS|Item 1A|3",
+    "GS|Item 1A|34",
+    "GS|Item 1A|36",
+    "GS|Item 1A|56"
+   ],
+   "labels": [
+    {
+     "key": "GS|Item 1A|1",
+     "relevance": "rel",
+     "evidence": "A failure in our operational systems ... cyber attacks ... ineffective risk management ... Climate change ... extensive and pervasive regulation (risk-factor summary: for a broad 'what risks' question the summary list answers it)"
+    },
+    {
+     "key": "GS|Item 1A|16",
+     "relevance": "rel",
+     "evidence": "we may be subject to a concentration of credit risk to a particular counterparty ... significantly increased our concentration of risk with respect to these entities"
+    },
+    {
+     "key": "GS|Item 1A|20",
+     "relevance": "rel",
+     "evidence": "Computers and computer networks are subject to various risks, including ... cyber attacks ... We are exposed to risks ... related to distributed ledger technology"
+    },
+    {
+     "key": "GS|Item 1A|21",
+     "relevance": "rel",
+     "evidence": "Human errors, malfeasance and other misconduct ... has in the past and may in the future result in reputational damage and losses"
+    },
+    {
+     "key": "GS|Item 1A|23",
+     "relevance": "rel",
+     "evidence": "a catastrophic event impacting our New York metropolitan area offices ... A failure to protect our computer systems ... against cyber attacks"
+    },
+    {
+     "key": "GS|Item 1A|27",
+     "relevance": "rel",
+     "evidence": "We may incur losses as a result of ineffective risk management processes and strategies"
+    },
+    {
+     "key": "GS|Item 1A|3",
+     "relevance": "rel",
+     "evidence": "Our financial performance is highly dependent on the environment in which our businesses operate ... Unfavorable or uncertain economic and market conditions"
+    },
+    {
+     "key": "GS|Item 1A|34",
+     "relevance": "rel",
+     "evidence": "consumer-oriented deposit-taking, lending and credit card businesses ... subjects us to numerous additional regulations"
+    },
+    {
+     "key": "GS|Item 1A|36",
+     "relevance": "rel",
+     "evidence": "Substantial civil or criminal liability or significant regulatory action against us could have material adverse financial effects"
+    },
+    {
+     "key": "GS|Item 1A|56",
+     "relevance": "rel",
+     "evidence": "we have faced, and would continue to face, additional compliance, legal and regulatory risk ... through GreenSky"
+    }
+   ],
+   "notes": "Broad. Every Item 1A chunk names a risk, so precision@k is near ceiling by construction: the section filter does the work. Whether the top k covers the MAIN risks is a salience question retrieval cannot see.",
+   "recheck": []
+  },
+  {
+   "id": "R23",
+   "split": "dev",
+   "question": "What are the main risks Tesla identified?",
+   "ticker": "TSLA",
+   "intent": "risk_factors",
+   "broad": true,
+   "audit": false,
+   "pool": [
+    "TSLA|Item 1A|0",
+    "TSLA|Item 1A|11",
+    "TSLA|Item 1A|12",
+    "TSLA|Item 1A|13",
+    "TSLA|Item 1A|18",
+    "TSLA|Item 1A|22",
+    "TSLA|Item 1A|33",
+    "TSLA|Item 1A|6",
+    "TSLA|Item 1A|8",
+    "TSLA|Item 1A|9"
+   ],
+   "labels": [
+    {
+     "key": "TSLA|Item 1A|0",
+     "relevance": "rel",
+     "evidence": "We may be impacted by macroeconomic conditions resulting from the global COVID-19 pandemic ... shortfall of semiconductors"
+    },
+    {
+     "key": "TSLA|Item 1A|11",
+     "relevance": "rel",
+     "evidence": "We face risks associated with maintaining and expanding our international operations ... Our business may suffer if our products or features contain defects"
+    },
+    {
+     "key": "TSLA|Item 1A|12",
+     "relevance": "rel",
+     "evidence": "Our products are also highly dependent on software ... We may be required to defend or insure against product liability claims"
+    },
+    {
+     "key": "TSLA|Item 1A|13",
+     "relevance": "rel",
+     "evidence": "lithium-ion cells can rapidly release the energy ... We will need to maintain public credibility and confidence in our long-term business prospects"
+    },
+    {
+     "key": "TSLA|Item 1A|18",
+     "relevance": "rel",
+     "evidence": "We are highly dependent on the services of Elon Musk ... Our information technology systems ... could be subject to cyber-attacks"
+    },
+    {
+     "key": "TSLA|Item 1A|22",
+     "relevance": "rel",
+     "evidence": "We may choose to or be compelled to undertake product recalls ... Our current and future warranty reserves may be insufficient"
+    },
+    {
+     "key": "TSLA|Item 1A|33",
+     "relevance": "rel",
+     "evidence": "We could be subject to liability, penalties and other restrictive sanctions ... arising out of certain governmental investigations"
+    },
+    {
+     "key": "TSLA|Item 1A|6",
+     "relevance": "rel",
+     "evidence": "We may be unable to grow our global product sales, delivery and installation capabilities and our servicing and vehicle charging networks"
+    },
+    {
+     "key": "TSLA|Item 1A|8",
+     "relevance": "rel",
+     "evidence": "the cost and mass production of battery cells ... depends in part upon the prices and availability of raw materials ... Our future growth and success are dependent upon consumers' demand for electric vehicles"
+    },
+    {
+     "key": "TSLA|Item 1A|9",
+     "relevance": "rel",
+     "evidence": "We face strong competition for our products and services from a growing list of established and new competitors"
+    }
+   ],
+   "notes": "Broad; same caveat as R22.",
+   "recheck": []
+  },
+  {
+   "id": "R24",
+   "split": "held",
+   "question": "What regulatory risks does Pfizer face?",
+   "ticker": "PFE",
+   "intent": "competition_and_regulation",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "PFE|Item 1|25",
+    "PFE|Item 1A|19",
+    "PFE|Item 1A|16",
+    "PFE|Item 1A|13",
+    "PFE|Item 1A|10",
+    "PFE|Item 1|30",
+    "PFE|Item 1A|8",
+    "PFE|Item 1|0",
+    "PFE|Item 1A|32",
+    "PFE|Item 1A|5",
+    "PFE|Item 1|33",
+    "PFE|Item 1|22",
+    "PFE|Item 1|21",
+    "PFE|Item 1A|11",
+    "PFE|Item 1A|12",
+    "PFE|Item 1|34",
+    "PFE|Item 1A|15",
+    "PFE|Item 1A|1",
+    "PFE|Item 1|35",
+    "PFE|Item 1A|14",
+    "PFE|Item 1|27",
+    "PFE|Item 1|26",
+    "PFE|Item 1A|18",
+    "PFE|Item 1A|6",
+    "PFE|Item 1|32",
+    "PFE|Item 1|9",
+    "PFE|Item 1A|7",
+    "PFE|Item 1|31",
+    "PFE|Item 1|23",
+    "PFE|Item 1A|23",
+    "PFE|Item 1A|33",
+    "PFE|Item 1A|34"
+   ],
+   "labels": [
+    {
+     "key": "PFE|Item 1|25",
+     "relevance": "rel",
+     "evidence": "We are subject to extensive regulation by government authorities ... a failure to comply could subject us to legal and/or administrative actions."
+    },
+    {
+     "key": "PFE|Item 1A|19",
+     "relevance": "rel",
+     "evidence": "If an interaction is found to be improper, government enforcement actions and penalties could result."
+    },
+    {
+     "key": "PFE|Item 1A|16",
+     "relevance": "rel",
+     "evidence": "Regulatory requirements may also result in a more challenging, expensive and lengthy regulatory approval process than anticipated"
+    },
+    {
+     "key": "PFE|Item 1A|13",
+     "relevance": "rel",
+     "evidence": "governments have significant power as large single payors to regulate prices ... the EC proposed the largest reform to drug pricing and access in 20 years"
+    },
+    {
+     "key": "PFE|Item 1|30",
+     "relevance": "rel",
+     "evidence": "HRSA ... has sent letters to numerous manufacturers ... express HRSA’s view that those manufacturers’ policies are in violation of the 340B statute."
+    },
+    {
+     "key": "PFE|Item 1A|8",
+     "relevance": "rel",
+     "evidence": "difficulties, delays or inefficiencies in our supply chain ... due to regulatory actions ... Regulatory agencies periodically inspect our manufacturing facilities"
+    },
+    {
+     "key": "PFE|Item 1A|32",
+     "relevance": "rel",
+     "evidence": "decisions by regulatory authorities impacting labeling or marketing, manufacturing processes, safety and/or other matters"
+    },
+    {
+     "key": "PFE|Item 1|33",
+     "relevance": "rel",
+     "evidence": "the EC proposed to revise the EU pharmaceutical legislation ... likely to be the largest reform in over 20 years to EU medicines regulation"
+    },
+    {
+     "key": "PFE|Item 1A|11",
+     "relevance": "rel",
+     "evidence": "U.S. and international governmental regulations that mandate price controls ... our future results could be adversely affected by changes in such regulations"
+    },
+    {
+     "key": "PFE|Item 1A|12",
+     "relevance": "rel",
+     "evidence": "the drug pricing provisions of the IRA ... require manufacturers of certain drugs, including Pfizer, to engage in price negotiations with Medicare"
+    },
+    {
+     "key": "PFE|Item 1|34",
+     "relevance": "rel",
+     "evidence": "a government policy that regulates the pricing of pharmaceutical products ... Pfizer ... have mostly not been successful in the VBP bidding process."
+    },
+    {
+     "key": "PFE|Item 1A|15",
+     "relevance": "rel",
+     "evidence": "We may not be able to successfully address all the comments received from regulatory authorities such as the FDA and the EMA, or be able to obtain approval"
+    },
+    {
+     "key": "PFE|Item 1A|1",
+     "relevance": "rel",
+     "evidence": "business arrangements in this area are subject to a high degree of government scrutiny, and available safe harbors under applicable federal and state fraud and abuse laws are subject to change"
+    },
+    {
+     "key": "PFE|Item 1|35",
+     "relevance": "rel",
+     "evidence": "proposals introduced in 2023 may reduce the basic period of regulatory data protection from eight to six years"
+    },
+    {
+     "key": "PFE|Item 1A|14",
+     "relevance": "rel",
+     "evidence": "Other U.S. federal or state legislative or regulatory action and/or policy efforts could adversely affect our business"
+    },
+    {
+     "key": "PFE|Item 1|27",
+     "relevance": "rel",
+     "evidence": "Our marketing practices are subject to federal and state laws, such as the Anti-Kickback Statute ... and False Claims Act"
+    },
+    {
+     "key": "PFE|Item 1A|18",
+     "relevance": "rel",
+     "evidence": "Government investigations and actions have and could result in substantial criminal and civil fines"
+    },
+    {
+     "key": "PFE|Item 1|32",
+     "relevance": "rel",
+     "evidence": "Any failure or perceived failure by us to comply with applicable privacy and data protection laws and regulations ... could subject us to significant fines"
+    },
+    {
+     "key": "PFE|Item 1|31",
+     "relevance": "rel",
+     "evidence": "Further efforts by states and the federal government to regulate prices or payment for pharmaceutical products"
+    },
+    {
+     "key": "PFE|Item 1|26",
+     "relevance": "border",
+     "evidence": "we are also required to report adverse events and comply with cGMPs ... (describes obligations, not risks)"
+    },
+    {
+     "key": "PFE|Item 1|21",
+     "relevance": "border",
+     "evidence": "Private third-party payors ... increasingly challenge pharmaceutical product pricing (commercial, not regulatory)"
+    },
+    {
+     "key": "PFE|Item 1A|7",
+     "relevance": "border",
+     "evidence": "Government financing and economic pressures can lead to negative pricing pressure in various markets"
+    },
+    {
+     "key": "PFE|Item 1A|6",
+     "relevance": "border",
+     "evidence": "the product may not be as competitive as expected because of the highly dynamic regulatory and market environments"
+    },
+    {
+     "key": "PFE|Item 1|23",
+     "relevance": "border",
+     "evidence": "consolidation in the MCO industry ... increased downward pressure on drug prices"
+    },
+    {
+     "key": "PFE|Item 1A|10",
+     "relevance": "border",
+     "evidence": "RISKS RELATED TO GOVERNMENT REGULATION AND LEGAL PROCEEDINGS: PRICING AND REIMBURSEMENT (heading at chunk end; body is counterfeits)"
+    },
+    {
+     "key": "PFE|Item 1A|5",
+     "relevance": "border",
+     "evidence": "The costs of product development continue to be high and are growing, as are regulatory requirements in many therapeutic areas"
+    },
+    {
+     "key": "PFE|Item 1A|33",
+     "relevance": "border",
+     "evidence": "uncertainties regarding the ability to obtain recommendations from vaccine or treatment advisory or technical committees and other public health authorities ... new legal or regulatory requirements that result in new or expanded carbon pricing"
+    },
+    {
+     "key": "PFE|Item 1A|34",
+     "relevance": "border",
+     "evidence": "This focus on ESG matters may lead to new expectations or requirements that could result in increased costs (governmental expectations, generic)"
+    }
+   ],
+   "notes": "Regulatory risk runs through most of Pfizer's Item 1 and 1A: keyword hits 59, capped at 25 for labelling. Many relevant chunks are unlabelled, so recall for R24 is a weak upper bound; precision@k is the informative metric here.",
+   "recheck": []
+  },
+  {
+   "id": "R25",
+   "split": "dev",
+   "question": "What legal proceedings did Meta disclose as a risk?",
+   "ticker": "META",
+   "intent": "competition_and_regulation",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "META|Item 1A|53",
+    "META|Item 1A|44",
+    "META|Item 1A|61",
+    "META|Item 1A|43",
+    "META|Item 1A|54",
+    "META|Item 1A|72",
+    "META|Item 1A|67",
+    "META|Item 1A|59",
+    "META|Item 1A|71",
+    "META|Item 1A|58",
+    "META|Item 1A|62",
+    "META|Item 1A|63",
+    "META|Item 1A|42",
+    "META|Item 1A|0",
+    "META|Item 1A|60",
+    "META|Item 1A|52",
+    "META|Item 1A|1",
+    "META|Item 1A|76",
+    "META|Item 1A|56",
+    "META|Item 1A|73",
+    "META|Item 1A|22",
+    "META|Item 1A|74",
+    "META|Item 1A|7",
+    "META|Item 1A|23",
+    "META|Item 1A|77",
+    "META|Item 1A|78",
+    "META|Item 1A|26",
+    "META|Item 1A|46"
+   ],
+   "labels": [
+    {
+     "key": "META|Item 1A|43",
+     "relevance": "rel",
+     "evidence": "allegations that we inflated our estimates of the potential audience size for advertisements ... We are also the subject of multiple lawsuits related to our alleged recommendation of and/or failure to remove harmful content."
+    },
+    {
+     "key": "META|Item 1A|61",
+     "relevance": "rel",
+     "evidence": "beginning in September 2021, we became subject to government investigations and requests relating to allegations and the release of internal company documents by a former employee."
+    },
+    {
+     "key": "META|Item 1A|59",
+     "relevance": "rel",
+     "evidence": "beginning in March 2018, we became subject to FTC, state attorneys general, and other government inquiries ... In July 2019, we entered into a settlement"
+    },
+    {
+     "key": "META|Item 1A|60",
+     "relevance": "rel",
+     "evidence": "Beginning in December 2020, we also became subject to lawsuits by the FTC and the attorneys general from 46 states ... alleging that we violated antitrust laws, including by acquiring Instagram in 2012 and WhatsApp in 2014"
+    },
+    {
+     "key": "META|Item 1A|42",
+     "relevance": "rel",
+     "evidence": "We are involved in numerous class action lawsuits and other litigation matters that are expensive and time consuming (section heading in the chunk's tail)"
+    },
+    {
+     "key": "META|Item 1A|76",
+     "relevance": "rel",
+     "evidence": "We presently are involved in a number of intellectual property lawsuits"
+    },
+    {
+     "key": "META|Item 1A|78",
+     "relevance": "rel",
+     "evidence": "We are currently subject to securities litigation in connection with our platform and user data practices"
+    },
+    {
+     "key": "META|Item 1A|54",
+     "relevance": "rel",
+     "evidence": "we received a preliminary draft decision from the IDPC that preliminarily concluded that Meta Platforms Ireland's reliance on SCCs ... does not achieve compliance with the GDPR"
+    },
+    {
+     "key": "META|Item 1A|26",
+     "relevance": "rel",
+     "evidence": "in 2022, the United Kingdom Competition and Markets Authority directed us to divest our Giphy acquisition ... the FTC filed lawsuits against us to enjoin our proposed acquisition of Within Unlimited."
+    },
+    {
+     "key": "META|Item 1A|53",
+     "relevance": "border",
+     "evidence": "the Privacy Shield was invalidated ... following a challenge brought by the Irish Data Protection Commission (court ruling on data transfers, not a suit against Meta)"
+    },
+    {
+     "key": "META|Item 1A|44",
+     "relevance": "border",
+     "evidence": "the IRS issued formal assessments relating to transfer pricing with our foreign subsidiaries (tax dispute)"
+    },
+    {
+     "key": "META|Item 1A|71",
+     "relevance": "border",
+     "evidence": "affected users or government authorities could initiate legal or regulatory actions against us (hypothetical)"
+    },
+    {
+     "key": "META|Item 1A|63",
+     "relevance": "border",
+     "evidence": "we may be subject to regulatory or governmental investigations or lawsuits (hypothetical)"
+    },
+    {
+     "key": "META|Item 1A|1",
+     "relevance": "border",
+     "evidence": "•litigation, including class action lawsuits ... •the impact of government investigations, enforcement actions, and settlements (summary list)"
+    },
+    {
+     "key": "META|Item 1A|46",
+     "relevance": "border",
+     "evidence": "The European Commission has conducted investigations ... state aid (tax, not against Meta)"
+    }
+   ],
+   "notes": "Meta's Item 1A has 34 keyword hits for litigation terms, capped at 25 labelled: recall is an upper bound.",
+   "recheck": []
+  },
+  {
+   "id": "R26",
+   "split": "dev",
+   "question": "Why did Microsoft's revenue grow in fiscal 2022?",
+   "ticker": "MSFT",
+   "intent": "management_commentary",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "MSFT|Item 7|5",
+    "MSFT|Item 7|0",
+    "MSFT|Item 7|6",
+    "MSFT|Item 7|8",
+    "MSFT|Item 7|7",
+    "MSFT|Item 7|1",
+    "MSFT|Item 7|9",
+    "MSFT|Item 7|4",
+    "MSFT|Item 7|3",
+    "MSFT|Item 7|19",
+    "MSFT|Item 7|2",
+    "MSFT|Item 7|15",
+    "MSFT|Item 7|10"
+   ],
+   "labels": [
+    {
+     "key": "MSFT|Item 7|5",
+     "relevance": "rel",
+     "evidence": "Revenue increased $30.2 billion or 18% driven by growth across each of our segments. Intelligent Cloud revenue increased driven by Azure and other cloud services."
+    },
+    {
+     "key": "MSFT|Item 7|0",
+     "relevance": "rel",
+     "evidence": "Office Commercial products and cloud services revenue increased 13% driven by Office 365 Commercial growth of 18%."
+    },
+    {
+     "key": "MSFT|Item 7|8",
+     "relevance": "rel",
+     "evidence": "Server products and cloud services revenue increased $14.7 billion or 28% driven by Azure and other cloud services."
+    },
+    {
+     "key": "MSFT|Item 7|7",
+     "relevance": "rel",
+     "evidence": "LinkedIn revenue increased $3.5 billion or 34% driven by a strong job market in our Talent Solutions business"
+    },
+    {
+     "key": "MSFT|Item 7|1",
+     "relevance": "rel",
+     "evidence": "Server products and cloud services revenue increased 28% driven by Azure and other cloud services growth of 45%."
+    },
+    {
+     "key": "MSFT|Item 7|9",
+     "relevance": "border",
+     "evidence": "Surface revenue increased $226 million or 3%. (one revenue line; rest is operating expenses)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R28",
+   "split": "dev",
+   "question": "How does Walmart describe its liquidity position?",
+   "ticker": "WMT",
+   "intent": "management_commentary",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "WMT|Item 7|25",
+    "WMT|Item 7|6",
+    "WMT|Item 7|7",
+    "WMT|Item 7|31",
+    "WMT|Item 7|16",
+    "WMT|Item 7|14",
+    "WMT|Item 7|4",
+    "WMT|Item 7|2",
+    "WMT|Item 7|21",
+    "WMT|Item 7|1",
+    "WMT|Item 7|24",
+    "WMT|Item 7|22",
+    "WMT|Item 7|28",
+    "WMT|Item 7|20",
+    "WMT|Item 7|29",
+    "WMT|Item 7|9",
+    "WMT|Item 7|27"
+   ],
+   "labels": [
+    {
+     "key": "WMT|Item 7|25",
+     "relevance": "rel",
+     "evidence": "We also have $15.0 billion of various undrawn committed lines of credit in the U.S. ... that provide additional liquidity, if needed."
+    },
+    {
+     "key": "WMT|Item 7|21",
+     "relevance": "rel",
+     "evidence": "We believe our sources of liquidity will continue to be sufficient to fund operations, finance our global investment activities, pay dividends and fund our share repurchases"
+    },
+    {
+     "key": "WMT|Item 7|24",
+     "relevance": "rel",
+     "evidence": "We generally utilize the liquidity provided by short-term borrowings to provide funding for our operations, dividend payments, share repurchases"
+    },
+    {
+     "key": "WMT|Item 7|22",
+     "relevance": "rel",
+     "evidence": "We generally operate with a working capital deficit due to our efficient use of cash in funding operations, consistent access to the capital markets"
+    },
+    {
+     "key": "WMT|Item 7|28",
+     "relevance": "rel",
+     "evidence": "We believe our cash flows from operations, current cash position, short-term borrowings and access to capital markets will continue to be sufficient to meet our anticipated cash requirements"
+    },
+    {
+     "key": "WMT|Item 7|29",
+     "relevance": "border",
+     "evidence": "any downgrade of our current short-term credit ratings could impair our ability to access the commercial paper markets (credit ratings, liquidity-adjacent)"
+    },
+    {
+     "key": "WMT|Item 7|27",
+     "relevance": "border",
+     "evidence": "Material cash requirements from operating activities primarily consist of inventory purchases ... which we expect to be primarily satisfied by our cash from operations"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R30",
+   "split": "dev",
+   "question": "What market risks did Apple disclose?",
+   "ticker": "AAPL",
+   "intent": "market_risk",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "AAPL|Item 7A|2",
+    "AAPL|Item 7A|1",
+    "AAPL|Item 7|7",
+    "AAPL|Item 7|9",
+    "AAPL|Item 7|1",
+    "AAPL|Item 7|2",
+    "AAPL|Item 7|4",
+    "AAPL|Item 7|5",
+    "AAPL|Item 7|3",
+    "AAPL|Item 7A|0"
+   ],
+   "labels": [
+    {
+     "key": "AAPL|Item 7A|0",
+     "relevance": "rel",
+     "evidence": "Interest Rate Risk The Company’s exposure to changes in interest rates relates primarily to the Company’s investment portfolio and outstanding debt."
+    },
+    {
+     "key": "AAPL|Item 7A|1",
+     "relevance": "rel",
+     "evidence": "Foreign Currency Risk In general, the Company is a net receiver of currencies other than the U.S. dollar."
+    },
+    {
+     "key": "AAPL|Item 7A|2",
+     "relevance": "rel",
+     "evidence": "the Company estimates with 95% confidence, a maximum one-day loss in fair value of $550 million"
+    },
+    {
+     "key": "AAPL|Item 7|4",
+     "relevance": "border",
+     "evidence": "The movement of foreign currencies in Europe relative to the U.S. dollar had a net favorable impact on Europe net sales (FX effect on results, not a risk disclosure)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "R31",
+   "split": "held",
+   "question": "How does JPMorgan describe its interest rate risk?",
+   "ticker": "JPM",
+   "intent": "market_risk",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "JPM|Item 1A|17",
+    "JPM|Item 1A|20",
+    "JPM|Item 1A|18",
+    "JPM|Item 1A|22",
+    "JPM|Item 1A|16",
+    "JPM|Item 1A|1",
+    "JPM|Item 1A|0",
+    "JPM|Item 1A|2",
+    "JPM|Item 1A|21",
+    "JPM|Item 1A|15",
+    "JPM|Item 1A|12",
+    "JPM|Item 1A|13"
+   ],
+   "labels": [
+    {
+     "key": "JPM|Item 1A|17",
+     "relevance": "rel",
+     "evidence": "a low or negative interest rate environment may cause: •net interest margins to be compressed ... Higher interest rates can also negatively affect the payment performance on loans"
+    },
+    {
+     "key": "JPM|Item 1A|16",
+     "relevance": "rel",
+     "evidence": "Changes in interest rates and credit spreads can adversely affect JPMorgan Chase’s earnings, its liquidity or its capital levels ... higher interest rates can also lead to ... lower net interest income"
+    },
+    {
+     "key": "JPM|Item 1A|0",
+     "relevance": "border",
+     "evidence": "•Market risks, including the effects that ... changes in interest rates and credit spreads ... can have on JPMorgan Chase’s consumer and wholesale businesses (summary line)"
+    },
+    {
+     "key": "JPM|Item 1A|12",
+     "relevance": "border",
+     "evidence": "•levels and volatility of interest rates, credit spreads and market prices for currencies (one item in a list)"
+    },
+    {
+     "key": "JPM|Item 1A|13",
+     "relevance": "border",
+     "evidence": "•prolonged periods of exceptionally high or low interest rates (consumer-business factor)"
+    },
+    {
+     "key": "JPM|Item 1A|15",
+     "relevance": "border",
+     "evidence": "higher interest rates or a downturn in financial markets could affect the valuation of client assets that JPMorgan Chase manages"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N16",
+   "split": "held",
+   "question": "What are Adobe's primary markets and customer segments?",
+   "ticker": "ADBE",
+   "intent": "company_overview",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "ADBE|Item 1|2",
+    "ADBE|Item 1|10",
+    "ADBE|Item 1|1",
+    "ADBE|Item 1|22",
+    "ADBE|Item 1|23",
+    "ADBE|Item 1|3",
+    "ADBE|Item 1|11",
+    "ADBE|Item 1|24",
+    "ADBE|Item 1|12",
+    "ADBE|Item 1|25",
+    "ADBE|Item 1|20",
+    "ADBE|Item 1|6",
+    "ADBE|Item 1|19",
+    "ADBE|Item 1|21",
+    "ADBE|Item 1|4",
+    "ADBE|Item 1|8",
+    "ADBE|Item 1|0",
+    "ADBE|Item 1|7",
+    "ADBE|Item 1|14",
+    "ADBE|Item 1|9",
+    "ADBE|Item 1|18",
+    "ADBE|Item 1|5",
+    "ADBE|Item 1|13",
+    "ADBE|Item 1|15",
+    "ADBE|Item 1|26"
+   ],
+   "labels": [
+    {
+     "key": "ADBE|Item 1|2",
+     "relevance": "rel",
+     "evidence": "Our customers include marketers, advertisers, agencies, publishers, merchandisers, merchants, web analysts, data scientists, developers and executives across the C-suite."
+    },
+    {
+     "key": "ADBE|Item 1|10",
+     "relevance": "rel",
+     "evidence": "we are focused on delivering the best customer experience management solutions across B2B and B2C buyers, and both enterprise and mid-market segments."
+    },
+    {
+     "key": "ADBE|Item 1|1",
+     "relevance": "rel",
+     "evidence": "We market our products and services directly to enterprise customers ... We have operations in the Americas; Europe, Middle East and Africa (“EMEA”); and Asia-Pacific (“APAC”)."
+    },
+    {
+     "key": "ADBE|Item 1|23",
+     "relevance": "rel",
+     "evidence": "across all our customer segments, which include enterprises, small and medium businesses, creative professionals and consumers."
+    },
+    {
+     "key": "ADBE|Item 1|3",
+     "relevance": "rel",
+     "evidence": "MARKET OVERVIEW This overview provides an explanation of our markets ... Creative Cloud addresses the needs of all content creators, from creative professionals ... to knowledge workers, marketers, educators"
+    },
+    {
+     "key": "ADBE|Item 1|4",
+     "relevance": "rel",
+     "evidence": "products and services that allow individuals, teams, small and medium businesses, enterprises and government institutions, including both professionals and enthusiasts"
+    },
+    {
+     "key": "ADBE|Item 1|7",
+     "relevance": "rel",
+     "evidence": "targeted vertical markets such as education, financial services, telecommunications and government, as well as on expanding into emerging markets"
+    },
+    {
+     "key": "ADBE|Item 1|0",
+     "relevance": "rel",
+     "evidence": "We offer a line of products and services used by creative professionals, including photographers, video editors ... communicators, including content creators"
+    },
+    {
+     "key": "ADBE|Item 1|6",
+     "relevance": "rel",
+     "evidence": "expand our universe of customers beyond creative professionals ... We utilize channel partners to target mid-size creative customers"
+    },
+    {
+     "key": "ADBE|Item 1|8",
+     "relevance": "border",
+     "evidence": "driving business-to-business (“B2B”) companies to deliver equally engaging and seamless experiences as business-to-consumer (“B2C”) companies"
+    },
+    {
+     "key": "ADBE|Item 1|9",
+     "relevance": "border",
+     "evidence": "solutions for businesses of any size in any industry"
+    },
+    {
+     "key": "ADBE|Item 1|11",
+     "relevance": "border",
+     "evidence": "We compete in a constantly evolving market (competition, not customers)"
+    },
+    {
+     "key": "ADBE|Item 1|14",
+     "relevance": "border",
+     "evidence": "enables creative professionals and enthusiasts alike to express themselves (product description)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N19",
+   "split": "dev",
+   "question": "salesforce growth strategy",
+   "ticker": "CRM",
+   "intent": "strategy",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "CRM|Item 1|4",
+    "CRM|Item 1|0",
+    "CRM|Item 1|10",
+    "CRM|Item 1|8",
+    "CRM|Item 1|1",
+    "CRM|Item 1|6",
+    "CRM|Item 1|5",
+    "CRM|Item 7|20",
+    "CRM|Item 7|29",
+    "CRM|Item 7|30",
+    "CRM|Item 7|4",
+    "CRM|Item 7|7",
+    "CRM|Item 7|15",
+    "CRM|Item 7|27",
+    "CRM|Item 7|18",
+    "CRM|Item 7|32",
+    "CRM|Item 7|21",
+    "CRM|Item 7|5",
+    "CRM|Item 7|6",
+    "CRM|Item 7|17",
+    "CRM|Item 7|16",
+    "CRM|Item 7|11",
+    "CRM|Item 7|2",
+    "CRM|Item 7|9",
+    "CRM|Item 7|23",
+    "CRM|Item 7|8",
+    "CRM|Item 7|12",
+    "CRM|Item 7|26",
+    "CRM|Item 7|13",
+    "CRM|Item 7|31"
+   ],
+   "labels": [
+    {
+     "key": "CRM|Item 1|4",
+     "relevance": "rel",
+     "evidence": "Our Business and Growth Strategy ... We orient our business strategy and invest for future growth by focusing on the following key priorities: Expanding relationships with existing customers."
+    },
+    {
+     "key": "CRM|Item 1|6",
+     "relevance": "rel",
+     "evidence": "Promoting strong customer adoption and reducing customer attrition ... Mergers and Acquisitions and Strategic Investments We evaluate opportunities to acquire or invest in complementary businesses"
+    },
+    {
+     "key": "CRM|Item 1|5",
+     "relevance": "rel",
+     "evidence": "Extending go-to-market capabilities globally ... Expanding into new categories and verticals. As part of our growth strategy, we are delivering innovative solutions in new categories"
+    },
+    {
+     "key": "CRM|Item 7|4",
+     "relevance": "rel",
+     "evidence": "We continue to invest for future growth and are focused on several key growth levers, including driving multi-cloud adoption, increasing our penetration with enterprise and international customers"
+    },
+    {
+     "key": "CRM|Item 7|5",
+     "relevance": "rel",
+     "evidence": "We plan to continue to reinvest a significant portion of our income from operations in future periods to grow and innovate our business ... We drive innovation organically and, to a lesser extent, through acquisitions."
+    },
+    {
+     "key": "CRM|Item 1|0",
+     "relevance": "border",
+     "evidence": "In addition to organic innovation, we add new capabilities to our Customer 360 platform through acquisitions."
+    },
+    {
+     "key": "CRM|Item 7|2",
+     "relevance": "border",
+     "evidence": "we have redirected and may in the future redirect some resources ... into key growth and strategic areas"
+    },
+    {
+     "key": "CRM|Item 7|20",
+     "relevance": "border",
+     "evidence": "hiring additional sales personnel to focus on adding new customers and increasing penetration within our existing customer base"
+    },
+    {
+     "key": "CRM|Item 7|23",
+     "relevance": "border",
+     "evidence": "In the future, we may enter into arrangements to acquire or invest in complementary businesses, services and technologies"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N20",
+   "split": "held",
+   "question": "What is Intel's plan for turning things around?",
+   "ticker": "INTC",
+   "intent": "strategy",
+   "broad": false,
+   "audit": true,
+   "pool": [
+    "INTC|Item 1|0",
+    "INTC|Item 1|1"
+   ],
+   "labels": [],
+   "notes": "Both eligible chunks are Intel's 10-K cross-reference index ('Item 1. Business ... Pages 3-9'), not business text. No relevant chunk exists in the corpus: the refusal is honest. Corpus defect: no Intel business description captured.",
+   "recheck": []
+  },
+  {
+   "id": "N21",
+   "split": "held",
+   "question": "What is Netflix's core business strategy for streaming?",
+   "ticker": "NFLX",
+   "intent": "strategy",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "NFLX|Item 1|0",
+    "NFLX|Item 1|3",
+    "NFLX|Item 1|4",
+    "NFLX|Item 1|1",
+    "NFLX|Item 7|4",
+    "NFLX|Item 7|1",
+    "NFLX|Item 7|10",
+    "NFLX|Item 7|0",
+    "NFLX|Item 7|5",
+    "NFLX|Item 7|16",
+    "NFLX|Item 7|2",
+    "NFLX|Item 7|13",
+    "NFLX|Item 7|3",
+    "NFLX|Item 7|9",
+    "NFLX|Item 7|18"
+   ],
+   "labels": [
+    {
+     "key": "NFLX|Item 1|0",
+     "relevance": "rel",
+     "evidence": "Our core strategy is to grow our business globally within the parameters of our operating margin target."
+    },
+    {
+     "key": "NFLX|Item 7|10",
+     "relevance": "border",
+     "evidence": "We expect to continue to significantly invest in global content, particularly in original content"
+    },
+    {
+     "key": "NFLX|Item 7|1",
+     "relevance": "border",
+     "evidence": "We expect that from time to time the prices of our membership plans in each country may change and we may test other plan and price variations."
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N22",
+   "split": "dev",
+   "question": "who are meta's main competitors and what rules are they facing",
+   "ticker": "META",
+   "intent": "competition_and_regulation",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "META|Item 1A|53",
+    "META|Item 1A|14",
+    "META|Item 1A|18",
+    "META|Item 1A|44",
+    "META|Item 1A|19",
+    "META|Item 1A|54",
+    "META|Item 1A|63",
+    "META|Item 1A|57",
+    "META|Item 1A|25",
+    "META|Item 1A|69",
+    "META|Item 1A|58",
+    "META|Item 1A|62",
+    "META|Item 1A|67",
+    "META|Item 1A|4",
+    "META|Item 1A|52",
+    "META|Item 1A|56",
+    "META|Item 1A|7",
+    "META|Item 1A|15",
+    "META|Item 1A|72",
+    "META|Item 1A|40",
+    "META|Item 1A|59",
+    "META|Item 1A|60",
+    "META|Item 1A|1",
+    "META|Item 1A|20",
+    "META|Item 1A|22",
+    "META|Item 1A|39",
+    "META|Item 1A|8",
+    "META|Item 1A|9",
+    "META|Item 1A|78",
+    "META|Item 1A|21"
+   ],
+   "labels": [
+    {
+     "key": "META|Item 1A|18",
+     "relevance": "rel",
+     "evidence": "We compete with companies providing connection, sharing, discovery, and communication products and services to users online, as well as companies that sell advertising to businesses"
+    },
+    {
+     "key": "META|Item 1A|19",
+     "relevance": "rel",
+     "evidence": "each of Apple and Google have integrated competitive products with iOS and Android, respectively"
+    },
+    {
+     "key": "META|Item 1A|53",
+     "relevance": "rel",
+     "evidence": "evolving laws and regulations that dictate whether, how, and under what circumstances we can transfer ... data ... the Privacy Shield was invalidated ... Standard Contractual Clauses (SCCs)"
+    },
+    {
+     "key": "META|Item 1A|54",
+     "relevance": "rel",
+     "evidence": "preliminary draft decision from the IDPC that preliminarily concluded that Meta Platforms Ireland's reliance on SCCs ... does not achieve compliance with the GDPR"
+    },
+    {
+     "key": "META|Item 1A|63",
+     "relevance": "rel",
+     "evidence": "we will be subject to new restrictions and requirements under the DMA ... the FTC consent order, GDPR, CPRA, ePrivacy Directive, DMA, DSA"
+    },
+    {
+     "key": "META|Item 1A|57",
+     "relevance": "rel",
+     "evidence": "the DMA in the European Union imposes new restrictions and requirements on companies like ours"
+    },
+    {
+     "key": "META|Item 1A|58",
+     "relevance": "rel",
+     "evidence": "the Digital Services Act (DSA) in the European Union, which will apply to our business as early as June 2023, will impose new restrictions"
+    },
+    {
+     "key": "META|Item 1A|62",
+     "relevance": "rel",
+     "evidence": "maintaining a comprehensive privacy program in connection with the FTC consent order"
+    },
+    {
+     "key": "META|Item 1A|52",
+     "relevance": "rel",
+     "evidence": "We are subject to a variety of laws and regulations ... privacy, data use, data protection ... competition, protection of minors, consumer protection"
+    },
+    {
+     "key": "META|Item 1A|56",
+     "relevance": "rel",
+     "evidence": "we have implemented a number of product changes and controls as a result of requirements under the European General Data Protection Regulation (GDPR)"
+    },
+    {
+     "key": "META|Item 1A|59",
+     "relevance": "rel",
+     "evidence": "We are and expect to continue to be the subject of investigations ... beginning in March 2018, we became subject to FTC, state attorneys general, and other government inquiries"
+    },
+    {
+     "key": "META|Item 1A|60",
+     "relevance": "rel",
+     "evidence": "inquiries and investigations by competition authorities ... lawsuits by the FTC and the attorneys general from 46 states ... alleging that we violated antitrust laws"
+    },
+    {
+     "key": "META|Item 1A|9",
+     "relevance": "rel",
+     "evidence": "legislative and regulatory developments, such as the GDPR, ePrivacy Directive, and California Consumer Privacy Act (CCPA), as amended by the CPRA, have impacted ... our ability to use such signals"
+    },
+    {
+     "key": "META|Item 1A|67",
+     "relevance": "rel",
+     "evidence": "laws and regulations ... governing anti-money laundering and counter-terrorist financing, money transmission, stored value"
+    },
+    {
+     "key": "META|Item 1A|40",
+     "relevance": "rel",
+     "evidence": "anti-corruption laws or regulations applicable to us, such as the U.S. Foreign Corrupt Practices Act and the U.K. Bribery Act 2010 ... regulations established by the U.S. Office of Foreign Assets Control"
+    },
+    {
+     "key": "META|Item 1A|8",
+     "relevance": "rel",
+     "evidence": "product changes and controls ... in connection with the GDPR, ePrivacy Directive, California Privacy Rights Act (CPRA), the Digital Markets Act (DMA)"
+    },
+    {
+     "key": "META|Item 1A|4",
+     "relevance": "rel",
+     "evidence": "in connection with the General Data Protection Regulation (GDPR), the European Union's ePrivacy Directive, the California Privacy Rights Act (CPRA)"
+    },
+    {
+     "key": "META|Item 1A|20",
+     "relevance": "border",
+     "evidence": "acquisitions or consolidation within our industry, which may result in more formidable competitors (competitive factors; names no competitor)"
+    },
+    {
+     "key": "META|Item 1A|21",
+     "relevance": "border",
+     "evidence": "third-party policies ... by mobile operating system and browser providers such as Apple and Google (named as platform providers, not as competitors)"
+    },
+    {
+     "key": "META|Item 1A|1",
+     "relevance": "border",
+     "evidence": "complex and evolving U.S. and foreign privacy ... competition ... laws ... our consent order with the Federal Trade Commission (FTC) (summary list)"
+    },
+    {
+     "key": "META|Item 1A|7",
+     "relevance": "border",
+     "evidence": "European regulators ... determining that our reliance on SCCs (fragment, repeats chunk 4)"
+    },
+    {
+     "key": "META|Item 1A|39",
+     "relevance": "border",
+     "evidence": "legal, regulatory, and other government scrutiny applicable to U.S. companies with sales and operations in foreign jurisdictions (generic)"
+    },
+    {
+     "key": "META|Item 1A|72",
+     "relevance": "border",
+     "evidence": "the independent privacy assessor required under our modified consent order with the FTC (passing mention)"
+    },
+    {
+     "key": "META|Item 1A|44",
+     "relevance": "border",
+     "evidence": "The tax laws applicable to our business ... the IRS issued formal assessments (tax rules, not regulation of the business)"
+    },
+    {
+     "key": "META|Item 1A|14",
+     "relevance": "border",
+     "evidence": "as our metaverse efforts evolve, we may be subject to a variety of existing or new laws and regulations ... privacy, safety, competition, content regulation (hypothetical, in the tail)"
+    },
+    {
+     "key": "META|Item 1A|15",
+     "relevance": "border",
+     "evidence": "We will also continue to experience media, legislative, or regulatory scrutiny of our actions or decisions regarding user privacy ... competition (generic)"
+    },
+    {
+     "key": "META|Item 1A|22",
+     "relevance": "border",
+     "evidence": "•changes in the legislative or regulatory environment, including with respect to privacy, data protection, and content ... fines, orders, or consent decrees (factor-list bullet)"
+    },
+    {
+     "key": "META|Item 1A|78",
+     "relevance": "border",
+     "evidence": "•adverse government actions or legislative or regulatory developments relating to advertising, competition, content, privacy (stock-price factor bullet)"
+    }
+   ],
+   "notes": "Two-part question (competitors + rules). Only chunks 18 and 19 speak to competitors; 17 relevant chunks overall, so capped recall is used. Chunks first read at 1300 characters were re-read in full in round 2.",
+   "recheck": []
+  },
+  {
+   "id": "N25",
+   "split": "dev",
+   "question": "jnj biggest risk factors what are they",
+   "ticker": "JNJ",
+   "intent": "risk_factors",
+   "broad": true,
+   "audit": false,
+   "pool": [
+    "JNJ|Item 1A|0",
+    "JNJ|Item 1A|10",
+    "JNJ|Item 1A|11",
+    "JNJ|Item 1A|12",
+    "JNJ|Item 1A|13",
+    "JNJ|Item 1A|14",
+    "JNJ|Item 1A|2",
+    "JNJ|Item 1A|3",
+    "JNJ|Item 1A|4",
+    "JNJ|Item 1A|5",
+    "JNJ|Item 1A|6",
+    "JNJ|Item 1A|7"
+   ],
+   "labels": [
+    {
+     "key": "JNJ|Item 1A|0",
+     "relevance": "rel",
+     "evidence": "The Company's businesses operate in highly competitive product markets and competitive pressures could adversely affect the Company's earnings"
+    },
+    {
+     "key": "JNJ|Item 1A|10",
+     "relevance": "rel",
+     "evidence": "Significant challenges or delays in the Company's innovation and development of new products ... could have an adverse impact"
+    },
+    {
+     "key": "JNJ|Item 1A|11",
+     "relevance": "rel",
+     "evidence": "The Company faces a variety of risks associated with conducting business internationally ... Foreign Currency Exchange ... Inflation ... Illegal Importation"
+    },
+    {
+     "key": "JNJ|Item 1A|12",
+     "relevance": "rel",
+     "evidence": "Anti-Bribery and Other Regulations ... Failure to maintain a satisfactory credit rating could adversely affect our liquidity"
+    },
+    {
+     "key": "JNJ|Item 1A|13",
+     "relevance": "rel",
+     "evidence": "Failure to maintain a satisfactory credit rating ... Our business depends on our ability to recruit and retain talented, highly skilled employees"
+    },
+    {
+     "key": "JNJ|Item 1A|14",
+     "relevance": "rel",
+     "evidence": "An information security incident, including a cybersecurity breach ... Climate change ... may negatively affect our business"
+    },
+    {
+     "key": "JNJ|Item 1A|2",
+     "relevance": "rel",
+     "evidence": "Other risks associated with our reliance on third parties ... Counterfeit versions of our products could harm our patients"
+    },
+    {
+     "key": "JNJ|Item 1A|3",
+     "relevance": "rel",
+     "evidence": "The COVID-19 pandemic has adversely impacted certain aspects of the Company's business"
+    },
+    {
+     "key": "JNJ|Item 1A|4",
+     "relevance": "rel",
+     "evidence": "uncertainties related to our efforts to develop a COVID-19 vaccine candidate ... Global sales ... may be negatively impacted by healthcare reforms and increasing pricing pressures"
+    },
+    {
+     "key": "JNJ|Item 1A|5",
+     "relevance": "rel",
+     "evidence": "Global sales in the Company's pharmaceutical and medical devices segments may be negatively impacted by healthcare reforms and increasing pricing pressures"
+    },
+    {
+     "key": "JNJ|Item 1A|6",
+     "relevance": "rel",
+     "evidence": "The Company is subject to significant legal proceedings ... lawsuits arising out of the use of body powders containing talc ... opioids"
+    },
+    {
+     "key": "JNJ|Item 1A|7",
+     "relevance": "rel",
+     "evidence": "Product reliability, safety and effectiveness concerns ... The Company faces significant regulatory scrutiny which imposes significant compliance costs"
+    }
+   ],
+   "notes": "Broad; same caveat as R22. Rank 1 is the COVID-19 vaccine-programme uncertainty, arguably not one of J&J's 'biggest' risks: similarity is not importance.",
+   "recheck": []
+  },
+  {
+   "id": "N27",
+   "split": "held",
+   "question": "What risks did Alphabet highlight regarding its advertising business?",
+   "ticker": "GOOGL",
+   "intent": "risk_factors",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "GOOGL|Item 1A|16",
+    "GOOGL|Item 1A|2",
+    "GOOGL|Item 1A|0",
+    "GOOGL|Item 1A|14",
+    "GOOGL|Item 1A|18",
+    "GOOGL|Item 1A|13",
+    "GOOGL|Item 1A|25",
+    "GOOGL|Item 1A|1",
+    "GOOGL|Item 1A|8",
+    "GOOGL|Item 1A|3",
+    "GOOGL|Item 1A|4",
+    "GOOGL|Item 1A|5",
+    "GOOGL|Item 1A|21",
+    "GOOGL|Item 1A|20",
+    "GOOGL|Item 1A|9",
+    "GOOGL|Item 1A|15"
+   ],
+   "labels": [
+    {
+     "key": "GOOGL|Item 1A|0",
+     "relevance": "rel",
+     "evidence": "We generate a significant portion of our revenues from advertising, and reduced spending by advertisers, a loss of partners, or new and existing technologies that block ads online ... could harm our business."
+    },
+    {
+     "key": "GOOGL|Item 1A|16",
+     "relevance": "rel",
+     "evidence": "filed an antitrust complaint against Google ... alleging that Google violated U.S. antitrust laws relating to Search and Search advertising"
+    },
+    {
+     "key": "GOOGL|Item 1A|13",
+     "relevance": "rel",
+     "evidence": "sophisticated attempts by bad actors to manipulate our hosting and advertising systems to fraudulently generate revenues"
+    },
+    {
+     "key": "GOOGL|Item 1A|3",
+     "relevance": "rel",
+     "evidence": "Changes in device mix ... and an increasing competition for advertising may also affect our advertising revenue growth rate."
+    },
+    {
+     "key": "GOOGL|Item 1A|18",
+     "relevance": "rel",
+     "evidence": "•New laws further restricting the collection, processing and/or sharing of advertising-related data."
+    },
+    {
+     "key": "GOOGL|Item 1A|1",
+     "relevance": "border",
+     "evidence": "If our competitors are more successful than we are ... in attracting and retaining users, advertisers ... our operating results could be harmed."
+    },
+    {
+     "key": "GOOGL|Item 1A|14",
+     "relevance": "border",
+     "evidence": "invalid traffic ... which could lead to additional expenses and the loss of users and advertisers."
+    },
+    {
+     "key": "GOOGL|Item 1A|5",
+     "relevance": "border",
+     "evidence": "if we fail to respond appropriately to ... objectionable practices by advertisers ... our users may lose confidence in our brands."
+    },
+    {
+     "key": "GOOGL|Item 1A|21",
+     "relevance": "border",
+     "evidence": "We also place advertisements displayed on other companies’ websites (legal liability)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N28",
+   "split": "held",
+   "question": "why did netflix say revenue changed in their latest report",
+   "ticker": "NFLX",
+   "intent": "management_commentary",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "NFLX|Item 7|4",
+    "NFLX|Item 7|1",
+    "NFLX|Item 7|0",
+    "NFLX|Item 7|2",
+    "NFLX|Item 7|5",
+    "NFLX|Item 7|15",
+    "NFLX|Item 7|6",
+    "NFLX|Item 7|17",
+    "NFLX|Item 7|3",
+    "NFLX|Item 7|14",
+    "NFLX|Item 7|7",
+    "NFLX|Item 7|8"
+   ],
+   "labels": [
+    {
+     "key": "NFLX|Item 7|1",
+     "relevance": "rel",
+     "evidence": "Streaming revenues ... increased 7% ... primarily due to the 8% growth in average paying memberships, partially offset by a 1% decrease in average monthly revenue per paying membership."
+    },
+    {
+     "key": "NFLX|Item 7|4",
+     "relevance": "rel",
+     "evidence": "our revenues would have been approximately $597 million higher had foreign currency exchange rates remained constant"
+    },
+    {
+     "key": "NFLX|Item 7|0",
+     "relevance": "border",
+     "evidence": "Total revenues $33,723,297 $31,615,550 ... 7 % (states the change, not why)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N29",
+   "split": "dev",
+   "question": "How does Walmart discuss its inventory management and capital requirements?",
+   "ticker": "WMT",
+   "intent": "management_commentary",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "WMT|Item 7|31",
+    "WMT|Item 7|6",
+    "WMT|Item 7|7",
+    "WMT|Item 7|16",
+    "WMT|Item 7|1",
+    "WMT|Item 7|4",
+    "WMT|Item 7|14",
+    "WMT|Item 7|2",
+    "WMT|Item 7|25",
+    "WMT|Item 7|3",
+    "WMT|Item 7|10",
+    "WMT|Item 7|21",
+    "WMT|Item 7|24",
+    "WMT|Item 7|28",
+    "WMT|Item 7|20",
+    "WMT|Item 7|27",
+    "WMT|Item 7|23"
+   ],
+   "labels": [
+    {
+     "key": "WMT|Item 7|6",
+     "relevance": "rel",
+     "evidence": "We invest in technology and process improvements to increase productivity, manage inventory and reduce costs ... we continue to allocate more capital to supply chain, omni-channel initiatives"
+    },
+    {
+     "key": "WMT|Item 7|7",
+     "relevance": "rel",
+     "evidence": "Allocation of Capital Expenditures ... Supply chain, customer-facing initiatives and technology$9,209 ... Total capital expenditures$16,857"
+    },
+    {
+     "key": "WMT|Item 7|3",
+     "relevance": "rel",
+     "evidence": "supply chain disruptions contributing to higher than normal inventory levels ... earlier-than-usual purchasing and in greater volumes or moderating purchasing in certain categories"
+    },
+    {
+     "key": "WMT|Item 7|28",
+     "relevance": "rel",
+     "evidence": "sufficient to meet our anticipated cash requirements ... which includes funding seasonal buildups in merchandise inventories and funding our capital expenditures"
+    },
+    {
+     "key": "WMT|Item 7|27",
+     "relevance": "rel",
+     "evidence": "Material cash requirements from operating activities primarily consist of inventory purchases, employee related costs, taxes, interest"
+    },
+    {
+     "key": "WMT|Item 7|23",
+     "relevance": "rel",
+     "evidence": "For the fiscal year ending January 31, 2024 ... we project capital expenditures will be approximately $17 billion to $18 billion"
+    },
+    {
+     "key": "WMT|Item 7|31",
+     "relevance": "border",
+     "evidence": "Inventories The Walmart U.S. segment ... is primarily accounted for under the retail inventory method ... LIFO (inventory accounting, not management)"
+    },
+    {
+     "key": "WMT|Item 7|21",
+     "relevance": "border",
+     "evidence": "The increase is primarily due to moderated levels of inventory purchases (cash-flow explanation that mentions inventory)"
+    },
+    {
+     "key": "WMT|Item 7|10",
+     "relevance": "border",
+     "evidence": "primarily due to moderated levels of inventory purchases ... an increase of $3.8 billion in capital expenditures to support our investment strategy"
+    },
+    {
+     "key": "WMT|Item 7|20",
+     "relevance": "border",
+     "evidence": "the decrease in gross profit rate was primarily due to inventory write-downs (Sam's Club margin)"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  },
+  {
+   "id": "N30",
+   "split": "dev",
+   "question": "visa exposure to foreign currency risk",
+   "ticker": "V",
+   "intent": "market_risk",
+   "broad": false,
+   "audit": false,
+   "pool": [
+    "V|Item 7A|0",
+    "V|Item 7A|1",
+    "V|Item 7A|2",
+    "V|Item 7|2",
+    "V|Item 7|23",
+    "V|Item 7|25",
+    "V|Item 7|22",
+    "V|Item 7A|3",
+    "V|Item 7|18",
+    "V|Item 7|19",
+    "V|Item 7|21",
+    "V|Item 7|12",
+    "V|Item 7|7",
+    "V|Item 7|11",
+    "V|Item 7|13",
+    "V|Item 7|10",
+    "V|Item 7|16",
+    "V|Item 7|1",
+    "V|Item 7|8"
+   ],
+   "labels": [
+    {
+     "key": "V|Item 7A|0",
+     "relevance": "rel",
+     "evidence": "Foreign Currency Exchange Rate Risk We are exposed to risks from foreign currency exchange rate fluctuations ... a hypothetical 10% weakening ... fair value loss of approximately $220 million"
+    },
+    {
+     "key": "V|Item 7A|1",
+     "relevance": "rel",
+     "evidence": "We are further exposed to foreign currency exchange rate risk related to translation as the functional currency of Visa Europe is the Euro."
+    },
+    {
+     "key": "V|Item 7|2",
+     "relevance": "rel",
+     "evidence": "Exchange rate movements, partially offset by our hedging program, negatively impacted our net revenues growth by approximately two-and-a-half percentage points."
+    },
+    {
+     "key": "V|Item 7|11",
+     "relevance": "rel",
+     "evidence": "In fiscal 2022, exchange rate movements, partially offset by our hedging program, negatively impacted our net revenues growth by approximately two-and-a-half percentage points."
+    },
+    {
+     "key": "V|Item 7|12",
+     "relevance": "border",
+     "evidence": "Data processing revenues increased ... partially offset by ... unfavorable currency fluctuations ... volatility of a broad range of currencies"
+    },
+    {
+     "key": "V|Item 7A|2",
+     "relevance": "border",
+     "evidence": "We have interest rate and cross-currency swap agreements on a portion of our outstanding senior notes"
+    }
+   ],
+   "notes": null,
+   "recheck": []
+  }
+ ]
+}

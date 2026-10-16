@@ -79,7 +79,8 @@ CASES: list[tuple[str, str]] = [
     ("What was Apple's revenue and why did it grow?",
      "hybrid: revenue stated ONCE (SQL part); narrative part has no dollar figure"),
     ("Which companies flagged interest rate risk?",
-     "corpus-wide: supported list with markers, then coverage lines (JPM, XOM)"),
+     "corpus-wide: supported list with markers, then coverage lines; JPM, XOM "
+     "judged on Item 1A via the market_risk fallback (D44), named in a fallback line"),
 ]
 
 

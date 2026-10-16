@@ -1,0 +1,54 @@
+{
+  "note": "Oracle-plan parameters the frozen labels do not carry, added after the label freeze (a15727e); the label file is unchanged. filters: thresholds copied verbatim from each question. task_questions: for each narrative task of a multi-task label, the narrative clause of the question in its own words, a pronoun replaced by the company name.",
+  "filters": {
+    "R06": {
+      "comparison": "gt",
+      "threshold_text": "$50 billion"
+    },
+    "N12": {
+      "comparison": "gt",
+      "threshold_text": "50b"
+    }
+  },
+  "task_questions": {
+    "R32": {
+      "t1": "What does Amazon do?"
+    },
+    "R33": {
+      "t1": "Describe Tesla's business."
+    },
+    "R34": {
+      "t1": "What risks did Pfizer flag?"
+    },
+    "R35": {
+      "t2": "What risks did Bank of America disclose?"
+    },
+    "R36": {
+      "t1": "What are Walmart's segments?"
+    },
+    "R37": {
+      "t1": "Why did Microsoft's revenue grow?"
+    },
+    "R38": {
+      "t2": "Why did Intel's margins fall?"
+    },
+    "R39": {
+      "t1": "What does Goldman Sachs do?"
+    },
+    "N36": {
+      "t1": "what's salesforce business"
+    },
+    "N37": {
+      "t2": "what Tesla's main risks are"
+    },
+    "N38": {
+      "t2": "explain why Microsoft's management says results changed"
+    },
+    "N39": {
+      "t2": "what's alphabet's business model"
+    },
+    "N40": {
+      "t2": "walmart growth strategy"
+    }
+  }
+}

@@ -1,0 +1,1013 @@
+{
+ "description": "Attribution judge validation set (D43). Real claims from the end-to-end execution run, plus seeded mismatches built from test claims.",
+ "source": {
+  "execution_file": "execution_results_d4bc8e36_b1d8ee5c.json",
+  "mode": "end_to_end",
+  "run": 1
+ },
+ "selection": "Pool: every cited claim and every supported corpus-wide finding in end-to-end run 1 (324). Shuffled with seed 43, at most 3 per question; first 20 = calibration, next 40 = test. Seed claims: 10 test claims per type, drawn with seed 4301.",
+ "seed_rules": {
+  "invented_detail": "The real claim with one invented, specific detail appended or inserted by hand; cited blocks unchanged.",
+  "wrong_block_same_company": "The real claim; its citation replaced by the claim's 10th-nearest uncited chunk from the same company and section (resolved by scripts/export_attribution_set.py).",
+  "wrong_company_same_topic": "The real claim; its citation replaced by the nearest chunk from a different company in the same section (resolved by the export script)."
+ },
+ "items": [
+  {
+   "id": "C01",
+   "split": "calib",
+   "claim_id": "N27|1|c4",
+   "question_id": "N27",
+   "kind": "claim",
+   "company": "GOOGL",
+   "claim": "Alphabet's advertising business is also at risk from intense competition, requiring continuous innovation to remain competitive.",
+   "sources": [
+    "GOOGL|Item 1A|0"
+   ]
+  },
+  {
+   "id": "C02",
+   "split": "calib",
+   "claim_id": "R17|1|c2",
+   "question_id": "R17",
+   "kind": "claim",
+   "company": "ADBE",
+   "claim": "In the Digital Media segment, Adobe provides products and services that enable content creation, publishing, and promotion, centered around Adobe Creative Cloud.",
+   "sources": [
+    "ADBE|Item 1|1",
+    "ADBE|Item 1|14"
+   ]
+  },
+  {
+   "id": "C03",
+   "split": "calib",
+   "claim_id": "H08|1|INTC",
+   "question_id": "H08",
+   "kind": "finding",
+   "company": "INTC",
+   "claim": "Intel Corp discloses that it is exposed to interest rate risk related to its fixed-rate investment portfolio and outstanding debt, and outlines the potential impact of interest rate changes on its financials.",
+   "sources": [
+    "INTC|Item 7A|1"
+   ]
+  },
+  {
+   "id": "C04",
+   "split": "calib",
+   "claim_id": "R23|1|c1",
+   "question_id": "R23",
+   "kind": "claim",
+   "company": "TSLA",
+   "claim": "Tesla faces risks related to product liability claims, particularly due to the complexity of their software and the potential for defects in their vehicles, which may lead to accidents and regulatory scrutiny.",
+   "sources": [
+    "TSLA|Item 1A|12"
+   ]
+  },
+  {
+   "id": "C05",
+   "split": "calib",
+   "claim_id": "N25|1|c1",
+   "question_id": "N25",
+   "kind": "claim",
+   "company": "JNJ",
+   "claim": "Johnson & Johnson faces uncertainties related to the development of its COVID-19 vaccine candidate, including risks of unsuccessful development, regulatory approval challenges, and competition from other companies' products.",
+   "sources": [
+    "JNJ|Item 1A|4"
+   ]
+  },
+  {
+   "id": "C06",
+   "split": "calib",
+   "claim_id": "R24|1|c4",
+   "question_id": "R24",
+   "kind": "claim",
+   "company": "PFE",
+   "claim": "Pfizer's manufacturing and distribution processes are subject to regulatory inspections, and failure to comply with applicable requirements may lead to legal actions, product recalls, or delays in product approvals.",
+   "sources": [
+    "PFE|Item 1A|8"
+   ]
+  },
+  {
+   "id": "C07",
+   "split": "calib",
+   "claim_id": "R33|1|c5",
+   "question_id": "R33",
+   "kind": "claim",
+   "company": "TSLA",
+   "claim": "Tesla's mission is to accelerate the world’s transition to sustainable energy, which is reflected in its focus on creating a complete energy and transportation ecosystem.",
+   "sources": [
+    "TSLA|Item 1|14",
+    "TSLA|Item 1|0"
+   ]
+  },
+  {
+   "id": "C08",
+   "split": "calib",
+   "claim_id": "R17|1|c6",
+   "question_id": "R17",
+   "kind": "claim",
+   "company": "ADBE",
+   "claim": "Other products include Frame.io for video collaboration and Behance for showcasing creative work.",
+   "sources": [
+    "ADBE|Item 1|17"
+   ]
+  },
+  {
+   "id": "C09",
+   "split": "calib",
+   "claim_id": "R34|1|c5",
+   "question_id": "R34",
+   "kind": "claim",
+   "company": "PFE",
+   "claim": "The company faces risks related to the development and approval of its products, including competition from other companies and challenges in maintaining manufacturing capacity.",
+   "sources": [
+    "PFE|Item 1A|32"
+   ]
+  },
+  {
+   "id": "C10",
+   "split": "calib",
+   "claim_id": "H08|1|ADBE",
+   "question_id": "H08",
+   "kind": "finding",
+   "company": "ADBE",
+   "claim": "Adobe Inc. discloses that changes in interest rates could adversely affect the market value of its short-term investments, with a sensitivity analysis indicating a potential $20 million decrease in market value with a 150 basis point increase in interest rates.",
+   "sources": [
+    "ADBE|Item 7A|2"
+   ]
+  },
+  {
+   "id": "C11",
+   "split": "calib",
+   "claim_id": "R18|1|c2",
+   "question_id": "R18",
+   "kind": "claim",
+   "company": "WMT",
+   "claim": "The company focuses on enhancing its omni-channel offerings, such as pickup and delivery services, and its Walmart+ membership to improve customer convenience.",
+   "sources": [
+    "WMT|Item 1|6",
+    "WMT|Item 1|2"
+   ]
+  },
+  {
+   "id": "C12",
+   "split": "calib",
+   "claim_id": "N38|2|c4",
+   "question_id": "N38",
+   "kind": "claim",
+   "company": "MSFT",
+   "claim": "Operating expenses increased by $6.3 billion or 14%, driven by investments in cloud engineering, LinkedIn, Gaming, and commercial sales.",
+   "sources": [
+    "MSFT|Item 7|6"
+   ]
+  },
+  {
+   "id": "C13",
+   "split": "calib",
+   "claim_id": "N35|1|BAC",
+   "question_id": "N35",
+   "kind": "finding",
+   "company": "BAC",
+   "claim": "Bank of America Corp. discusses the risks associated with the implementation, use, and management of emerging technologies, including AI and machine learning, highlighting the potential for operational, reputational, and financial harm if these technologies are not properly managed.",
+   "sources": [
+    "BAC|Item 1A|35"
+   ]
+  },
+  {
+   "id": "C14",
+   "split": "calib",
+   "claim_id": "H09|1|c1",
+   "question_id": "H09",
+   "kind": "claim",
+   "company": "V",
+   "claim": "An increasing number of jurisdictions regulate or influence debit and credit interchange reimbursement rates, including the U.S. Dodd-Frank Act and the European Union's IFR.",
+   "sources": [
+    "V|Item 1|16"
+   ]
+  },
+  {
+   "id": "C15",
+   "split": "calib",
+   "claim_id": "R14|1|c3",
+   "question_id": "R14",
+   "kind": "claim",
+   "company": "JNJ",
+   "claim": "The Medical Devices segment includes a broad range of products used in the Interventional Solutions, Orthopaedics, Surgery, and Vision fields.",
+   "sources": [
+    "JNJ|Item 1|7"
+   ]
+  },
+  {
+   "id": "C16",
+   "split": "calib",
+   "claim_id": "N28|1|c2",
+   "question_id": "N28",
+   "kind": "claim",
+   "company": "NFLX",
+   "claim": "Streaming revenues increased 7% for the year ended December 31, 2023, primarily due to an 8% growth in average paying memberships, although this was partially offset by a 1% decrease in average monthly revenue per paying membership.",
+   "sources": [
+    "NFLX|Item 7|1"
+   ]
+  },
+  {
+   "id": "C17",
+   "split": "calib",
+   "claim_id": "N26|1|c2",
+   "question_id": "N26",
+   "kind": "claim",
+   "company": "TGT",
+   "claim": "The company is exposed to legal and regulatory risks related to data security and privacy, particularly following its significant data breach in 2013, which could result in government enforcement actions and private litigation.",
+   "sources": [
+    "TGT|Item 1A|5"
+   ]
+  },
+  {
+   "id": "C18",
+   "split": "calib",
+   "claim_id": "N17|1|c2",
+   "question_id": "N17",
+   "kind": "claim",
+   "company": "PFE",
+   "claim": "Pfizer's product portfolio includes treatments in various therapeutic areas such as Oncology, Primary Care, and Specialty Care, with notable products like Ibrance, Eliquis, and Comirnaty.",
+   "sources": [
+    "PFE|Item 1|3"
+   ]
+  },
+  {
+   "id": "C19",
+   "split": "calib",
+   "claim_id": "N37|2|c3",
+   "question_id": "N37",
+   "kind": "claim",
+   "company": "TSLA",
+   "claim": "Tesla's operations are affected by the fluctuating prices and availability of raw materials necessary for battery production, which can impact growth and profitability.",
+   "sources": [
+    "TSLA|Item 1A|8"
+   ]
+  },
+  {
+   "id": "C20",
+   "split": "calib",
+   "claim_id": "N25|1|c2",
+   "question_id": "N25",
+   "kind": "claim",
+   "company": "JNJ",
+   "claim": "The Company is subject to significant legal proceedings that can result in substantial expenses, fines, and reputational damage, particularly related to product liability and antitrust claims.",
+   "sources": [
+    "JNJ|Item 1A|6"
+   ]
+  },
+  {
+   "id": "T01",
+   "split": "test",
+   "claim_id": "R17|1|c4",
+   "question_id": "R17",
+   "kind": "claim",
+   "company": "ADBE",
+   "claim": "Adobe Creative Cloud includes various applications for photography, design, video, and web, allowing users to collaborate and access their work across devices.",
+   "sources": [
+    "ADBE|Item 1|14"
+   ]
+  },
+  {
+   "id": "T02",
+   "split": "test",
+   "claim_id": "N50|1|TSLA",
+   "question_id": "N50",
+   "kind": "finding",
+   "company": "TSLA",
+   "claim": "Tesla's strategy focuses on accelerating the world's transition to sustainable energy through direct sales, a vertically integrated business model, and continuous innovation in electric vehicle technology and infrastructure.",
+   "sources": [
+    "TSLA|Item 1|4",
+    "TSLA|Item 1|0"
+   ]
+  },
+  {
+   "id": "T03",
+   "split": "test",
+   "claim_id": "N32|1|JNJ",
+   "question_id": "N32",
+   "kind": "finding",
+   "company": "JNJ",
+   "claim": "The company discusses potential interruptions and delays in manufacturing operations due to supply chain issues, which could adversely affect its business, sales, and reputation.",
+   "sources": [
+    "JNJ|Item 1A|1"
+   ]
+  },
+  {
+   "id": "T04",
+   "split": "test",
+   "claim_id": "N49|1|CRM",
+   "question_id": "N49",
+   "kind": "finding",
+   "company": "CRM",
+   "claim": "Salesforce discloses various risk factors including operational risks related to the COVID-19 pandemic, security breaches, and economic conditions that could adversely affect their business and results of operations.",
+   "sources": [
+    "CRM|Item 1A|0",
+    "CRM|Item 1A|55"
+   ]
+  },
+  {
+   "id": "T05",
+   "split": "test",
+   "claim_id": "N34|1|TSLA",
+   "question_id": "N34",
+   "kind": "finding",
+   "company": "TSLA",
+   "claim": "Tesla discloses that it is subject to evolving laws and regulations related to environmental and climate change, which could impose substantial costs and affect its operations.",
+   "sources": [
+    "TSLA|Item 1A|30"
+   ]
+  },
+  {
+   "id": "T06",
+   "split": "test",
+   "claim_id": "R26|1|c1",
+   "question_id": "R26",
+   "kind": "claim",
+   "company": "MSFT",
+   "claim": "Microsoft's revenue grew by $30.2 billion or 18% in fiscal 2022, driven by growth across each of its segments.",
+   "sources": [
+    "MSFT|Item 7|5"
+   ]
+  },
+  {
+   "id": "T07",
+   "split": "test",
+   "claim_id": "R18|1|c1",
+   "question_id": "R18",
+   "kind": "claim",
+   "company": "WMT",
+   "claim": "Walmart's growth strategy includes a commitment to everyday low prices (EDLP) and everyday low costs (EDLC) to build customer trust and control expenses, respectively.",
+   "sources": [
+    "WMT|Item 1|6",
+    "WMT|Item 1|0"
+   ]
+  },
+  {
+   "id": "T08",
+   "split": "test",
+   "claim_id": "N49|1|GOOGL",
+   "question_id": "N49",
+   "kind": "finding",
+   "company": "GOOGL",
+   "claim": "The company discloses various risk factors including reliance on information systems, international operations, and cybersecurity threats that could adversely affect its business and financial condition.",
+   "sources": [
+    "GOOGL|Item 1A|8",
+    "GOOGL|Item 1A|11"
+   ]
+  },
+  {
+   "id": "T09",
+   "split": "test",
+   "claim_id": "N21|1|c3",
+   "question_id": "N21",
+   "kind": "claim",
+   "company": "NFLX",
+   "claim": "Netflix competes for consumers' leisure time against various entertainment sources and strives to win 'moments of truth' by continually improving its service, technology, and content offerings.",
+   "sources": [
+    "NFLX|Item 1|0"
+   ]
+  },
+  {
+   "id": "T10",
+   "split": "test",
+   "claim_id": "N35|1|CRM",
+   "question_id": "N35",
+   "kind": "finding",
+   "company": "CRM",
+   "claim": "Salesforce discloses that the integration of AI into their offerings presents additional risks, including ethical issues and potential legal liabilities that could affect their business and reputation.",
+   "sources": [
+    "CRM|Item 1A|29"
+   ]
+  },
+  {
+   "id": "T11",
+   "split": "test",
+   "claim_id": "R15|1|c3",
+   "question_id": "R15",
+   "kind": "claim",
+   "company": "QCOM",
+   "claim": "Qualcomm also engages in strategic investments through its QSI (Qualcomm Strategic Initiatives) segment and has nonreportable segments including QGOV (Qualcomm Government Technologies).",
+   "sources": [
+    "QCOM|Item 1A|6",
+    "QCOM|Item 1A|19"
+   ]
+  },
+  {
+   "id": "T12",
+   "split": "test",
+   "claim_id": "N50|1|QCOM",
+   "question_id": "N50",
+   "kind": "finding",
+   "company": "QCOM",
+   "claim": "Qualcomm's strategy includes creating standalone value through acquisitions and partnerships, differentiating its products with innovative technologies, and expanding into new industries such as automotive and IoT.",
+   "sources": [
+    "QCOM|Item 1A|82",
+    "QCOM|Item 1A|81"
+   ]
+  },
+  {
+   "id": "T13",
+   "split": "test",
+   "claim_id": "N36|1|c2",
+   "question_id": "N36",
+   "kind": "claim",
+   "company": "CRM",
+   "claim": "The Customer 360 platform allows businesses to sell, service, market, and conduct commerce from anywhere, enabling them to digitally transform and leverage customer data effectively.",
+   "sources": [
+    "CRM|Item 1|1",
+    "CRM|Item 1|0"
+   ]
+  },
+  {
+   "id": "T14",
+   "split": "test",
+   "claim_id": "N32|2|GS",
+   "question_id": "N32",
+   "kind": "finding",
+   "company": "GS",
+   "claim": "The company mentions interruptions in the supply chain that have adversely affected many businesses and contributed to higher rates of inflation.",
+   "sources": [
+    "GS|Item 1A|51"
+   ]
+  },
+  {
+   "id": "T15",
+   "split": "test",
+   "claim_id": "N34|1|V",
+   "question_id": "N34",
+   "kind": "finding",
+   "company": "V",
+   "claim": "Visa Inc. discusses the pressures from governments, investors, and stakeholders to address climate change and the resulting regulations that may impact their business.",
+   "sources": [
+    "V|Item 1A|22"
+   ]
+  },
+  {
+   "id": "T16",
+   "split": "test",
+   "claim_id": "N32|2|META",
+   "question_id": "N32",
+   "kind": "finding",
+   "company": "META",
+   "claim": "Meta Platforms, Inc. discusses experiencing supply and labor shortages and disruptions in logistics and the supply chain, which have been exacerbated by the COVID-19 pandemic, affecting their operations and procurement practices.",
+   "sources": [
+    "META|Item 1A|41",
+    "META|Item 1A|29"
+   ]
+  },
+  {
+   "id": "T17",
+   "split": "test",
+   "claim_id": "N39|2|c1",
+   "question_id": "N39",
+   "kind": "claim",
+   "company": "GOOGL",
+   "claim": "Alphabet Inc. operates as a collection of businesses, with Google being the largest, and it reports its operations in two segments: Google Services and Google Cloud, while all non-Google businesses are reported as Other Bets.",
+   "sources": [
+    "GOOGL|Item 1|0"
+   ]
+  },
+  {
+   "id": "T18",
+   "split": "test",
+   "claim_id": "N36|1|c5",
+   "question_id": "N36",
+   "kind": "claim",
+   "company": "CRM",
+   "claim": "In addition to its core offerings, Salesforce enhances its platform through acquisitions and enables third parties to create additional functionality and applications that run on its platform.",
+   "sources": [
+    "CRM|Item 1|0"
+   ]
+  },
+  {
+   "id": "T19",
+   "split": "test",
+   "claim_id": "N36|1|c1",
+   "question_id": "N36",
+   "kind": "claim",
+   "company": "CRM",
+   "claim": "Salesforce is a global leader in customer relationship management (CRM) technology that connects companies and their customers through its Customer 360 platform, which integrates customer data across systems, apps, and devices.",
+   "sources": [
+    "CRM|Item 1|0"
+   ]
+  },
+  {
+   "id": "T20",
+   "split": "test",
+   "claim_id": "N41|1|c1",
+   "question_id": "N41",
+   "kind": "claim",
+   "company": "AAPL",
+   "claim": "Apple's total research and development expense for 2021 was $21,914 million, which represents a 17% increase compared to 2020.",
+   "sources": [
+    "AAPL|Item 7|5"
+   ]
+  },
+  {
+   "id": "T21",
+   "split": "test",
+   "claim_id": "H08|1|CRM",
+   "question_id": "H08",
+   "kind": "finding",
+   "company": "CRM",
+   "claim": "Salesforce, Inc. discusses its exposure to interest rate risk related to its cash equivalents and marketable securities, noting that changes in interest rates can adversely impact the market value of fixed-rate securities and affect future investment income.",
+   "sources": [
+    "CRM|Item 7A|3"
+   ]
+  },
+  {
+   "id": "T22",
+   "split": "test",
+   "claim_id": "N40|2|c2",
+   "question_id": "N40",
+   "kind": "claim",
+   "company": "WMT",
+   "claim": "Walmart aims to enhance customer convenience through omni-channel offerings such as pickup and delivery services and the Walmart+ membership program.",
+   "sources": [
+    "WMT|Item 1|6"
+   ]
+  },
+  {
+   "id": "T23",
+   "split": "test",
+   "claim_id": "R35|2|c5",
+   "question_id": "R35",
+   "kind": "claim",
+   "company": "BAC",
+   "claim": "Weaknesses in the U.S. housing market could adversely affect Bank of America's financial condition, leading to increased credit losses and write-downs of asset values.",
+   "sources": [
+    "BAC|Item 1A|17"
+   ]
+  },
+  {
+   "id": "T24",
+   "split": "test",
+   "claim_id": "N34|1|MSFT",
+   "question_id": "N34",
+   "kind": "finding",
+   "company": "MSFT",
+   "claim": "Microsoft discusses the long-term effects of climate change on the global economy and the IT industry, as well as the potential impact of environmental regulations on the availability and cost of resources necessary for their business.",
+   "sources": [
+    "MSFT|Item 1A|30"
+   ]
+  },
+  {
+   "id": "T25",
+   "split": "test",
+   "claim_id": "N22|1|c3",
+   "question_id": "N22",
+   "kind": "claim",
+   "company": "META",
+   "claim": "Meta faces evolving laws and regulations that affect how it can transfer, process, and receive data, which are critical to its operations.",
+   "sources": [
+    "META|Item 1A|53"
+   ]
+  },
+  {
+   "id": "T26",
+   "split": "test",
+   "claim_id": "N31|1|c4",
+   "question_id": "N31",
+   "kind": "claim",
+   "company": "JPM",
+   "claim": "The firm’s risk management and monitoring processes, including a stress testing framework, aim to quantify and manage exposure to extreme market moves, although these strategies may not always be effective.",
+   "sources": [
+    "JPM|Item 1A|18"
+   ]
+  },
+  {
+   "id": "T27",
+   "split": "test",
+   "claim_id": "R34|1|c2",
+   "question_id": "R34",
+   "kind": "claim",
+   "company": "PFE",
+   "claim": "The company may encounter difficulties in obtaining favorable recommendations from advisory committees, which could impact the commercial potential of its products.",
+   "sources": [
+    "PFE|Item 1A|16"
+   ]
+  },
+  {
+   "id": "T28",
+   "split": "test",
+   "claim_id": "R25|1|c2",
+   "question_id": "R25",
+   "kind": "claim",
+   "company": "META",
+   "claim": "Meta is involved in multiple lawsuits related to its alleged recommendation of and/or failure to remove harmful content, and the outcomes of these lawsuits could result in substantial monetary damages or fines.",
+   "sources": [
+    "META|Item 1A|43"
+   ]
+  },
+  {
+   "id": "T29",
+   "split": "test",
+   "claim_id": "R28|1|c1",
+   "question_id": "R28",
+   "kind": "claim",
+   "company": "WMT",
+   "claim": "As of January 31, 2023, Walmart had $15.0 billion of various undrawn committed lines of credit in the U.S. that provide additional liquidity, if needed.",
+   "sources": [
+    "WMT|Item 7|25"
+   ]
+  },
+  {
+   "id": "T30",
+   "split": "test",
+   "claim_id": "N50|1|JNJ",
+   "question_id": "N50",
+   "kind": "finding",
+   "company": "JNJ",
+   "claim": "Johnson & Johnson's strategy emphasizes the importance of its employees and focuses on attracting, developing, and empowering talent, while also maintaining a strong commitment to diversity, equity, and inclusion.",
+   "sources": [
+    "JNJ|Item 1|13"
+   ]
+  },
+  {
+   "id": "T31",
+   "split": "test",
+   "claim_id": "N29|1|c1",
+   "question_id": "N29",
+   "kind": "claim",
+   "company": "WMT",
+   "claim": "Walmart's U.S. segment inventory is primarily accounted for under the retail inventory method using the last-in, first-out (LIFO) valuation method, while the majority of Sam's Club segment inventories are valued using the weighted-average cost LIFO method.",
+   "sources": [
+    "WMT|Item 7|31"
+   ]
+  },
+  {
+   "id": "T32",
+   "split": "test",
+   "claim_id": "N49|1|PFE",
+   "question_id": "N49",
+   "kind": "finding",
+   "company": "PFE",
+   "claim": "Pfizer Inc discloses various risk factors including managed care trends, government pricing pressures, and foreign currency risks that could adversely affect its business operations and financial condition.",
+   "sources": [
+    "PFE|Item 1A|0",
+    "PFE|Item 1A|7"
+   ]
+  },
+  {
+   "id": "T33",
+   "split": "test",
+   "claim_id": "R19|1|c1",
+   "question_id": "R19",
+   "kind": "claim",
+   "company": "NFLX",
+   "claim": "Netflix's core strategy is to grow its business globally while continuously improving the member experience by offering compelling content that delights them and attracts new members.",
+   "sources": [
+    "NFLX|Item 1|0"
+   ]
+  },
+  {
+   "id": "T34",
+   "split": "test",
+   "claim_id": "N30|1|c3",
+   "question_id": "N30",
+   "kind": "claim",
+   "company": "V",
+   "claim": "Visa manages foreign currency exchange rate risks by entering into foreign currency forward contracts, which hedge exposures of anticipated non-functional currency denominated cash flows.",
+   "sources": [
+    "V|Item 7A|0"
+   ]
+  },
+  {
+   "id": "T35",
+   "split": "test",
+   "claim_id": "R35|2|c1",
+   "question_id": "R35",
+   "kind": "claim",
+   "company": "BAC",
+   "claim": "Bank of America faces compliance risks due to evolving laws, rules, and regulations, which could lead to significant losses and increased costs.",
+   "sources": [
+    "BAC|Item 1A|34"
+   ]
+  },
+  {
+   "id": "T36",
+   "split": "test",
+   "claim_id": "N28|1|c3",
+   "question_id": "N28",
+   "kind": "claim",
+   "company": "NFLX",
+   "claim": "The decrease in average monthly revenue per paying membership was primarily due to changes in plan mix and higher membership growth in regions with lower average monthly revenue, partially offset by limited price increases.",
+   "sources": [
+    "NFLX|Item 7|1"
+   ]
+  },
+  {
+   "id": "T37",
+   "split": "test",
+   "claim_id": "H05|1|ADBE",
+   "question_id": "H05",
+   "kind": "finding",
+   "company": "ADBE",
+   "claim": "Adobe Inc. discusses various cybersecurity risks including malware, ransomware, unauthorized access, and sophisticated cyber threats that evolve constantly, which could lead to significant operational challenges and financial impacts.",
+   "sources": [
+    "ADBE|Item 1A|11",
+    "ADBE|Item 1A|9"
+   ]
+  },
+  {
+   "id": "T38",
+   "split": "test",
+   "claim_id": "N33|1|AMZN",
+   "question_id": "N33",
+   "kind": "finding",
+   "company": "AMZN",
+   "claim": "The company mentions that general economic conditions, including inflation, may impact demand for its products and services, which could result in decreased revenue or growth.",
+   "sources": [
+    "AMZN|Item 1A|0"
+   ]
+  },
+  {
+   "id": "T39",
+   "split": "test",
+   "claim_id": "N35|1|NFLX",
+   "question_id": "N35",
+   "kind": "finding",
+   "company": "NFLX",
+   "claim": "The company discloses that the use or adoption of new and emerging technologies, including AI, may increase exposure to intellectual property claims, and the availability of copyright protection for AI-generated material is uncertain.",
+   "sources": [
+    "NFLX|Item 1A|16"
+   ]
+  },
+  {
+   "id": "T40",
+   "split": "test",
+   "claim_id": "R30|1|c1",
+   "question_id": "R30",
+   "kind": "claim",
+   "company": "AAPL",
+   "claim": "Apple disclosed that it is exposed to foreign currency risk, particularly as a net receiver of currencies other than the U.S. dollar, which can negatively affect its net sales and gross margins when the U.S. dollar strengthens.",
+   "sources": [
+    "AAPL|Item 7A|1"
+   ]
+  }
+ ],
+ "seeds": [
+  {
+   "id": "S3-01",
+   "type": "invented_detail",
+   "base": "T03",
+   "company": "JNJ",
+   "claim": "The company discusses potential interruptions and delays in manufacturing operations due to supply chain issues, which could adversely affect its business, sales, and reputation, and it expects these delays to last through 2025.",
+   "sources": [
+    "JNJ|Item 1A|1"
+   ]
+  },
+  {
+   "id": "S3-02",
+   "type": "invented_detail",
+   "base": "T06",
+   "company": "MSFT",
+   "claim": "Microsoft's revenue grew by $30.2 billion or 18% in fiscal 2022, driven by growth across each of its segments, led by a 35% increase in Xbox content and services revenue.",
+   "sources": [
+    "MSFT|Item 7|5"
+   ]
+  },
+  {
+   "id": "S3-03",
+   "type": "invented_detail",
+   "base": "T09",
+   "company": "NFLX",
+   "claim": "Netflix competes for consumers' leisure time against various entertainment sources and strives to win 'moments of truth' by continually improving its service, technology, and content offerings, and spends over $5 billion a year on marketing to win them.",
+   "sources": [
+    "NFLX|Item 1|0"
+   ]
+  },
+  {
+   "id": "S3-04",
+   "type": "invented_detail",
+   "base": "T12",
+   "company": "QCOM",
+   "claim": "Qualcomm's strategy includes creating standalone value through acquisitions and partnerships, differentiating its products with innovative technologies, and expanding into new industries such as automotive and IoT, including through a planned joint venture with Samsung.",
+   "sources": [
+    "QCOM|Item 1A|82",
+    "QCOM|Item 1A|81"
+   ]
+  },
+  {
+   "id": "S3-05",
+   "type": "invented_detail",
+   "base": "T20",
+   "company": "AAPL",
+   "claim": "Apple's total research and development expense for 2021 was $21,914 million, which represents a 17% increase compared to 2020, driven mainly by headcount growth in its services business.",
+   "sources": [
+    "AAPL|Item 7|5"
+   ]
+  },
+  {
+   "id": "S3-06",
+   "type": "invented_detail",
+   "base": "T21",
+   "company": "CRM",
+   "claim": "Salesforce, Inc. discusses its exposure to interest rate risk related to its cash equivalents and marketable securities, noting that changes in interest rates can adversely impact the market value of fixed-rate securities and affect future investment income, and that it uses interest rate swaps to hedge this exposure.",
+   "sources": [
+    "CRM|Item 7A|3"
+   ]
+  },
+  {
+   "id": "S3-07",
+   "type": "invented_detail",
+   "base": "T22",
+   "company": "WMT",
+   "claim": "Walmart aims to enhance customer convenience through omni-channel offerings such as pickup and delivery services and the Walmart+ membership program, which it plans to expand to 12 new countries in fiscal 2024.",
+   "sources": [
+    "WMT|Item 1|6"
+   ]
+  },
+  {
+   "id": "S3-08",
+   "type": "invented_detail",
+   "base": "T24",
+   "company": "MSFT",
+   "claim": "Microsoft discusses the long-term effects of climate change on the global economy and the IT industry, as well as the potential impact of environmental regulations on the availability and cost of resources necessary for their business, including a carbon border tax adopted by the European Union in 2021.",
+   "sources": [
+    "MSFT|Item 1A|30"
+   ]
+  },
+  {
+   "id": "S3-09",
+   "type": "invented_detail",
+   "base": "T29",
+   "company": "WMT",
+   "claim": "As of January 31, 2023, Walmart had $15.0 billion of various undrawn committed lines of credit in the U.S. that expire in fiscal 2026 and provide additional liquidity, if needed.",
+   "sources": [
+    "WMT|Item 7|25"
+   ]
+  },
+  {
+   "id": "S3-10",
+   "type": "invented_detail",
+   "base": "T32",
+   "company": "PFE",
+   "claim": "Pfizer Inc discloses various risk factors including managed care trends, government pricing pressures, and foreign currency risks, particularly from the Japanese yen, that could adversely affect its business operations and financial condition.",
+   "sources": [
+    "PFE|Item 1A|0",
+    "PFE|Item 1A|7"
+   ]
+  },
+  {
+   "id": "S1-01",
+   "type": "wrong_block_same_company",
+   "base": "T01",
+   "company": "ADBE",
+   "claim": "Adobe Creative Cloud includes various applications for photography, design, video, and web, allowing users to collaborate and access their work across devices.",
+   "sources": null
+  },
+  {
+   "id": "S1-02",
+   "type": "wrong_block_same_company",
+   "base": "T02",
+   "company": "TSLA",
+   "claim": "Tesla's strategy focuses on accelerating the world's transition to sustainable energy through direct sales, a vertically integrated business model, and continuous innovation in electric vehicle technology and infrastructure.",
+   "sources": null
+  },
+  {
+   "id": "S1-03",
+   "type": "wrong_block_same_company",
+   "base": "T06",
+   "company": "MSFT",
+   "claim": "Microsoft's revenue grew by $30.2 billion or 18% in fiscal 2022, driven by growth across each of its segments.",
+   "sources": null
+  },
+  {
+   "id": "S1-04",
+   "type": "wrong_block_same_company",
+   "base": "T17",
+   "company": "GOOGL",
+   "claim": "Alphabet Inc. operates as a collection of businesses, with Google being the largest, and it reports its operations in two segments: Google Services and Google Cloud, while all non-Google businesses are reported as Other Bets.",
+   "sources": null
+  },
+  {
+   "id": "S1-05",
+   "type": "wrong_block_same_company",
+   "base": "T23",
+   "company": "BAC",
+   "claim": "Weaknesses in the U.S. housing market could adversely affect Bank of America's financial condition, leading to increased credit losses and write-downs of asset values.",
+   "sources": null
+  },
+  {
+   "id": "S1-06",
+   "type": "wrong_block_same_company",
+   "base": "T28",
+   "company": "META",
+   "claim": "Meta is involved in multiple lawsuits related to its alleged recommendation of and/or failure to remove harmful content, and the outcomes of these lawsuits could result in substantial monetary damages or fines.",
+   "sources": null
+  },
+  {
+   "id": "S1-07",
+   "type": "wrong_block_same_company",
+   "base": "T29",
+   "company": "WMT",
+   "claim": "As of January 31, 2023, Walmart had $15.0 billion of various undrawn committed lines of credit in the U.S. that provide additional liquidity, if needed.",
+   "sources": null
+  },
+  {
+   "id": "S1-08",
+   "type": "wrong_block_same_company",
+   "base": "T32",
+   "company": "PFE",
+   "claim": "Pfizer Inc discloses various risk factors including managed care trends, government pricing pressures, and foreign currency risks that could adversely affect its business operations and financial condition.",
+   "sources": null
+  },
+  {
+   "id": "S1-09",
+   "type": "wrong_block_same_company",
+   "base": "T35",
+   "company": "BAC",
+   "claim": "Bank of America faces compliance risks due to evolving laws, rules, and regulations, which could lead to significant losses and increased costs.",
+   "sources": null
+  },
+  {
+   "id": "S1-10",
+   "type": "wrong_block_same_company",
+   "base": "T39",
+   "company": "NFLX",
+   "claim": "The company discloses that the use or adoption of new and emerging technologies, including AI, may increase exposure to intellectual property claims, and the availability of copyright protection for AI-generated material is uncertain.",
+   "sources": null
+  },
+  {
+   "id": "S2-01",
+   "type": "wrong_company_same_topic",
+   "base": "T05",
+   "company": "TSLA",
+   "claim": "Tesla discloses that it is subject to evolving laws and regulations related to environmental and climate change, which could impose substantial costs and affect its operations.",
+   "sources": null
+  },
+  {
+   "id": "S2-02",
+   "type": "wrong_company_same_topic",
+   "base": "T10",
+   "company": "CRM",
+   "claim": "Salesforce discloses that the integration of AI into their offerings presents additional risks, including ethical issues and potential legal liabilities that could affect their business and reputation.",
+   "sources": null
+  },
+  {
+   "id": "S2-03",
+   "type": "wrong_company_same_topic",
+   "base": "T14",
+   "company": "GS",
+   "claim": "The company mentions interruptions in the supply chain that have adversely affected many businesses and contributed to higher rates of inflation.",
+   "sources": null
+  },
+  {
+   "id": "S2-04",
+   "type": "wrong_company_same_topic",
+   "base": "T19",
+   "company": "CRM",
+   "claim": "Salesforce is a global leader in customer relationship management (CRM) technology that connects companies and their customers through its Customer 360 platform, which integrates customer data across systems, apps, and devices.",
+   "sources": null
+  },
+  {
+   "id": "S2-05",
+   "type": "wrong_company_same_topic",
+   "base": "T21",
+   "company": "CRM",
+   "claim": "Salesforce, Inc. discusses its exposure to interest rate risk related to its cash equivalents and marketable securities, noting that changes in interest rates can adversely impact the market value of fixed-rate securities and affect future investment income.",
+   "sources": null
+  },
+  {
+   "id": "S2-06",
+   "type": "wrong_company_same_topic",
+   "base": "T24",
+   "company": "MSFT",
+   "claim": "Microsoft discusses the long-term effects of climate change on the global economy and the IT industry, as well as the potential impact of environmental regulations on the availability and cost of resources necessary for their business.",
+   "sources": null
+  },
+  {
+   "id": "S2-07",
+   "type": "wrong_company_same_topic",
+   "base": "T28",
+   "company": "META",
+   "claim": "Meta is involved in multiple lawsuits related to its alleged recommendation of and/or failure to remove harmful content, and the outcomes of these lawsuits could result in substantial monetary damages or fines.",
+   "sources": null
+  },
+  {
+   "id": "S2-08",
+   "type": "wrong_company_same_topic",
+   "base": "T29",
+   "company": "WMT",
+   "claim": "As of January 31, 2023, Walmart had $15.0 billion of various undrawn committed lines of credit in the U.S. that provide additional liquidity, if needed.",
+   "sources": null
+  },
+  {
+   "id": "S2-09",
+   "type": "wrong_company_same_topic",
+   "base": "T30",
+   "company": "JNJ",
+   "claim": "Johnson & Johnson's strategy emphasizes the importance of its employees and focuses on attracting, developing, and empowering talent, while also maintaining a strong commitment to diversity, equity, and inclusion.",
+   "sources": null
+  },
+  {
+   "id": "S2-10",
+   "type": "wrong_company_same_topic",
+   "base": "T35",
+   "company": "BAC",
+   "claim": "Bank of America faces compliance risks due to evolving laws, rules, and regulations, which could lead to significant losses and increased costs.",
+   "sources": null
+  }
+ ]
+}

@@ -3,7 +3,8 @@
 # Purpose: Turn retrieved context into a structured, cited NarrativeResult —
 #          claims for one company, or one verdict per company for corpus-wide
 #          questions. Refusal text and citation validation live here, in Python.
-# Depends on: asyncio, langchain-openai, pydantic v2, src.query.schemas,
+# Depends on: asyncio, langchain-openai, pydantic v2, src.query.intents,
+#             src.query.schemas,
 #             src.rag.figure_guard, src.rag.prompts, src.rag.retriever,
 #             src.storage.vector_store, src.utils.config, src.utils.logger,
 #             src.utils.text
@@ -28,6 +29,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.query.intents import SECTION_FALLBACKS
 from src.query.schemas import (
     CitedClaim,
     CompanyFinding,
@@ -177,7 +179,7 @@ def _get_llm() -> ChatOpenAI:
     return _llm
 
 
-def _section_phrase(sections: frozenset[str]) -> str:
+def section_phrase(sections: frozenset[str]) -> str:
     """
     Name a set of sections for a sentence.
 
@@ -210,7 +212,7 @@ def refusal_message(
     Returns:
         The sentence.
     """
-    where = _section_phrase(sections)
+    where = section_phrase(sections)
     if refusal is NarrativeRefusal.SECTION_ABSENT:
         # "Not captured", not "has no": every company here files an MD&A, but
         # some place it outside an Item 7 heading or in an incorporated exhibit
@@ -230,6 +232,45 @@ def refusal_message(
     if refusal is NarrativeRefusal.UNCITED:
         return f"I couldn't produce an answer about {subject} that is supported by cited passages."
     return f"I couldn't retrieve or read the narrative text for {subject} just now."
+
+
+def fallback_note(
+    intent: Intent,
+    subject: str,
+    fallback_from: frozenset[str],
+    sections_searched: frozenset[str],
+    answered: bool,
+) -> str:
+    """
+    The fixed disclosure shown whenever a fallback section was searched (D44).
+
+    Precedes the answer, or the refusal when the fallback text did not address
+    the question, so the reader always knows the text came from somewhere other
+    than the section the question needed — and what that text cannot tell them.
+
+    Args:
+        intent: The narrative intent whose fallback applied.
+        subject: Display name of the company.
+        fallback_from: The intent's own sections, absent for this company.
+        sections_searched: The fallback sections searched instead.
+        answered: Whether the chain answered from the fallback text.
+
+    Returns:
+        One or two sentences.
+    """
+    absent = section_phrase(fallback_from)
+    used = section_phrase(sections_searched)
+    if not answered:
+        return (
+            f"The {absent} section of {subject}'s filing was not captured in this "
+            f"corpus, so its {used} section was searched instead."
+        )
+    fallback = SECTION_FALLBACKS.get(intent)
+    caveat = f" {fallback.caveat}" if fallback is not None else ""
+    return (
+        f"The {absent} section of {subject}'s filing was not captured in this "
+        f"corpus, so this answer draws on its {used} section instead.{caveat}"
+    )
 
 
 def clean_claim(text: str) -> str:
@@ -358,10 +399,15 @@ async def answer_for_company(
     """
     context = await asyncio.to_thread(retrieve_for_company, question, intent, company)
     searched = context.sections_searched
+    fallback_from = context.fallback_from
     if context.status is RetrievalStatus.NO_MATCHING_CHUNKS:
         return NarrativeResult(refusal=NarrativeRefusal.SECTION_ABSENT, sections_searched=searched)
     if context.status is RetrievalStatus.FAILED:
-        return NarrativeResult(refusal=NarrativeRefusal.FAILED, sections_searched=searched)
+        return NarrativeResult(
+            refusal=NarrativeRefusal.FAILED,
+            sections_searched=searched,
+            fallback_from=fallback_from,
+        )
 
     try:
         targets = await _targets(company.ticker)
@@ -384,19 +430,25 @@ async def answer_for_company(
             error_type=type(exc).__name__,
             error=str(exc),
         )
-        return NarrativeResult(refusal=NarrativeRefusal.FAILED, sections_searched=searched)
+        return NarrativeResult(
+            refusal=NarrativeRefusal.FAILED,
+            sections_searched=searched,
+            fallback_from=fallback_from,
+        )
 
     if draft.outcome is AnswerOutcome.FIGURE_REQUESTED:
         return NarrativeResult(
             refusal=NarrativeRefusal.FIGURE_REQUESTED,
             figures_masked=masked,
             sections_searched=searched,
+            fallback_from=fallback_from,
         )
     if draft.outcome is AnswerOutcome.NOT_ADDRESSED or not draft.claims:
         return NarrativeResult(
             refusal=NarrativeRefusal.NOT_ADDRESSED,
             figures_masked=masked,
             sections_searched=searched,
+            fallback_from=fallback_from,
         )
 
     claims: list[CitedClaim] = []
@@ -420,6 +472,7 @@ async def answer_for_company(
         invalid_citations=invalid_total,
         figures_masked=masked,
         figures_redacted=redacted_total,
+        fallback_used=bool(fallback_from),
     )
     return NarrativeResult(
         claims=claims,
@@ -428,6 +481,7 @@ async def answer_for_company(
         figures_redacted=redacted_total,
         invalid_citations=invalid_total,
         sections_searched=searched,
+        fallback_from=fallback_from,
     )
 
 
@@ -464,6 +518,8 @@ def _finding(context: CompanyContext, status: FindingStatus,
         fiscal_year=context.company.fiscal_year,
         status=status,
         claim=claim,
+        sections_searched=context.sections_searched,
+        fallback_from=context.fallback_from,
     )
 
 
@@ -596,6 +652,7 @@ async def survey_companies(
         supported=[f.ticker for f in findings if f.status is FindingStatus.SUPPORTED],
         not_found=sum(f.status is FindingStatus.NOT_FOUND for f in findings),
         not_searchable=[f.ticker for f in findings if f.status is FindingStatus.NOT_SEARCHABLE],
+        fallback=[f.ticker for f in findings if f.fallback_used],
         failed=[f.ticker for f in findings if f.status is FindingStatus.FAILED],
         figures_masked=result.figures_masked,
         figures_redacted=result.figures_redacted,

@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.query.intents import sections_for
+from src.query.intents import SECTION_FALLBACKS, fallback_for, sections_for
 from src.query.schemas import Intent
 from src.rag import retriever
 from src.rag.retriever import CompanyRef, format_context
@@ -98,7 +98,9 @@ def test_corpus_wide_embeds_once_and_searches_each_company(store: FakeStore) -> 
         "q", Intent.MARKET_RISK, [APPLE, JPM, META], k=2
     )
     assert store.embed_calls == 1
-    assert [t for t, _ in store.searches] == ["AAPL", "JPM", "META"]
+    # JPM's market-risk sections are absent, so its fallback is tried once with
+    # the same vector (D44); this fake holds nothing for JPM at all.
+    assert [t for t, _ in store.searches] == ["AAPL", "JPM", "JPM", "META"]
     assert [c.company.ticker for c in contexts] == ["AAPL", "JPM", "META"]
     assert contexts[1].status is RetrievalStatus.NO_MATCHING_CHUNKS
     assert all(len(c.blocks) == 2 for c in contexts if c.status is RetrievalStatus.OK)
@@ -121,3 +123,90 @@ def test_format_context_heads_each_block_with_number_and_source(store: FakeStore
     text = format_context(context)
     assert text.startswith("[1] Apple Inc., FY2021, Item 1A\nAAPL Item 1A text 0")
     assert "\n\n[2] Apple Inc., FY2021, Item 1A\n" in text
+
+# --- Section fallback (D44) ---------------------------------------------------
+
+XOM = CompanyRef(ticker="XOM", company_name="EXXON MOBIL CORP", fiscal_year=2022)
+
+
+class SectionStore:
+    """Answers OK only where a ticker actually holds one of the filtered sections."""
+
+    HELD = {
+        "AAPL": {"Item 1", "Item 1A", "Item 7", "Item 7A"},
+        "JPM": {"Item 1", "Item 1A"},
+        "XOM": {"Item 1"},
+    }
+
+    def __init__(self) -> None:
+        self.searches: list[tuple[str | None, frozenset[str]]] = []
+
+    def embed(self, text: str) -> list[float]:
+        return [0.1, 0.2]
+
+    def search(self, vector, k, ticker=None, sections=None) -> RetrievalResult:
+        wanted = frozenset(sections or ())
+        self.searches.append((ticker, wanted))
+        held = sorted(wanted & self.HELD.get(ticker, set()))
+        if not held:
+            return RetrievalResult(status=RetrievalStatus.NO_MATCHING_CHUNKS, detail="none")
+        return RetrievalResult(
+            status=RetrievalStatus.OK,
+            chunks=[_chunk(ticker, held[0], i, 0.3 + i / 10) for i in range(k)],
+        )
+
+
+@pytest.fixture
+def sections_store(monkeypatch: pytest.MonkeyPatch) -> SectionStore:
+    fake = SectionStore()
+    monkeypatch.setattr(retriever, "embed_query", fake.embed)
+    monkeypatch.setattr(retriever, "query_by_vector", fake.search)
+    return fake
+
+
+def test_only_market_risk_has_a_fallback() -> None:
+    assert set(SECTION_FALLBACKS) == {Intent.MARKET_RISK}
+    assert fallback_for(Intent.MARKET_RISK, "JPM").sections == {"Item 1A"}
+    assert fallback_for(Intent.MANAGEMENT_COMMENTARY, "JPM") is None
+    assert fallback_for(Intent.RISK_FACTORS, "JPM") is None
+
+
+def test_fallback_is_searched_when_the_intent_sections_are_absent(
+    sections_store: SectionStore,
+) -> None:
+    context = retriever.retrieve_for_company("q", Intent.MARKET_RISK, JPM, k=2)
+    assert sections_store.searches == [
+        ("JPM", frozenset({"Item 7", "Item 7A"})),
+        ("JPM", frozenset({"Item 1A"})),
+    ]
+    assert context.status is RetrievalStatus.OK
+    assert context.sections_searched == {"Item 1A"}
+    assert context.fallback_from == {"Item 7", "Item 7A"}
+    assert {b.chunk.section for b in context.blocks} == {"Item 1A"}
+
+
+def test_no_fallback_when_the_intent_sections_are_held(sections_store: SectionStore) -> None:
+    context = retriever.retrieve_for_company("q", Intent.MARKET_RISK, APPLE, k=2)
+    assert len(sections_store.searches) == 1
+    assert context.fallback_from == frozenset()
+
+
+def test_intent_without_a_fallback_still_refuses(sections_store: SectionStore) -> None:
+    context = retriever.retrieve_for_company("q", Intent.MANAGEMENT_COMMENTARY, JPM, k=2)
+    assert sections_store.searches == [("JPM", frozenset({"Item 7"}))]
+    assert context.status is RetrievalStatus.NO_MATCHING_CHUNKS
+    assert context.fallback_from == frozenset()
+
+
+def test_absent_fallback_reports_the_original_absence(sections_store: SectionStore) -> None:
+    context = retriever.retrieve_for_company("q", Intent.MARKET_RISK, XOM, k=2)
+    assert len(sections_store.searches) == 2
+    assert context.status is RetrievalStatus.NO_MATCHING_CHUNKS
+    assert context.sections_searched == {"Item 7", "Item 7A"}
+    assert context.fallback_from == frozenset()
+
+
+def test_corpus_wide_applies_the_fallback_per_company(sections_store: SectionStore) -> None:
+    contexts = retriever.retrieve_corpus_wide("q", Intent.MARKET_RISK, [APPLE, JPM], k=2)
+    assert [c.fallback_from for c in contexts] == [frozenset(), frozenset({"Item 7", "Item 7A"})]
+    assert all(c.status is RetrievalStatus.OK for c in contexts)

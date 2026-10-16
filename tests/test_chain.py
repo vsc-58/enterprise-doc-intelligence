@@ -16,6 +16,7 @@ from src.rag.chain import (
     DraftVerdict,
     VerdictOutcome,
     clean_claim,
+    fallback_note,
     refusal_message,
 )
 from src.rag.figure_guard import PLACEHOLDER
@@ -203,3 +204,70 @@ def test_inline_passage_reference_is_stripped_from_answers(wired: dict) -> None:
         DraftClaim(text="Growth came from iPhone (passage 1).", passages=[1]),
     ]))
     assert result.claims[0].text == "Growth came from iPhone."
+
+# --- Section fallback (D44) ---------------------------------------------------
+
+JPM = CompanyRef(ticker="JPM", company_name="JPMORGAN CHASE & CO", fiscal_year=2023)
+ABSENT = frozenset({"Item 7", "Item 7A"})
+
+
+def _fallback_context(company: CompanyRef) -> CompanyContext:
+    base = _context(company, RetrievalStatus.OK)
+    return base.model_copy(update={
+        "sections_searched": frozenset({"Item 1A"}), "fallback_from": ABSENT,
+    })
+
+
+def test_fallback_provenance_reaches_an_answer(wired: dict) -> None:
+    wired["contexts"]["JPM"] = _fallback_context(JPM)
+    wired["drafts"]["JPMorgan Chase & Co."] = DraftAnswer(
+        outcome=AnswerOutcome.ANSWERED,
+        claims=[DraftClaim(text="Rate changes affect net interest income.", passages=[1])],
+    )
+    result = asyncio.run(chain.answer_for_company("q", Intent.MARKET_RISK, JPM))
+    assert result.refusal is None and result.fallback_used
+    assert result.fallback_from == ABSENT
+    assert result.sections_searched == {"Item 1A"}
+
+
+def test_fallback_provenance_reaches_a_refusal(wired: dict) -> None:
+    wired["contexts"]["JPM"] = _fallback_context(JPM)
+    wired["drafts"]["JPMorgan Chase & Co."] = DraftAnswer(outcome=AnswerOutcome.NOT_ADDRESSED)
+    result = asyncio.run(chain.answer_for_company("q", Intent.MARKET_RISK, JPM))
+    assert result.refusal is NarrativeRefusal.NOT_ADDRESSED
+    assert result.fallback_from == ABSENT
+
+
+def test_section_absent_never_claims_a_fallback(wired: dict) -> None:
+    wired["contexts"]["INTC"] = _context(INTEL, RetrievalStatus.NO_MATCHING_CHUNKS)
+    result = asyncio.run(chain.answer_for_company("q", Intent.MANAGEMENT_COMMENTARY, INTEL))
+    assert result.refusal is NarrativeRefusal.SECTION_ABSENT and not result.fallback_used
+
+
+def test_fallback_note_names_both_sections_and_states_the_caveat_only_when_answered() -> None:
+    used = frozenset({"Item 1A"})
+    answered = fallback_note(Intent.MARKET_RISK, "JPMorgan", ABSENT, used, answered=True)
+    searched = fallback_note(Intent.MARKET_RISK, "JPMorgan", ABSENT, used, answered=False)
+    for text in (answered, searched):
+        assert "MD&A (Item 7) or Market Risk (Item 7A)" in text
+        assert "Risk Factors (Item 1A)" in text
+    assert "qualitatively" in answered
+    assert "qualitatively" not in searched
+
+
+def test_survey_findings_carry_fallback_provenance(wired: dict) -> None:
+    wired["contexts"].update({
+        "AAPL": _context(APPLE, RetrievalStatus.OK),
+        "JPM": _fallback_context(JPM),
+    })
+    wired["drafts"].update({
+        "Apple Inc.": DraftVerdict(outcome=VerdictOutcome.SUPPORTED,
+                                   claim="Apple hedges rate risk.", passages=[1]),
+        "JPMorgan Chase & Co.": DraftVerdict(outcome=VerdictOutcome.SUPPORTED,
+                                             claim="JPM flags rate risk.", passages=[2]),
+    })
+    result = asyncio.run(chain.survey_companies("q", Intent.MARKET_RISK, [APPLE, JPM]))
+    assert [(f.ticker, f.fallback_used) for f in result.findings] == [
+        ("AAPL", False), ("JPM", True),
+    ]
+    assert result.findings[1].sections_searched == {"Item 1A"}

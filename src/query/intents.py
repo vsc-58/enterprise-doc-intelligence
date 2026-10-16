@@ -1,7 +1,8 @@
 # src/query/intents.py
 # Module: Intent policy table (tool selection + section policy)
-# Purpose: The application-controlled mapping from intent to tool and to the set
-#          of corpus sections a narrative intent searches. Data, not logic.
+# Purpose: The application-controlled mapping from intent to tool, to the set
+#          of corpus sections a narrative intent searches, and to the one
+#          section fallback the corpus justifies. Data, not logic.
 # Depends on: pydantic v2, src.query.schemas
 
 from pydantic import BaseModel, ConfigDict
@@ -91,6 +92,91 @@ SECTION_ALIASES: dict[str, dict[str, frozenset[str]]] = {
 }
 
 
+class SectionFallback(BaseModel):
+    """
+    Where a narrative intent searches when a company holds none of its sections.
+
+    Applied only on structural absence — retrieval returned NO_MATCHING_CHUNKS
+    for the intent's own sections — and never because the chain judged the
+    retrieved text NOT_ADDRESSED. Retrying on "the model couldn't answer" would
+    search until something answers, which biases the system toward answering
+    (D44).
+
+    Attributes:
+        sections: Canonical sections searched instead. Aliases apply to them
+            exactly as to the intent's own sections.
+        caveat: One sentence, shown to the user with every fallback answer,
+            stating what the fallback text can and cannot tell them.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    sections: frozenset[str]
+    caveat: str
+
+
+# Admission test for an entry, applied per intent (D44): the fallback section
+# must answer the SAME KIND of question as the intent's own sections, not merely
+# a related one.
+#
+#   market_risk -> Item 1A: passes. Market-risk disclosure and risk factors both
+#     describe exposure to rates, currency and commodities; the risk factors do
+#     so qualitatively. Serves JPM and XOM, which hold neither Item 7 nor 7A.
+#   management_commentary -> Item 1A: fails. "Why did margins fall?" asks what
+#     management says happened; risk factors say what might go wrong. An answer
+#     from them would read as an explanation while answering another question.
+#
+# Every other narrative intent always reaches Item 1 or Item 1A in this corpus,
+# so no other entry has a case to serve. Not a permanent union entry: Item 1A
+# is 831 chunks against Item 7A's 57 and would crowd out the quantitative
+# disclosure for the companies that have it.
+SECTION_FALLBACKS: dict[Intent, SectionFallback] = {
+    Intent.MARKET_RISK: SectionFallback(
+        sections=frozenset({ITEM_1A}),
+        caveat=(
+            "Risk factors describe these exposures qualitatively; the "
+            "quantitative market-risk disclosures are not in this corpus."
+        ),
+    ),
+}
+
+
+def _stored(sections: frozenset[str], ticker: str) -> frozenset[str]:
+    """
+    Map canonical sections to the stored labels that hold them for one company.
+
+    Args:
+        sections: Canonical section labels.
+        ticker: The company.
+
+    Returns:
+        Stored labels after SECTION_ALIASES.
+    """
+    aliases = SECTION_ALIASES.get(ticker, {})
+    stored: set[str] = set()
+    for section in sections:
+        stored |= aliases.get(section, frozenset({section}))
+    return frozenset(stored)
+
+
+def fallback_for(intent: Intent, ticker: str) -> SectionFallback | None:
+    """
+    The fallback one company is searched under when its intent sections are absent.
+
+    Args:
+        intent: A narrative intent.
+        ticker: The company being searched.
+
+    Returns:
+        The fallback with aliases applied to its sections, or None if the intent
+        has no fallback.
+    """
+    fallback = SECTION_FALLBACKS.get(intent)
+    if fallback is None:
+        return None
+    return SectionFallback(sections=_stored(fallback.sections, ticker), caveat=fallback.caveat)
+
+
 def sections_for(intent: Intent, ticker: str) -> frozenset[str]:
     """
     The sections one company is searched under for one intent.
@@ -105,11 +191,8 @@ def sections_for(intent: Intent, ticker: str) -> frozenset[str]:
     Returns:
         Stored section labels to filter on. Empty for SQL intents.
     """
-    aliases = SECTION_ALIASES.get(ticker, {})
-    stored: set[str] = set()
-    for section in policy_for(intent).sections:
-        stored |= aliases.get(section, frozenset({section}))
-    return frozenset(stored)
+    return _stored(policy_for(intent).sections, ticker)
+
 
 def policy_for(intent: Intent) -> IntentPolicy:
     """

@@ -1,0 +1,98 @@
+{
+ "note": "Citation for each seed, resolved by scripts/export_attribution_set.py.",
+ "same_company_rank": 10,
+ "sources": {
+  "S3-01": [
+   "JNJ|Item 1A|1"
+  ],
+  "S3-02": [
+   "MSFT|Item 7|5"
+  ],
+  "S3-03": [
+   "NFLX|Item 1|0"
+  ],
+  "S3-04": [
+   "QCOM|Item 1A|82",
+   "QCOM|Item 1A|81"
+  ],
+  "S3-05": [
+   "AAPL|Item 7|5"
+  ],
+  "S3-06": [
+   "CRM|Item 7A|3"
+  ],
+  "S3-07": [
+   "WMT|Item 1|6"
+  ],
+  "S3-08": [
+   "MSFT|Item 1A|30"
+  ],
+  "S3-09": [
+   "WMT|Item 7|25"
+  ],
+  "S3-10": [
+   "PFE|Item 1A|0",
+   "PFE|Item 1A|7"
+  ],
+  "S1-01": [
+   "ADBE|Item 1|9"
+  ],
+  "S1-02": [
+   "TSLA|Item 1|16"
+  ],
+  "S1-03": [
+   "MSFT|Item 7|19"
+  ],
+  "S1-04": [
+   "GOOGL|Item 1|11"
+  ],
+  "S1-05": [
+   "BAC|Item 1A|34"
+  ],
+  "S1-06": [
+   "META|Item 1A|16"
+  ],
+  "S1-07": [
+   "WMT|Item 7|5"
+  ],
+  "S1-08": [
+   "PFE|Item 1A|34"
+  ],
+  "S1-09": [
+   "BAC|Item 1A|27"
+  ],
+  "S1-10": [
+   "NFLX|Item 1A|5"
+  ],
+  "S2-01": [
+   "JNJ|Item 1A|15"
+  ],
+  "S2-02": [
+   "MSFT|Item 1A|14"
+  ],
+  "S2-03": [
+   "AAPL|Item 1A|3"
+  ],
+  "S2-04": [
+   "MSFT|Item 1|16"
+  ],
+  "S2-05": [
+   "META|Item 7A|1"
+  ],
+  "S2-06": [
+   "ADBE|Item 1A|29"
+  ],
+  "S2-07": [
+   "GOOGL|Item 1A|19"
+  ],
+  "S2-08": [
+   "AMZN|Item 7|10"
+  ],
+  "S2-09": [
+   "JPM|Item 1|5"
+  ],
+  "S2-10": [
+   "GS|Item 1A|30"
+  ]
+ }
+}
