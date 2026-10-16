@@ -431,3 +431,155 @@ aimed at it. Corpus share does not disadvantage small sections.
 - **`store._collection` private-attribute use** in `vector_store.py` for metadata
   read, filtered delete and count. `langchain-chroma` exposes none of the three
   publicly.
+
+## Phase 5 — Query Path: Planner, Exact SQL, Cited RAG, and Its Evaluation
+
+Phase 5 turns the stored extractions (Phase 3) and the vector store (Phase 4)
+into a question-answering system, then measures it stage by stage. It ran in
+three parts: **5A** built the planner and the exact-figure path, **5B** the
+cited narrative path, and **5C** the evaluation. Decisions D25–D52 in
+`docs/decisions.md`; full evaluation in `docs/query_eval_results.md`.
+
+### Architecture
+
+```
+question → planner (LLM)        → validated plan: 1–3 tasks, each with an intent
+         → resolver (Python)    → company mention → ticker + fiscal year held
+         → executor (Python)    → intent → tool; tasks run concurrently
+             ├─ SQL path        → parameterized read-only SELECT; sentence built in Python
+             └─ RAG path        → section-filtered retrieval → figure guard
+                                  → answer chain (LLM) → citations checked in code
+         → synthesizer (Python) → one answer, numbered sources, fixed refusal text
+```
+
+One invariant holds across the whole path: **no LLM ever receives a stored
+financial figure** — not from SQL, and not from retrieved text, where the five
+stored metrics are masked before the model sees them. A structure enforces it,
+not a prompt instruction.
+
+---
+
+### 5A — Planner, resolution, exact figures
+
+**Why the planned router was replaced.** The architecture specified a binary
+router (SQL *or* RAG). "What was Intel's net income, and why did its margins
+fall?" needs both, and a binary router must silently drop one half. A planner
+that emits up to three typed tasks has no such hole (D25).
+
+- **Planner** — one `with_structured_output` call returns a Pydantic `QueryPlan`:
+  single, hybrid, clarification, unsupported or out-of-scope. It is
+  *corpus-blind*: it copies company mentions verbatim and never knows which
+  companies are held, so "What was Nvidia's revenue?" produces a correct plan and
+  a clean downstream refusal (D32).
+- **Resolver** — Python only. Turns "amzn", "J&J" or "that bank" into a held
+  ticker, a non-corpus refusal, or an ambiguity refusal.
+- **SQL path** — the LLM extracts parameters; Python validates them and runs a
+  parameterized, read-only query with column allowlists and a hard limit. The
+  answer sentence is rendered in Python, so the figure never passes through an
+  LLM (D27). Unsupported shapes (averages, ratios) are refused before any query
+  runs; valid queries with no data say so — two different messages.
+- **Data-quality flag** — a scale-coherence check computed from stored evidence
+  only, never from the answer key. It found three known 1,000× extraction errors.
+  Bank of America's statements use two scales in one header, which produced a 2–2
+  tie; instead of a tie-break rule fitted to one case, every tied field is marked
+  `disputed / scale_ambiguous` and disclosed in the answer (D29).
+
+### 5B — Cited narrative answers and honest refusals
+
+- **Section-filtered retrieval** — each narrative intent maps to the 10-K items
+  that can answer it (business → Item 1, risk → Item 1A, MD&A → Item 7, market
+  risk → Item 7A). Intents whose section sets were identical executed identically,
+  so they were merged: 12 intents became 9 (D38).
+- **Answer chain** — returns structured claims, each citing numbered blocks.
+  Citations are checked in code, and an uncited claim is dropped. The chain's
+  refusals are typed (section absent, not addressed, figure requested, …) and
+  their sentences are written in Python, never by the model (D41).
+- **Figure guard** — stored metrics in retrieved text are masked before the LLM
+  sees them; anything that slips through is redacted afterwards. Across nine
+  evaluation runs, redaction never fired.
+- **Corpus-wide questions** ("which companies flag interest-rate risk?") retrieve
+  per company, not from a shared top-k: a shared top-50 reached 16 companies,
+  with two banks taking 28 of the slots; per-company retrieval reached all 18
+  that hold the section (D39).
+- **Lesson that shaped the design:** the prompt is not the guarantee. Three
+  times a rule stated in the prompt was broken in a run — figures, citations,
+  inline passage references — and each rule that matters now has a check in code.
+
+### 5C — Evaluating every stage separately
+
+The point is traceability: when an answer is wrong, the evaluation names the
+stage that caused it.
+
+**Eval set.** 109 questions frozen by SHA-256 before any scoring — the original
+50 relabelled, 50 written by a separate LLM in real-user phrasing (typos,
+tickers, vague wording) and 9 hard cases. 42 are held out and report-only: no
+prompt was revised in response to a held-out result. Every LLM measurement is a
+mean of 3 runs (temperature 0 is not deterministic, D35).
+
+| Stage | What it measures | Held-out | Dev |
+|---|---|---|---|
+| Routing, before any tuning | Clean out-of-sample planner accuracy | **82.5%** [68–91] | 79.6% |
+| Routing, final prompt (v3) | After two dev-driven revisions | 88.9% | 90.0% |
+| End to end | Every task's outcome correct | 89.7% | 93.5% |
+| Oracle (gold plan) | Downstream system with routing assumed perfect | 100% | 100% |
+| Retrieval | Relevant chunk in the 5 the chain reads (18 questions) | 100% | 100% |
+| Retrieval | Capped recall@5 | 79% | 59% |
+| Attribution | Answer sentences supported by their citations (322) | 91.1% | 94.5% |
+
+Adjudicated figures; raw scores are reported beside them in the results doc, and
+frozen labels were never edited (D48).
+
+**Reading it:** given the right plan the system is exact, so the remaining
+end-to-end errors are almost all routing. Retrieval always puts a relevant chunk
+in front of the model but often not all of them. About 7% of answer sentences
+claim more than their source says.
+
+**How the two hard stages were measured**
+
+- **Retrieval** is scored against chunk-level relevance labels, not "right
+  section", which is ~100% by construction under filtered search. Candidates were
+  pooled from the retriever and from keyword search written before reading any
+  results, labelled against a rule fixed in advance, reviewed, and frozen by hash.
+  It is scored on the planner's reworded query — what production actually
+  embeds; the rewording changed one ranking in 18 (D49).
+- **Attribution** is scored by an LLM judge from a different model family, which
+  had to pass criteria committed before it ran: it caught **30 of 30** planted
+  errors (invented details, wrong chunk, wrong company) and agreed with reference
+  labels at Cohen's kappa **0.97** (D43, D52). Had it failed, its score would
+  have been withheld.
+
+**What the evaluation found**
+
+- **A chunking defect, diagnosed with a controlled test.** Walmart's liquidity
+  text ranked 9th–18th because chunks deep inside a subsection lose its heading.
+  Re-embedding every chunk with its heading lifted recall@5 from 20% to 80%;
+  rewording the question only reached 60% (D51). Logged as the next fix.
+- **What unsupported sentences look like:** mostly added inference ("which
+  reflects its focus on…") and over-narrowed detail; one in 22 had no support at
+  all.
+- **Remaining routing errors are named, not chased:** questions about an
+  unnamed company ("that bank") planned as a 20-company survey; R&D and dividend
+  questions refused.
+- **Four label errors and two harness bugs** were found by auditing every miss,
+  including an oracle that fed hybrid questions whole to the narrative chain
+  (fixed, D50).
+
+### Known limitations
+
+- Small n: 18 retrieval questions, 40 attribution test claims; intervals are wide.
+- Attribution reference labels are a second model's, with every disagreement
+  adjudicated by the developer — not blind human labels.
+- Corpus gaps: Intel, JPMorgan and Exxon MD&A and Tesla's Item 7A were not
+  captured, so those questions are correctly refused.
+- One fiscal year per company: cross-year and trend questions are out of scope.
+
+### Run
+
+```bash
+python -m scripts.diagnostic.test_query          # end-to-end smoke cases
+python -m scripts.run_routing_eval               # planner accuracy, 3 runs
+python -m scripts.run_execution_eval             # oracle + end to end, 3 runs
+python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
+python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
+pytest tests                                     # 186 tests, no API key or database needed
+```
