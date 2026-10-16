@@ -74,18 +74,38 @@ class FilterParams(BaseModel):
     threshold_text: str
 
 
-def load_oracle_params(path: Path | None = None) -> dict[str, FilterParams]:
+class OracleParams(BaseModel):
     """
-    Load filter thresholds for oracle plans.
+    Parameters an oracle plan needs that the frozen labels do not carry.
+
+    Attributes:
+        filters: Question id -> filter threshold, copied from the question text.
+        task_questions: Question id -> task_id -> the retrieval question for one
+            narrative task of a multi-task label. It is the narrative clause of
+            the question in the question's own words, with a pronoun replaced by
+            the company name — what the planner is asked to write. Without it the
+            oracle would retrieve with the whole hybrid question, figure clause
+            included, which no planned task ever does.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    filters: dict[str, FilterParams] = Field(default_factory=dict)
+    task_questions: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+
+def load_oracle_params(path: Path | None = None) -> OracleParams:
+    """
+    Load the oracle parameters.
 
     Kept outside the frozen label file: they were added after the freeze, and are
-    literal copies of each question's own threshold phrase.
+    literal copies of (or minimal edits to) each question's own text.
 
     Args:
         path: JSON file; settings.EVAL_DATA_PATH / ORACLE_PARAMS_FILE when omitted.
 
     Returns:
-        Question id -> filter parameters.
+        The parameters.
 
     Raises:
         OracleError: if the file is missing or malformed.
@@ -93,7 +113,9 @@ def load_oracle_params(path: Path | None = None) -> dict[str, FilterParams]:
     path = path or Path(settings.EVAL_DATA_PATH) / settings.ORACLE_PARAMS_FILE
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-        return {qid: FilterParams.model_validate(v) for qid, v in raw["filters"].items()}
+        return OracleParams.model_validate(
+            {"filters": raw["filters"], "task_questions": raw.get("task_questions", {})}
+        )
     except (OSError, KeyError, ValueError) as exc:
         raise OracleError(f"cannot load oracle params from {path}: {exc}") from exc
 
@@ -118,9 +140,15 @@ def _oracle_task(
     index: int,
     expected: ExpectedTask,
     question: EvalQuestion,
-    filters: dict[str, FilterParams],
+    params: OracleParams,
 ) -> Task:
-    """Build one executable Task from one labelled task."""
+    """
+    Build one executable Task from one labelled task.
+
+    Raises:
+        OracleError: if a filter label has no threshold, or a narrative task of a
+            multi-task label has no task question.
+    """
     intent = Intent(expected.intent)
     mention = _MENTION_FOR.get(expected.company, expected.company) if expected.company else None
     fields: dict = {
@@ -134,27 +162,37 @@ def _oracle_task(
     if intent is Intent.FINANCIAL_RANKING:
         fields["direction"] = Direction(expected.direction or "highest")
     if intent is Intent.FINANCIAL_FILTER:
-        params = filters.get(question.id)
-        if params is None:
+        threshold = params.filters.get(question.id)
+        if threshold is None:
             raise OracleError(f"{question.id}: filter label has no oracle threshold")
-        fields["comparison"] = params.comparison
-        fields["threshold_text"] = params.threshold_text
+        fields["comparison"] = threshold.comparison
+        fields["threshold_text"] = threshold.threshold_text
     if intent not in (Intent.FINANCIAL_METRIC, Intent.FINANCIAL_RANKING, Intent.FINANCIAL_FILTER):
-        fields["question"] = question.question
+        if len(question.strict.tasks) == 1:
+            fields["question"] = question.question
+        else:
+            task_question = params.task_questions.get(question.id, {}).get(fields["task_id"])
+            if not task_question:
+                raise OracleError(
+                    f"{question.id}: narrative task {fields['task_id']} of a multi-task label "
+                    "has no oracle task question"
+                )
+            fields["question"] = task_question
     return Task(**fields)
 
 
-def oracle_plan(question: EvalQuestion, filters: dict[str, FilterParams]) -> QueryPlan:
+def oracle_plan(question: EvalQuestion, params: OracleParams) -> QueryPlan:
     """
     The label's strict plan as an executable QueryPlan.
 
-    Narrative tasks use the original question text as their retrieval query —
-    the planner would normally rephrase it, which the oracle deliberately does
-    not imitate.
+    A single-task narrative label retrieves with the original question text — the
+    planner would normally rephrase it, which the oracle deliberately does not
+    imitate. A narrative task inside a multi-task label retrieves with its own
+    task question from the oracle params.
 
     Args:
         question: An executable labelled question.
-        filters: Oracle filter thresholds.
+        params: Oracle parameters.
 
     Returns:
         The plan.
@@ -165,7 +203,7 @@ def oracle_plan(question: EvalQuestion, filters: dict[str, FilterParams]) -> Que
     if not is_executable(question):
         raise OracleError(f"{question.id}: strict label has no tasks")
     tasks = [
-        _oracle_task(i, expected, question, filters)
+        _oracle_task(i, expected, question, params)
         for i, expected in enumerate(question.strict.tasks, start=1)
     ]
     return QueryPlan(

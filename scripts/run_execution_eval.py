@@ -44,6 +44,7 @@ from src.eval.execution_eval import (
     OracleError,
     expected_by_key,
     is_executable,
+    OracleParams,
     load_oracle_params,
     matched_alternative,
     oracle_plan,
@@ -75,7 +76,7 @@ async def _run_question(
     question: EvalQuestion,
     mode: str,
     index: CorpusIndex,
-    filters: dict,
+    filters: OracleParams,
     semaphore: asyncio.Semaphore,
 ) -> dict:
     """
@@ -172,7 +173,7 @@ async def _run_mode(
     mode: str,
     questions: list[EvalQuestion],
     index: CorpusIndex,
-    filters: dict,
+    filters: OracleParams,
     runs: int,
 ) -> list[list[dict]]:
     """All runs of one mode; returns records[run][question]."""
@@ -193,7 +194,7 @@ async def _run_all(
     modes: list[str],
     questions: list[EvalQuestion],
     index: CorpusIndex,
-    filters: dict,
+    filters: OracleParams,
     runs: int,
 ) -> dict[str, list[list[dict]]]:
     """Every mode, sequentially, inside one event loop."""
@@ -289,6 +290,10 @@ def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
                "", "### Misses", "", *miss_md, ""]
 
     suffix = "_smoke" if ids else ""
+    # A partial-mode run gets its own file, so it never overwrites a full run's
+    # other mode (the attribution eval scores end_to_end claims from that file).
+    if set(modes) != set(MODES):
+        suffix += "_" + "_".join(modes)
     out = (Path(settings.EVAL_DATA_PATH)
            / f"{Path(settings.EXECUTION_RESULTS_FILE).stem}_{p_version[:8]}_{c_version[:8]}{suffix}.json")
     out.write_text(json.dumps(results, indent=2, default=str), encoding="utf-8")

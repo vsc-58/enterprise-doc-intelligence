@@ -393,6 +393,69 @@ def embed_query(text: str) -> list[float]:
         raise VectorStoreError("Could not embed the query") from exc
 
 
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    """Embed several texts as documents, in one batched call.
+
+    For evaluation and diagnostics that compare alternative chunk texts against
+    the same query with the production embedding model; never used to write the
+    store.
+
+    Args:
+        texts: Texts to embed.
+
+    Returns:
+        One embedding per text, in input order.
+
+    Raises:
+        VectorStoreError: if the embedding call fails.
+    """
+    try:
+        return _embeddings().embed_documents(texts)
+    except Exception as exc:
+        logger.error("document_embedding_failed", count=len(texts),
+                     error_type=type(exc).__name__, error=str(exc))
+        raise VectorStoreError("Could not embed the texts") from exc
+
+
+def get_chunks_by_key(
+    keys: Collection[tuple[str, str, int]],
+) -> dict[tuple[str, str, int], RetrievedChunk]:
+    """Fetch stored chunks by identity, without a similarity search.
+
+    Used by evaluation to show a judge or a labeller exactly the text a citation
+    points at. One store read per (ticker, section) pair.
+
+    Args:
+        keys: (ticker, section, chunk_index) identities.
+
+    Returns:
+        Identity -> chunk, with distance 0.0 (no query was involved). Keys the
+        store does not hold are absent; the caller decides whether that is an
+        error.
+
+    Raises:
+        VectorStoreError: if the store cannot be read.
+    """
+    wanted: dict[tuple[str, str], set[int]] = {}
+    for ticker, section, index in keys:
+        wanted.setdefault((ticker, section), set()).add(int(index))
+    found: dict[tuple[str, str, int], RetrievedChunk] = {}
+    for (ticker, section), indexes in wanted.items():
+        try:
+            got = get_store()._collection.get(
+                where=build_filter(ticker, {section}), include=["documents", "metadatas"]
+            )
+        except Exception as exc:
+            logger.error("chunk_fetch_failed", ticker=ticker, section=section,
+                         error_type=type(exc).__name__, error=str(exc))
+            raise VectorStoreError(f"Could not read chunks for {ticker} {section}") from exc
+        for text, meta in zip(got["documents"], got["metadatas"]):
+            if int(meta["chunk_index"]) in indexes:
+                chunk = _to_chunk(LCDocument(page_content=text, metadata=meta), 0.0)
+                found[(chunk.ticker, chunk.section, chunk.chunk_index)] = chunk
+    return found
+
+
 def build_filter(
     ticker: str | None = None,
     sections: Collection[str] | None = None,

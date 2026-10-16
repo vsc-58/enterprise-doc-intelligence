@@ -163,6 +163,46 @@ class Settings(BaseSettings):
 
     EXECUTION_RESULTS_FILE: str = "execution_results.json"
 
+    # Retrieval eval (step 4). The gold file is committed evidence; the to-label
+    # file holds chunk text and goes to PROCESSED_DATA_PATH (gitignored).
+    RETRIEVAL_GOLD_FILE: str = "retrieval_gold.json"
+    # Hash of the verified gold (LF-normalised, as for the eval set). Scoring
+    # refuses a gold file that differs: a relabel must be a deliberate, committed
+    # change of this value, never a quiet edit after seeing the numbers.
+    RETRIEVAL_GOLD_SHA256: str = (
+        "16490f1c26ddedd5a224ff14d3742eb8cd4aa8c8b191b995de5a3081e9dade0b"
+    )
+    RETRIEVAL_RESULTS_FILE: str = "retrieval_results.json"
+    RETRIEVAL_TO_LABEL_FILE: str = "retrieval_to_label.json"
+    # Cut-offs scored. 5 is RAG_TOP_K, what the chain actually reads; 10 shows
+    # whether a miss at 5 is near or far.
+    RETRIEVAL_EVAL_KS: list[int] = [5, 10]
+    # How deep each ranking is pulled: past any one company's section set (the
+    # largest seen, META Item 1A, ranks chunks into the 70s), so first-relevant
+    # rank is exact rather than censored.
+    RETRIEVAL_EVAL_DEPTH: int = 200
+
+    # Attribution judge (D43). Evaluation tooling only; the system model is
+    # unchanged. Function calling on this model family requires reasoning
+    # effort "none" in Chat Completions; the probe script checks it.
+    JUDGE_MODEL: str = "gpt-6-luna"
+    JUDGE_REASONING_EFFORT: str | None = "none"
+    JUDGE_STRUCTURED_METHOD: str = "function_calling"
+    JUDGE_MAX_RETRIES: int = 3
+    JUDGE_CONCURRENCY: int = 8
+    # Pass criteria, committed before any judge output was seen (D43).
+    JUDGE_MIN_SEED_CATCH: float = 0.90
+    JUDGE_MIN_SEED_CATCH_PER_TYPE: float = 0.80
+    JUDGE_MIN_KAPPA: float = 0.70
+    JUDGE_MAX_FLIP_RATE: float = 0.05
+    ATTRIBUTION_SET_FILE: str = "attribution_set.json"
+    ATTRIBUTION_SEEDS_FILE: str = "attribution_seeds.json"
+    ATTRIBUTION_LABELS_FILE: str = "attribution_labels.json"
+    ATTRIBUTION_RESULTS_FILE: str = "attribution_results.json"
+    # Written to PROCESSED_DATA_PATH (gitignored): they hold filing text.
+    ATTRIBUTION_SHEET_FILE: str = "attribution_label_sheet.md"
+    ATTRIBUTION_REVIEW_FILE: str = "attribution_review.json"
+
     # Relative tolerance for recognising a stored metric value in text (D41).
     # Wide enough for an answer's rounding ("$365.8 billion" vs 365,817,000,000
     # is 0.005%); narrow enough that a different figure rarely falls inside it,

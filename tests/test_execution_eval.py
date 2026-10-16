@@ -9,6 +9,7 @@ from src.eval.execution_eval import (
     OracleError,
     expected_by_key,
     is_executable,
+    OracleParams,
     load_oracle_params,
     matched_alternative,
     oracle_plan,
@@ -57,15 +58,29 @@ def test_oracle_maps_label_companies_to_resolvable_mentions() -> None:
 
 def test_oracle_narrative_task_uses_the_original_question() -> None:
     question = {q.id: q for q in load_eval_set().questions}["R22"]
-    task = oracle_plan(question, {}).tasks[0]
+    task = oracle_plan(question, OracleParams()).tasks[0]
     assert task.question == question.question
+
+
+def test_hybrid_narrative_task_uses_its_own_task_question() -> None:
+    questions = {q.id: q for q in load_eval_set().questions}
+    params = load_oracle_params()
+    tasks = oracle_plan(questions["R35"], params).tasks
+    assert tasks[1].question == "What risks did Bank of America disclose?"
+    assert tasks[0].question is None
+
+
+def test_hybrid_without_task_question_is_refused() -> None:
+    question = {q.id: q for q in load_eval_set().questions}["R35"]
+    with pytest.raises(OracleError, match="no oracle task question"):
+        oracle_plan(question, OracleParams())
 
 
 def test_refusal_labels_are_not_executable() -> None:
     question = {q.id: q for q in load_eval_set().questions}["R45"]
     assert not is_executable(question)
     with pytest.raises(OracleError):
-        oracle_plan(question, {})
+        oracle_plan(question, OracleParams())
 
 
 # --- Outcome classes ---------------------------------------------------------------

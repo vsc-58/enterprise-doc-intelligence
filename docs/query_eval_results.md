@@ -1,7 +1,7 @@
 # Query-Path Evaluation — Phase 5C Results
 
-Status: routing and execution complete (2026-10-13). Retrieval hit-rate and
-attribution support (D43) pending — section 7.
+Status: complete (2026-10-15). Routing, execution, retrieval (section 7) and
+attribution support (section 8). Decisions D43–D52.
 
 All numbers are means over **3 runs** (temperature 0 is not deterministic, D35).
 95% intervals are Wilson intervals with **n = questions**: repeated runs measure
@@ -18,15 +18,21 @@ a held-out result, and every revision is tied to a named dev miss.
 | Routing, v1 — **clean out-of-sample** | **82.5%** [68–91] | 79.6% [68–88] |
 | Routing, v3 (final) | 88.9% [76–95] | 90.0% [81–95] |
 | End-to-end correct outcome (v3, adjudicated) | 89.7% [77–96] | 93.5% [85–97] |
-| Downstream with gold plan (oracle, non-hybrid, adjudicated) | 96.6% [83–99] | 99.3% [91–100] |
+| Downstream with gold plan (oracle, all 91 executable, adjudicated) | 100% [90–100] (raw 91.7%) | 100% [94–100] |
 | Deterministic refusals (section absent, year not held, non-corpus, ambiguous, flagged figure, fallback) | 100% | 100% |
-| Figure-guard redactions (masking misses), 6 runs | 0 | 0 |
-| Invalid citations, 6 runs | 0 | 0 |
+| Figure-guard redactions (masking misses), 9 runs | 0 | 0 |
+| Invalid citations, 9 runs | 1 in total, detected by the citation check | |
+| Retrieval: relevant chunk in the top 5 (strict, n = 18 specific questions) | 100% [68–100] | 100% [72–100] |
+| Retrieval: capped recall@5 / precision@5 (strict) | 79% / 50% | 59% / 46% |
+| **Attribution: claims supported by their cited chunks** (validated judge, 322 claims) | **91.1%** [85–95] | **94.5%** [90–97] |
 
-Reading it: the downstream system is near-exact when given the right plan; the
-remaining end-to-end errors are almost all routing. v1's held-out number is the
-only one untouched by tuning; v2 and v3 held-out numbers are reported beside it,
-not instead of it (section 4.4).
+Reading it: the downstream system is exact when given the right plan; the
+remaining end-to-end errors are almost all routing. Retrieval always puts a
+relevant chunk in front of the chain, but often not all of them (Walmart's
+liquidity text ranks 9–18, section 7.4). About 7% of answer sentences claim more
+than their cited text says — mostly added inference, rarely invention (section
+8.3). v1's held-out routing number is the only one untouched by tuning; v2 and
+v3 held-out numbers are reported beside it, not instead of it (section 4.4).
 
 ---
 
@@ -135,17 +141,20 @@ the v3 run made it final.
 
 ## 5. Execution Outcomes
 
-### 5.1 Oracle vs end to end on identical questions (adjudicated)
+### 5.1 Oracle vs end to end on identical questions
 
-| Questions | Split | Oracle (per run) | End to end (per run) |
-|---|---|---|---|
-| Executable, non-hybrid | held (29) | 28 / 28 / 28 | 25 / 26 / 26 |
-| | dev (45) | 45 / 44 / 45 | 43 / 42 / 42 |
-| Hybrid | held (7) | see 6.2 | 7 / 7 / 7 |
-| | dev (10) | see 6.2 | 10 / 10 / 10 |
+The oracle was rerun after D50 gave each narrative task of a multi-task label its
+own question, so hybrids are now included.
 
-Every non-hybrid question that passes the oracle but fails end to end is a
-routing miss already listed in 4.5: N01, N32, N35, N41, N43, H01.
+| Questions | Split | Oracle raw (per run) | Oracle adjudicated | End to end (per run, adjudicated) |
+|---|---|---|---|---|
+| All executable | held (36) | 33 / 33 / 33 | 36 / 36 / 36 | 32 / 33 / 33 |
+| | dev (55) | 55 / 55 / 55 | 55 / 55 / 55 | 53 / 52 / 52 |
+
+The three raw held misses are label errors, not system errors: R35 and N14
+(6.1) and N20, labelled "answered" although no relevant chunk exists in the
+corpus (section 7.5). Every question that passes the oracle but fails end to end
+is a routing miss already listed in 4.5: N01, N32, N35, N41, N43, H01.
 
 ### 5.2 Outcomes decided in code — all exact
 
@@ -165,9 +174,11 @@ routing miss already listed in 4.5: N01, N32, N35, N41, N43, H01.
 | 1 | 31 | 0 | 22 | 0 | 0 |
 | 2 | 31 | 0 | 19 | 0 | 0 |
 | 3 | 31 | 0 | 19 | 0 | 0 |
+| Oracle rerun (D50), runs 1–3 | 28 / 28 / 28 | 0 | — | — | 0 / 1 / 0 |
 
 The redaction backstop never fired: masking caught every stored figure before
-the model saw it. Every citation pointed at a retrieved block.
+the model saw it. One citation in nine runs pointed at a block number that did
+not exist; the citation check detected and counted it. First occurrence, logged.
 
 ### 5.4 Corpus-wide surveys (oracle, run 1)
 
@@ -198,54 +209,233 @@ score is reported as primary and the adjudicated score beside it.
 | ID | Label said | Correct | Why |
 |---|---|---|---|
 | N29 | single task only | two same-intent tasks also acceptable | Accepted for N22, not here — inconsistent labelling |
+| N20 | answered | not_addressed (honest refusal) | Intel's two strategy chunks are a 10-K cross-reference index; no relevant chunk exists (7.5) |
 | N44 | ratio_or_derived | field_not_queryable defensible | Debt-to-equity needs equity, which is not stored |
 | R35 | BAC revenue answered | answered_flagged | BAC's four fields are in the 2–2 scale tie (5A); revenue is disputed |
 | N14 | answered | answered_flagged | The lowest row is Intel, whose net income is disputed |
 
-### 6.2 Harness artifact — oracle hybrids
+### 6.2 Harness artifact — oracle hybrids (fixed, D50)
 
-The oracle passes the original question to each narrative task. For a hybrid
-("Describe Tesla's business and give its total revenue"), the narrative task
-then receives a question that also asks for a figure, and the chain refuses.
-Five oracle misses (R33, N37, N39, N40, R35's narrative half) are this
-artifact; all five pass end to end, where the planner splits the question.
-Oracle numbers above therefore exclude hybrids. Fix before the attribution run:
-per-task questions for hybrids, or hybrids excluded from oracle.
+The first oracle passed the whole question to each narrative task, so a hybrid
+("Describe Tesla's business and give its total revenue") sent the figure clause
+to the chain, which correctly refused it. Five oracle misses were this artifact.
+D50 gives each narrative task of the 13 multi-task labels its own clause, kept in
+`oracle_params.json` beside the frozen labels; a missing clause now raises. After
+the fix every hybrid passes the oracle.
 
 ### 6.3 Genuine downstream misses
 
-- **N20** (Intel turnaround strategy): not_addressed in every run, both modes.
-  Intel's strategy pool is 2 chunks (no Item 7). Probably an honest refusal;
-  to be verified against the chunks during retrieval labelling.
+- **N20** (Intel turnaround strategy): resolved as a label error (6.1). Both
+  of Intel's eligible chunks are the 10-K cross-reference index, so the refusal
+  is the correct answer; the defect is the corpus (Intel's Item 1 and MD&A text
+  were not captured).
 - **N41** (Apple R&D): the chain returned figure_requested in 1 of 3 runs,
   treating R&D as a reserved figure. D45's policy is fragile at both the
   planner and the chain.
 
 ---
 
-## 7. Pending
+## 7. Retrieval
 
-- **Retrieval hit-rate**: chunk-level gold for the 23 narrative-set questions
-  (keyword + top-10 pooling, model-proposed and human-verified), recall@k.
-  Ticker + section hit-rate is ~100% by construction under filtered retrieval
-  and is reported only as a sanity counter.
-- **Attribution support (D43)**: validated judge (gpt-6-luna) over every claim.
-  Pass criteria fixed in D43 before any judge output: seeded catch rate ≥ 0.90
-  overall and ≥ 0.80 per type, Cohen's kappa ≥ 0.70 against blind human labels,
-  ≤ 5% label flips across runs. Run 1 produced 157 single-company claims and 97
-  supported survey findings (oracle).
+Scorer: `scripts/run_retrieval_eval.py`; gold: `data/eval/retrieval_gold.json`
+(frozen by hash, D49); results: `data/eval/retrieval_results.{json,md}`.
+
+### 7.1 Why chunk-level gold
+
+Retrieval filters on company and section (D30, D38), so "right company, right
+section" is ~100% by construction and measures the filter. What can fail is which
+chunks of the right section reach the 5 the chain reads. That needs chunk-level
+relevance labels.
+
+### 7.2 Gold
+
+- 24 questions: the 23-question narrative set plus N20 as an audit.
+- Pool per question: the retriever's top 10 ∪ keyword hits (regexes written from
+  the question before reading retrieved text, capped at 25). Pooled-but-unlabelled
+  = not relevant; outside the pool = unjudged.
+- Rule fixed before labelling: **rel** = a reader could write at least one sentence
+  answering the question from this chunk alone, for this company; **border** = on
+  topic but generic, a summary bullet, hypothetical or partial.
+- Labels proposed with an evidence phrase each; every label reviewed by the
+  developer (one change, R18). Two further rounds labelled every chunk that entered
+  any top 10 unjudged, until none remained. 173 rel/border labels; 110 rel.
+
+### 7.3 Results (strict = rel only; planner query = what production embeds)
+
+| Questions | n | Relevant in top 5 | Capped recall@5 | Recall@10 | Precision@5 | First relevant rank |
+|---|---|---|---|---|---|---|
+| Specific, held-out | 8 | 100% [68–100] | 79% | 83% | 50% | 1.5 |
+| Specific, dev | 10 | 100% [72–100] | 59% | 70% | 46% | 1.4 |
+| Specific, all | 18 | 100% [82–100] | 68% | 76% | 48% | 1.4 |
+| Broad (precision only) | 5 | — | — | — | 84% (92% lenient) | 1.0 |
+
+Capped recall = relevant in top k / min(k, R): a question with 17 relevant chunks
+cannot fit more than 5 in a top 5, and plain recall would call a perfect top 5 29%.
+Recall is an upper bound (unpooled relevant chunks are unknown).
+
+**Planner rewording vs the user's words**: identical rankings on 17 of 18 specific
+questions; N19 improved (+20 points recall@5). Rewording neither helps nor hurts.
+The one cost came from intent, not wording: the planner routes R24 (Pfizer
+regulatory risk) to risk_factors, an accepted label, which searches Item 1A only
+and makes 8 of its 19 relevant chunks unreachable (recall@10 70% → 50%).
+
+Held-out scores higher than dev because the two hardest questions (R28, N29,
+both Walmart MD&A) happen to be in dev; with n = 8 and 10 the gap means little.
+
+### 7.4 Weakest questions, and the diagnosed cause (D51)
+
+| Question | Recall@5 | Why |
+|---|---|---|
+| R28 Walmart liquidity | 20% | Liquidity chunks rank 9, 15, 17, 18 behind general MD&A |
+| N19 Salesforce growth strategy | 20% (40% planner) | Strategy spread thinly across Item 1 |
+| N29 Walmart inventory & capital needs | 40% | Same section, same crowding as R28 |
+| R19 Netflix content investment | 50% | First relevant chunk at rank 5 |
+
+A controlled test on R28 and N29 (dev) changed one side at a time:
+
+| Condition | R28 recall@5 | N29 recall@5 |
+|---|---|---|
+| Baseline | 20% | 40% |
+| Subsection heading prefixed to every chunk | **80%** | **60%** |
+| Question rewritten in the filing's words | 60% | 40% |
+
+Chunks deep inside "Liquidity and Capital Resources" no longer carry that heading.
+Heading loss is the larger effect; vocabulary is partial. Headings were assigned by
+a crude heuristic, so the effect is directional. The fix — contextual chunk headers
+from the parser — needs a full re-embed and is logged as a next step, not built.
+
+### 7.5 N20 audit
+
+Both of Intel's eligible strategy chunks are the 10-K cross-reference index
+("Item 1. Business … Pages 3–9"). No relevant chunk exists, so not_addressed is
+the correct answer and the label is wrong (6.1).
+
+### 7.6 Limitations
+
+- n = 18 specific questions: a 100% top-5 hit rate has a lower bound of 82%.
+- R24 (59 keyword hits) and R25 (34) were capped at 25 labelled: their recall is a
+  weak upper bound; precision is the informative number there.
+- Similarity is not salience: broad risk questions reach ~100% precision because
+  every Item 1A chunk names a risk. Whether the top 5 holds the *main* risks is not
+  measured (N25's rank 1 is J&J's COVID vaccine-programme uncertainty).
 
 ---
 
-## 8. Reproduce
+## 8. Attribution Support
+
+Judge: `src/eval/attribution.py`; run: `scripts/run_attribution_eval.py`;
+results: `data/eval/attribution_results.{json,md}`; labels:
+`data/eval/attribution_labels.json`. Design D43, amended D52 before the first run.
+
+### 8.1 What is measured
+
+For each sentence of a narrative answer and the chunks it cites: do the chunks
+support **every** detail (company, figures, dates, causes, qualifiers)? Binary
+verdict, supporting span quoted. The judge (gpt-6-luna, function calling,
+reasoning off) is a different model from the system (gpt-4o-mini) to reduce
+self-preference. It sees the claim, the company it is about and the cited text —
+not the question, so it rules on support, not relevance.
+
+### 8.2 Judge validation — passed every criterion
+
+Validation set: 20 calibration claims, 40 test claims (random, seed 43, ≤ 3 per
+question) and 30 seeded mismatches built from test claims: 10 with an invented
+detail written by hand, 10 citing a wrong chunk of the same company, 10 citing the
+nearest chunk of a different company. All 30 seeds were read against their text to
+confirm none was accidentally supported.
+
+| Criterion (committed before any judge output) | Result | Bar |
+|---|---|---|
+| Seeded mismatches caught, overall | **30 / 30** | ≥ 90% |
+| — invented detail / wrong block / wrong company | 10/10 · 10/10 · 10/10 | ≥ 80% each |
+| Cohen's kappa vs reference, 40 test + 30 seeds | **0.97** (1.00 after adjudication) | ≥ 0.70 |
+| Label flips across 3 runs (validation) | 3.3% | ≤ 5% |
+
+Reference labels for the test claims were written by Claude — a different model
+family from the judge, from claim and excerpts only — at the developer's request,
+not by a human (D52). The single judge–reference disagreement (T02, Tesla:
+"continuous innovation in EV technology" is not in the text) was adjudicated by the
+developer in the judge's favour, giving 40 / 40 agreement on real claims.
+
+Why kappa, and why over test + seeds: 39 of 40 real claims are supported, so a judge
+that always said "supported" would score 97.5% raw agreement while catching
+nothing. Kappa discounts chance agreement. At that prevalence it is also unstable:
+the one disagreement alone gives a test-only kappa of 0.66 at 97.5% agreement.
+Adding the 30 known-bad seeds gives both classes enough items (D52, decided before
+the run).
+
+Calibration (not gating): 17 / 20 agreement. The judge is stricter on wording than
+the reference — it rejected "substantial" for the filing's "significant" (C20) —
+so the headline below leans conservative.
+
+### 8.3 Results — 322 claims, end-to-end run 1
+
+| Group | Claims | Supported |
+|---|---|---|
+| **All** | 322 | **93.2%** [90–95] |
+| Held-out questions | 123 | 91.1% [85–95] |
+| Dev questions | 199 | 94.5% [90–97] |
+| Single-company answers | 172 | 94.2% |
+| Corpus-wide survey findings | 150 | 92.0% |
+
+Intervals use n = claims; claims cluster within questions, so true uncertainty is
+wider. 2 of 324 claims got no verdict (all three calls failed).
+
+**What the 22 unsupported claims are** — mostly added inference, rarely invention:
+
+| Pattern | Count | Example |
+|---|---|---|
+| Inference the text does not make | 10 | "…which reflects its focus on improving inventory management" (N29); "as part of its growth strategy" (N40) |
+| Over-specific or narrowed detail | 6 | "particularly those used in AI applications" (N35 QCOM); "advertising business specifically" (N27) |
+| Wrong attribution within the text | 2 | Netflix's operating-margin drivers reported as revenue drivers; company-wide FX impact reported as streaming-only (N28) |
+| No support at all | 1 | Amazon "inflation may impact demand" — cited text never mentions it (N33) |
+| Borderline: wording strictness or split runs | 3 | "significantly affect market value" (H08 META); H05 ADBE and H08 TGT split 1–2 across runs |
+
+The N35 "AI risk" survey suspicion (5.4) is confirmed in one case: Bank of America's
+text is about regulators' compliance focus on AI, not AI causing harm.
+
+### 8.4 Caveats
+
+- Reference labels are a second model's, not a human's; two LLMs can share a blind
+  spot. The seeds, wrong by construction, are the check that depends on neither.
+- One real unsupported claim among 40 test claims: the judge's recall on *real*
+  failures is barely measured and rests on the seeds.
+- Flip rate on the 322 scored claims was 5.6%, just above the 5% bar that was set
+  for the validation set; majority over 3 runs is the label.
+- For 104 of 300 SUPPORTED verdicts the judge's quoted span is not verbatim in the
+  text (paraphrased or reformatted quotes). Recorded, not used for verdicts.
+
+---
+
+## 9. Known Limitations and Next Steps
+
+| Item | Status |
+|---|---|
+| Chunks lose their subsection heading (R28, N29) | Diagnosed (D51); fix = contextual chunk headers, needs re-embed |
+| Unnamed-company questions planned as surveys (N49, N50) | Wrong answers; needs a structural guard, not a prompt rule |
+| R&D and dividend questions refused (N41, N43) | D45 policy fragile; needs a schema signal |
+| ~7% of answer sentences over-interpret their source | Measured; candidate fix = run the judge as a post-generation check |
+| Corpus gaps: Intel/JPM/XOM MD&A, Tesla Item 7A, Intel Item 1 is an index | Logged; acquisition-layer fixes |
+| Planner on a stronger model | Not run; would share the judge's model |
+
+---
+
+## 10. Reproduce
 
 ```bash
-python -m scripts.diagnostic.dump_section_inventory   # section inventory
-python -m scripts.run_routing_eval                    # routing, 3 runs
-python -m scripts.run_execution_eval                  # oracle + end to end, 3 runs
-pytest tests                                          # 157 unit tests
+python -m scripts.diagnostic.dump_section_inventory          # section inventory
+python -m scripts.run_routing_eval                           # routing, 3 runs
+python -m scripts.run_execution_eval                         # oracle + end to end, 3 runs
+python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
+python -m scripts.diagnostic.probe_heading_context           # D51 diagnostic
+python -m scripts.diagnostic.probe_judge                     # judge structured-output probe
+python -m scripts.export_attribution_set                     # seeds + label sheet
+python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
+pytest tests                                                 # 186 unit tests
 ```
 
-Evidence files in `data/eval/`: `query_eval_set.json`, `section_inventory.json`,
+Evidence in `data/eval/`: `query_eval_set.json`, `section_inventory.json`,
 `oracle_params.json`, `routing_results_{0ed3e740,f5252664,d4bc8e36}.{json,md}`,
-`execution_results_d4bc8e36_b1d8ee5c.{json,md}`. Decisions D43–D47.
+`execution_results_d4bc8e36_b1d8ee5c{,_oracle}.{json,md}`, `retrieval_gold.json`,
+`retrieval_results.{json,md}`, `attribution_set.json`, `attribution_seeds.json`,
+`attribution_labels.json`, `attribution_results.{json,md}`. Decisions D43–D52.
