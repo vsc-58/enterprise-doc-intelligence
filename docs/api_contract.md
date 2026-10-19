@@ -243,9 +243,21 @@ of a crash loop.
 | 503 | Not ready (§6); OpenAI unreachable/timeout/rate-limited/auth on the planner call; every task in the plan `failed` | error envelope: `not_ready`, `llm_unavailable`, `service_degraded` |
 | 504 | `QUERY_TIMEOUT_SECONDS` exceeded | error envelope, `timeout` |
 
-**Partial vs total failure.** One failed task in a hybrid is a 200 with that
-part explained (5A design). If *every* task failed, nothing was answered: 503
-`service_degraded`, so a client does not treat it as an answer.
+**Refused is not failed.** `refused` means the system worked and the corpus
+cannot answer (year not held, section absent, …) — a correct answer. `failed`
+means something broke. Only `failed` can make a response 5xx.
+
+| Task statuses in the plan | Status | Why |
+|---|---|---|
+| all `success` | 200 | answered |
+| all `refused` | 200 | each part's own refusal sentence, e.g. year not held + section absent |
+| `success` + `refused` / `failed` (any mix with one success) | 200 | partial answer, each part explained (5A design) |
+| `refused` + `failed` | 200 | the refused part is a complete answer; the failed part says it could not be answered; `tasks[].status` tells a client which is which |
+| all `failed` | 503 `service_degraded` | nothing was answered and nothing is known about the corpus; a retry may work |
+
+No generic "not answerable from this corpus" summary line is added on top:
+each refused part already carries its own specific sentence (typed refusals,
+Python-written), and a generic line would hide which reason applied.
 
 **OpenAI down → 503, not 502.** 502 says "an upstream gave a bad response";
 the user-facing meaning (try again later) is 503's. Stated default.
