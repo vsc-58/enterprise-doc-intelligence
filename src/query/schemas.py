@@ -361,11 +361,17 @@ class MetricResult(BaseModel):
         non-filter intents. Carried rather than reparsed so the number that
         selected the rows and the number quoted back to the user are the same
         value, computed once.
+        flagged_not_shown: Companies left out of a ranking or filter whose
+            figure for the queried metric is not verified. A mis-scaled figure
+            decides membership, so a flagged company the query dropped may
+            belong in the answer; the renderer names each one (D36 extended).
+            Always empty for single-company lookups.
     """
 
     model_config = ConfigDict(frozen=True)
 
     rows: list[MetricRow] = Field(default_factory=list)
+    flagged_not_shown: list[MetricRow] = Field(default_factory=list)
     excluded_null_count: int = 0
     mixed_years: bool = False
     sql_preview: str | None = None
