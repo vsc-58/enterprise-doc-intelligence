@@ -32,17 +32,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
 
+from src.api.context import REQUEST_ID_HEADER, elapsed_ms
 from src.api.errors import ERROR_MESSAGES, ApiError
 from src.api.models import ErrorBody, ErrorCode
 from src.api.readiness import Readiness
+from src.api.routes import query as query_routes
 from src.rag.figure_guard import FigureGuardError
 from src.storage.vector_store import VectorStoreError
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-REQUEST_ID_HEADER = "X-Request-ID"
 
 # An incoming request id is reused only if it is short and plain. Anything else
 # is replaced: the id is written into every log line, so an attacker-chosen
@@ -69,8 +69,8 @@ _STORE_UNAVAILABLE: tuple[type[Exception], ...] = (
     OperationalError,
 )
 
-# Routers are added as the route files are built (steps 6 and 7).
-_ROUTERS: list[APIRouter] = []
+# One router per route file. /documents, /export and /health follow in step 7.
+_ROUTERS: list[APIRouter] = [query_routes.router]
 
 _DESCRIPTION = (
     "Question answering over 20 SEC 10-K filings. Each question is planned into "
@@ -136,23 +136,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 # --- Middleware ---------------------------------------------------------------
-
-
-def elapsed_ms(request: Request) -> int:
-    """
-    Milliseconds since the middleware started handling this request.
-
-    Args:
-        request: The current request.
-
-    Returns:
-        Elapsed whole milliseconds; 0 if the middleware did not run (tests that
-        call a handler directly).
-    """
-    started = getattr(request.state, "started_at", None)
-    if started is None:
-        return 0
-    return round((time.perf_counter() - started) * 1000)
 
 
 async def request_context(

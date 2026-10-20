@@ -259,6 +259,12 @@ No generic "not answerable from this corpus" summary line is added on top:
 each refused part already carries its own specific sentence (typed refusals,
 Python-written), and a generic line would hide which reason applied.
 
+**422 is checked before readiness.** A malformed body is a 422 even while the
+server is not ready: validation costs nothing, readiness may touch the disk, and
+"try again in 5 s" would be wrong advice for a request that can never succeed.
+(FastAPI runs dependencies before body validation, so `/query` checks readiness
+inside the handler — found running the server in step 6.)
+
 **OpenAI down → 503, not 502.** 502 says "an upstream gave a bad response";
 the user-facing meaning (try again later) is 503's. Stated default.
 
@@ -322,7 +328,10 @@ one worker (§1). The OpenAI dashboard spending limit stays the final guard.
 ```
 src/api/models.py          request/response models (this document, §3–§6)
 src/api/main.py            app, lifespan, middleware, exception handlers, CORS
-src/api/dependencies.py    get_index, readiness
+src/api/context.py         request-id header name, request timer
+src/api/errors.py          API error types and fixed messages
+src/api/readiness.py       which data parts are usable; warm-up and re-try
+src/api/dependencies.py    per-endpoint readiness checks
 src/api/mapping.py         plan + outcomes + answer → QueryResponse (pure, tested)
 src/api/routes/query.py
 src/api/routes/documents.py

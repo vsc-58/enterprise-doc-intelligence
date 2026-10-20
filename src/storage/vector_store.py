@@ -148,12 +148,19 @@ def _embeddings() -> OpenAIEmbeddings:
     bug 5 — the same failure will occur here otherwise, and passing it from
     settings is also what the no-hardcode rule requires.
 
+    timeout and max_retries are the API's per-call limits (D54); the question
+    embedding runs in a worker thread a request timeout cannot stop. The same
+    client embeds 100-chunk batches in scripts.embed_documents: if a batch ever
+    needs longer, run that script with OPENAI_TIMEOUT_SECONDS=60.
+
     Returns:
         A configured OpenAIEmbeddings client.
     """
     return OpenAIEmbeddings(
         model=settings.EMBEDDING_MODEL,
         api_key=settings.OPENAI_API_KEY,
+        timeout=settings.OPENAI_TIMEOUT_SECONDS,
+        max_retries=settings.OPENAI_MAX_RETRIES,
     )
 
 

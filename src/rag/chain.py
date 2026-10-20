@@ -166,6 +166,10 @@ def _get_llm() -> ChatOpenAI:
     api_key passed explicitly: pydantic-settings does not populate os.environ
     (Phase 2 bug 5).
 
+    timeout and max_retries bound each answer and verdict call (D54). A verdict
+    call that times out marks that one company failed and the survey goes on.
+    Neither is part of chain_version().
+
     Returns:
         The configured ChatOpenAI client.
     """
@@ -175,6 +179,8 @@ def _get_llm() -> ChatOpenAI:
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,
             temperature=0,
+            timeout=settings.OPENAI_TIMEOUT_SECONDS,
+            max_retries=settings.OPENAI_MAX_RETRIES,
         )
     return _llm
 

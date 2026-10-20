@@ -53,6 +53,12 @@ def _get_llm() -> ChatOpenAI:
     into os.environ, so a client relying on ambient environment variables finds
     nothing (Phase 2 bug 5).
 
+    timeout and max_retries bound one planner call (D54). The API runs this call
+    in a worker thread that a request timeout cannot stop, so these two values
+    are what end it: 10 s x (1 retry + 1) = 20 s, inside the 30 s request limit.
+    Neither is part of planner_version(): they change how long we wait, not
+    what the model is asked.
+
     Returns:
         The configured ChatOpenAI client.
     """
@@ -62,6 +68,8 @@ def _get_llm() -> ChatOpenAI:
             model=settings.OPENAI_MODEL,
             api_key=settings.OPENAI_API_KEY,
             temperature=0,
+            timeout=settings.OPENAI_TIMEOUT_SECONDS,
+            max_retries=settings.OPENAI_MAX_RETRIES,
         )
     return _llm
 

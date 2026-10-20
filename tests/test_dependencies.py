@@ -8,7 +8,12 @@ import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from src.api.dependencies import database_ready, documents_index, query_index
+from src.api.dependencies import (
+    database_ready,
+    documents_index,
+    get_readiness,
+    query_ready_index,
+)
 from src.api.main import create_app
 from src.api.readiness import DATABASE, FIGURE_GUARD, INDEX, VECTOR_STORE, Readiness
 from src.query.resolve import CorpusIndex
@@ -35,7 +40,8 @@ def _app(failures: dict[str, str], index: CorpusIndex | None) -> FastAPI:
     app.state.readiness = state
 
     @app.get("/q")
-    async def q(idx: CorpusIndex = Depends(query_index)) -> dict[str, int]:
+    async def q(readiness: Readiness = Depends(get_readiness)) -> dict[str, int]:
+        idx = await query_ready_index(readiness)       # as /query does, after validation
         return {"documents": len(idx.entries)}
 
     @app.get("/d")
