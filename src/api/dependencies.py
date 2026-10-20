@@ -19,10 +19,15 @@
 # query_ready_index inside the handler, after validation: 422 always wins.
 # Routes without a body use the raising dependencies directly.
 #
-# Tests swap get_readiness through app.dependency_overrides for a hand-built
-# Readiness, so route tests need no database.
+# Every endpoint reaches readiness through Depends(get_readiness) — directly or
+# as a sub-dependency — so one app.dependency_overrides[get_readiness] swaps it
+# for a hand-built Readiness everywhere, and route tests need no database.
+# (Calling get_readiness(request) directly would bypass the override: found
+# when the step-7 route tests first ran.)
 
-from fastapi import Request
+from typing import Annotated
+
+from fastapi import Depends, Request
 
 from src.api.errors import NotReadyError
 from src.api.readiness import DATABASE, FIGURE_GUARD, INDEX, VECTOR_STORE, Readiness
@@ -103,12 +108,15 @@ async def query_ready_index(readiness: Readiness) -> CorpusIndex:
     return _loaded_index(await require(readiness, QUERY_NEEDS))
 
 
-async def documents_index(request: Request) -> CorpusIndex:
+async def documents_index(
+    readiness: Annotated[Readiness, Depends(get_readiness)],
+) -> CorpusIndex:
     """
     Dependency for /documents: the corpus index only.
 
     Args:
-        request: The current request.
+        readiness: From get_readiness, as a sub-dependency so a test override
+            of get_readiness reaches every endpoint the same way.
 
     Returns:
         The corpus index.
@@ -116,17 +124,17 @@ async def documents_index(request: Request) -> CorpusIndex:
     Raises:
         NotReadyError: if the index is missing.
     """
-    return _loaded_index(await require(get_readiness(request), DOCUMENTS_NEEDS))
+    return _loaded_index(await require(readiness, DOCUMENTS_NEEDS))
 
 
-async def database_ready(request: Request) -> None:
+async def database_ready(readiness: Annotated[Readiness, Depends(get_readiness)]) -> None:
     """
     Dependency for /export: the database file is present.
 
     Args:
-        request: The current request.
+        readiness: From get_readiness, as a sub-dependency.
 
     Raises:
         NotReadyError: if the database is missing.
     """
-    await require(get_readiness(request), EXPORT_NEEDS)
+    await require(readiness, EXPORT_NEEDS)

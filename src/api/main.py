@@ -36,6 +36,9 @@ from src.api.context import REQUEST_ID_HEADER, elapsed_ms
 from src.api.errors import ERROR_MESSAGES, ApiError
 from src.api.models import ErrorBody, ErrorCode
 from src.api.readiness import Readiness
+from src.api.routes import documents as documents_routes
+from src.api.routes import export as export_routes
+from src.api.routes import health as health_routes
 from src.api.routes import query as query_routes
 from src.rag.figure_guard import FigureGuardError
 from src.storage.vector_store import VectorStoreError
@@ -69,8 +72,13 @@ _STORE_UNAVAILABLE: tuple[type[Exception], ...] = (
     OperationalError,
 )
 
-# One router per route file. /documents, /export and /health follow in step 7.
-_ROUTERS: list[APIRouter] = [query_routes.router]
+# One router per route file, in the order Swagger lists them.
+_ROUTERS: list[APIRouter] = [
+    query_routes.router,
+    documents_routes.router,
+    export_routes.router,
+    health_routes.router,
+]
 
 _DESCRIPTION = (
     "Question answering over 20 SEC 10-K filings. Each question is planned into "
