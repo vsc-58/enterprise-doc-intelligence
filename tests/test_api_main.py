@@ -1,10 +1,12 @@
 """The app shell: startup that never crashes, request ids, error envelope, CORS.
 
-No database, no vector store, no API key: the three startup calls are replaced,
-and errors are raised from throwaway routes added to a fresh app.
+No database, no vector store, no API key: startup runs against empty temporary
+paths or a replaced warm-up, and errors are raised from throwaway routes added
+to a fresh app.
 """
 
 import re
+from pathlib import Path
 
 import httpx
 import openai
@@ -13,7 +15,6 @@ import structlog
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.api import main
 from src.api.errors import (
     ERROR_MESSAGES,
     NotReadyError,
@@ -23,70 +24,40 @@ from src.api.errors import (
 )
 from src.api.main import REQUEST_ID_HEADER, create_app, timeouts_consistent
 from src.api.models import ErrorCode, QueryRequest
-from src.query.resolve import CorpusIndex
+from src.api.readiness import Readiness
 from src.rag.figure_guard import FigureGuardError
 from src.storage.vector_store import VectorStoreError
+from src.utils.config import settings
 
 # --- Startup ------------------------------------------------------------------
+# What readiness checks is tested in test_readiness.py. Here: the lifespan runs
+# it once, stores it on app.state, and never stops the server.
 
 
-@pytest.fixture
-def stub_startup(monkeypatch: pytest.MonkeyPatch, index: CorpusIndex) -> CorpusIndex:
-    """Replace the three startup calls with ones that succeed without any store."""
-    monkeypatch.setattr(main, "load_index", lambda: index)
-    monkeypatch.setattr(main, "get_store", lambda: object())
-    monkeypatch.setattr(main, "collection_count", lambda: 1750)
-    monkeypatch.setattr(main, "load_guard_values", lambda: {})
-    return index
+def test_lifespan_stores_a_warmed_readiness(monkeypatch: pytest.MonkeyPatch) -> None:
+    warmed: list[Readiness] = []
 
+    async def fake_warm(self: Readiness) -> None:
+        self.failures = {}
+        warmed.append(self)
 
-def test_startup_loads_the_index_once(stub_startup: CorpusIndex) -> None:
+    monkeypatch.setattr(Readiness, "warm", fake_warm)
     app = create_app()
     with TestClient(app):                       # "with" runs the lifespan
-        assert app.state.index is stub_startup
-        assert app.state.startup_errors == {}
+        assert app.state.readiness is warmed[0]
+        assert app.state.readiness.ready
 
 
-def test_startup_survives_an_empty_database(
-    stub_startup: CorpusIndex, monkeypatch: pytest.MonkeyPatch
+def test_server_starts_when_nothing_is_present(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """load_index raises RuntimeError on an empty corpus; the server still starts."""
-    def empty() -> CorpusIndex:
-        raise RuntimeError("corpus index is empty")
-    monkeypatch.setattr(main, "load_index", empty)
+    """The real warm-up against empty paths: the app starts, not ready."""
+    monkeypatch.setattr(settings, "SQLITE_DB_PATH", str(tmp_path / "metadata.db"))
+    monkeypatch.setattr(settings, "CHROMA_DB_PATH", str(tmp_path / "chroma"))
     app = create_app()
-    with TestClient(app):
-        assert app.state.index is None
-        assert app.state.startup_errors == {"index": "RuntimeError"}
-
-
-def test_startup_records_every_failed_part(
-    stub_startup: CorpusIndex, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """One failure must not hide another."""
-    def no_store() -> object:
-        raise VectorStoreError("cannot open")
-    def no_guard() -> dict:
-        raise FigureGuardError("cannot read")
-    monkeypatch.setattr(main, "get_store", no_store)
-    monkeypatch.setattr(main, "load_guard_values", no_guard)
-    app = create_app()
-    with TestClient(app):
-        assert app.state.index is stub_startup
-        assert app.state.startup_errors == {
-            "vector_store": "VectorStoreError", "figure_guard": "FigureGuardError",
-        }
-
-
-@pytest.mark.parametrize(("chunks", "label"), [(0, "EmptyVectorStore"), (-1, "EmptyVectorStore")])
-def test_empty_or_unreadable_store_is_not_ready(
-    stub_startup: CorpusIndex, monkeypatch: pytest.MonkeyPatch, chunks: int, label: str
-) -> None:
-    """get_store() creates an empty collection when none exists; opening proves nothing."""
-    monkeypatch.setattr(main, "collection_count", lambda: chunks)
-    app = create_app()
-    with TestClient(app):
-        assert app.state.startup_errors == {"vector_store": label}
+    with TestClient(app) as client:
+        assert not app.state.readiness.ready
+        assert client.get("/no-such-path").status_code == 404     # still serving
 
 
 @pytest.mark.parametrize(
@@ -190,6 +161,18 @@ def test_each_error_maps_to_one_envelope(exc: Exception, status_code: int, code:
     assert body["error"] == code.value
     assert body["message"] == ERROR_MESSAGES[code]
     assert body["request_id"] == response.headers[REQUEST_ID_HEADER]
+
+
+@pytest.mark.parametrize(("exc", "status_code", "code"), _CASES)
+def test_only_503_tells_the_client_when_to_retry(
+    exc: Exception, status_code: int, code: ErrorCode
+) -> None:
+    """Retry-After is the readiness re-try interval, the earliest possible recovery."""
+    response = _client_raising(exc).get("/boom")
+    if status_code == 503:
+        assert response.headers["Retry-After"] == "5"
+    else:
+        assert "Retry-After" not in response.headers
 
 
 def test_exception_text_never_reaches_the_client() -> None:

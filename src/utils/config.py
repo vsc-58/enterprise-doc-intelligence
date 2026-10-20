@@ -227,6 +227,10 @@ class Settings(BaseSettings):
     OPENAI_TIMEOUT_SECONDS: float = 10.0
     OPENAI_MAX_RETRIES: int = 1
 
+    # While the API is not ready, a request may re-try loading the data at most
+    # this often (src/api/readiness.py). Also sent as Retry-After on 503s.
+    READINESS_RETRY_SECONDS: float = 5.0
+
     # Browser origins allowed to call the API from another site. Empty: Swagger
     # at /docs is same-origin and needs none; curl and tests ignore CORS. Set
     # as JSON in .env, e.g. CORS_ALLOW_ORIGINS=["http://localhost:3000"].

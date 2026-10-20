@@ -5,25 +5,20 @@
 #          error envelope (docs/api_contract.md §7). Routes live in
 #          src/api/routes/ and are registered here.
 # Depends on: fastapi, starlette, structlog, openai, sqlalchemy, src.api.*,
-#             src.query.resolve, src.rag.figure_guard, src.storage.vector_store,
-#             src.utils.*
+#             src.rag.figure_guard, src.storage.vector_store, src.utils.*
 #
 # Run locally:  uvicorn src.api.main:app --reload            (port 8000)
-# One worker only: Chroma's local store is single-process and the caches warmed
-# below live per process (contract §1).
+# One worker only: Chroma's local store is single-process and the caches the
+# readiness warm-up fills live per process (contract §1).
 #
-# Startup never crashes on a missing store (D54). Each part is warmed on its
-# own; a failure is logged and recorded in app.state.startup_errors, and the
-# server starts anyway. /health reports which part failed and /query refuses
-# with 503 not_ready (both in later steps). On a hosted Space this shows the
-# cause in a browser instead of a crash loop.
-#
-# The lifespan WARMS caches that already exist at module level — load_index()'s
-# _cached_index, get_store()'s locked singleton, load_guard_values()'s
-# lru_cache — rather than building a second engine or client. The query path
-# keeps using its own accessors; warming moves the slow first call to startup.
+# Startup never crashes on a missing store (D54). The lifespan warms the data
+# parts through src/api/readiness.py and stores the state on app.state.readiness;
+# a missing part is logged and the server starts anyway. Routes declare what
+# they need through src/api/dependencies.py, which re-tries readiness while not
+# ready and otherwise answers 503 not_ready with Retry-After. On a hosted Space
+# this shows the cause in a browser instead of a crash loop.
 
-import asyncio
+import math
 import re
 import time
 import uuid
@@ -35,13 +30,13 @@ import structlog
 from fastapi import APIRouter, FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.exc import OperationalError
 
 from src.api.errors import ERROR_MESSAGES, ApiError
 from src.api.models import ErrorBody, ErrorCode
-from src.query.resolve import load_index
-from src.rag.figure_guard import FigureGuardError, load_guard_values
-from src.storage.vector_store import VectorStoreError, collection_count, get_store
+from src.api.readiness import Readiness
+from src.rag.figure_guard import FigureGuardError
+from src.storage.vector_store import VectorStoreError
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
@@ -108,61 +103,6 @@ def timeouts_consistent(request_s: float, per_call_s: float, retries: int) -> bo
     return per_call_s * (retries + 1) < request_s
 
 
-def _record_failure(app: FastAPI, part: str, error_type: str, detail: str) -> None:
-    """
-    Log one failed startup part and remember it for /health.
-
-    Args:
-        app: The application.
-        part: Which part failed: "index", "vector_store" or "figure_guard".
-        error_type: Exception class name, or a short label for a failed check.
-        detail: What went wrong, for the log only.
-    """
-    app.state.startup_errors[part] = error_type
-    logger.error("startup_part_unavailable", part=part, error_type=error_type, error=detail)
-
-
-async def warm_up(app: FastAPI) -> None:
-    """
-    Load the corpus index and open the stores once, off the event loop.
-
-    Each part is tried on its own, so one failure does not hide another, and
-    none of them stops the server (D54).
-
-    Args:
-        app: The application. Sets app.state.index (CorpusIndex | None) and
-            app.state.startup_errors (part -> exception type name).
-    """
-    app.state.index = None
-    app.state.startup_errors = {}
-
-    try:
-        app.state.index = await asyncio.to_thread(load_index)
-    except (RuntimeError, SQLAlchemyError) as exc:   # RuntimeError: empty corpus
-        _record_failure(app, "index", type(exc).__name__, str(exc))
-
-    # Opening is not enough: on a machine with no store, get_store() CREATES an
-    # empty collection and succeeds (found running this step against an empty
-    # checkout). The count is what proves there is something to retrieve.
-    # collection_count() returns -1 when the collection cannot be read.
-    try:
-        await asyncio.to_thread(get_store)
-        chunks = await asyncio.to_thread(collection_count)
-    except VectorStoreError as exc:
-        _record_failure(app, "vector_store", type(exc).__name__, str(exc))
-    else:
-        if chunks <= 0:
-            _record_failure(
-                app, "vector_store", "EmptyVectorStore",
-                f"collection holds {chunks} chunks; run scripts.embed_documents",
-            )
-
-    try:
-        await asyncio.to_thread(load_guard_values)
-    except FigureGuardError as exc:
-        _record_failure(app, "figure_guard", type(exc).__name__, str(exc))
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
@@ -187,14 +127,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             consequence="a timed-out request can leave a planner call running",
         )
 
-    await warm_up(app)
-    index = app.state.index
-    logger.info(
-        "api_started",
-        ready=not app.state.startup_errors,
-        documents=len(index.entries) if index is not None else None,
-        unavailable=sorted(app.state.startup_errors),
-    )
+    readiness = Readiness()
+    await readiness.warm()
+    app.state.readiness = readiness
+    logger.info("api_started", ready=readiness.ready, unavailable=sorted(readiness.failures))
     yield
     logger.info("api_stopped")
 
@@ -279,10 +215,15 @@ def error_response(request: Request, code: ErrorCode, status_code: int) -> JSONR
     """
     request_id = getattr(request.state, "request_id", None) or uuid.uuid4().hex
     body = ErrorBody(error=code, message=ERROR_MESSAGES[code], request_id=request_id)
+    headers = {REQUEST_ID_HEADER: request_id}
+    if status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+        # When to try again: the readiness re-try interval, the earliest moment
+        # a not-ready server can have recovered. Whole seconds, per HTTP.
+        headers["Retry-After"] = str(math.ceil(settings.READINESS_RETRY_SECONDS))
     return JSONResponse(
         status_code=status_code,
         content=body.model_dump(mode="json"),
-        headers={REQUEST_ID_HEADER: request_id},
+        headers=headers,
     )
 
 
