@@ -31,6 +31,10 @@ def _configure_logging() -> None:
     # Configure structlog
     structlog.configure(
         processors=[
+            # Adds values bound with structlog.contextvars.bind_contextvars — the
+            # API binds request_id once per request, so every log line written
+            # while serving it carries the id. A no-op for scripts.
+            structlog.contextvars.merge_contextvars,
             structlog.stdlib.add_log_level,
             structlog.stdlib.add_logger_name,
             structlog.processors.TimeStamper(fmt="iso"),

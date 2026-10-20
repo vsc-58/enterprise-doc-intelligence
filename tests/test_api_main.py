@@ -1,0 +1,226 @@
+"""The app shell: startup that never crashes, request ids, error envelope, CORS.
+
+No database, no vector store, no API key: the three startup calls are replaced,
+and errors are raised from throwaway routes added to a fresh app.
+"""
+
+import re
+
+import httpx
+import openai
+import pytest
+import structlog
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from src.api import main
+from src.api.errors import (
+    ERROR_MESSAGES,
+    NotReadyError,
+    QueryTimeoutError,
+    RateLimitedError,
+    ServiceDegradedError,
+)
+from src.api.main import REQUEST_ID_HEADER, create_app, timeouts_consistent
+from src.api.models import ErrorCode, QueryRequest
+from src.query.resolve import CorpusIndex
+from src.rag.figure_guard import FigureGuardError
+from src.storage.vector_store import VectorStoreError
+
+# --- Startup ------------------------------------------------------------------
+
+
+@pytest.fixture
+def stub_startup(monkeypatch: pytest.MonkeyPatch, index: CorpusIndex) -> CorpusIndex:
+    """Replace the three startup calls with ones that succeed without any store."""
+    monkeypatch.setattr(main, "load_index", lambda: index)
+    monkeypatch.setattr(main, "get_store", lambda: object())
+    monkeypatch.setattr(main, "collection_count", lambda: 1750)
+    monkeypatch.setattr(main, "load_guard_values", lambda: {})
+    return index
+
+
+def test_startup_loads_the_index_once(stub_startup: CorpusIndex) -> None:
+    app = create_app()
+    with TestClient(app):                       # "with" runs the lifespan
+        assert app.state.index is stub_startup
+        assert app.state.startup_errors == {}
+
+
+def test_startup_survives_an_empty_database(
+    stub_startup: CorpusIndex, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """load_index raises RuntimeError on an empty corpus; the server still starts."""
+    def empty() -> CorpusIndex:
+        raise RuntimeError("corpus index is empty")
+    monkeypatch.setattr(main, "load_index", empty)
+    app = create_app()
+    with TestClient(app):
+        assert app.state.index is None
+        assert app.state.startup_errors == {"index": "RuntimeError"}
+
+
+def test_startup_records_every_failed_part(
+    stub_startup: CorpusIndex, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """One failure must not hide another."""
+    def no_store() -> object:
+        raise VectorStoreError("cannot open")
+    def no_guard() -> dict:
+        raise FigureGuardError("cannot read")
+    monkeypatch.setattr(main, "get_store", no_store)
+    monkeypatch.setattr(main, "load_guard_values", no_guard)
+    app = create_app()
+    with TestClient(app):
+        assert app.state.index is stub_startup
+        assert app.state.startup_errors == {
+            "vector_store": "VectorStoreError", "figure_guard": "FigureGuardError",
+        }
+
+
+@pytest.mark.parametrize(("chunks", "label"), [(0, "EmptyVectorStore"), (-1, "EmptyVectorStore")])
+def test_empty_or_unreadable_store_is_not_ready(
+    stub_startup: CorpusIndex, monkeypatch: pytest.MonkeyPatch, chunks: int, label: str
+) -> None:
+    """get_store() creates an empty collection when none exists; opening proves nothing."""
+    monkeypatch.setattr(main, "collection_count", lambda: chunks)
+    app = create_app()
+    with TestClient(app):
+        assert app.state.startup_errors == {"vector_store": label}
+
+
+@pytest.mark.parametrize(
+    ("request_s", "per_call_s", "retries", "expected"),
+    [(30, 10, 1, True), (30, 30, 0, False), (30, 10, 2, False), (30, 14.9, 1, True)],
+)
+def test_timeout_rule(request_s: float, per_call_s: float, retries: int, expected: bool) -> None:
+    """Equal timeouts fail the rule: the per-call limit could never fire first."""
+    assert timeouts_consistent(request_s, per_call_s, retries) is expected
+
+
+# --- Request id middleware -------------------------------------------------------
+
+
+def _app_with_probe() -> FastAPI:
+    """A fresh app (no lifespan run) with a route reporting the logging context."""
+    app = create_app()
+
+    @app.get("/probe")
+    async def probe() -> dict[str, str | None]:
+        return {"bound": structlog.contextvars.get_contextvars().get("request_id")}
+
+    return app
+
+
+def test_request_id_is_generated_and_returned() -> None:
+    response = TestClient(_app_with_probe()).get("/probe")
+    request_id = response.headers[REQUEST_ID_HEADER]
+    assert re.fullmatch(r"[0-9a-f]{32}", request_id)
+    assert response.json()["bound"] == request_id      # every log line carries it
+
+
+def test_safe_incoming_request_id_is_reused() -> None:
+    response = TestClient(_app_with_probe()).get(
+        "/probe", headers={REQUEST_ID_HEADER: "demo-run.42"}
+    )
+    assert response.headers[REQUEST_ID_HEADER] == "demo-run.42"
+
+
+@pytest.mark.parametrize("bad_id", ["has spaces", "x" * 65, "semi;colon"])
+def test_unsafe_incoming_request_id_is_replaced(bad_id: str) -> None:
+    """The id is written into logs, so a client cannot choose arbitrary text."""
+    response = TestClient(_app_with_probe()).get("/probe", headers={REQUEST_ID_HEADER: bad_id})
+    assert response.headers[REQUEST_ID_HEADER] != bad_id
+
+
+def test_logging_context_does_not_leak_between_requests() -> None:
+    client = TestClient(_app_with_probe())
+    first = client.get("/probe").headers[REQUEST_ID_HEADER]
+    second = client.get("/probe")
+    assert second.json()["bound"] == second.headers[REQUEST_ID_HEADER] != first
+
+
+def test_unknown_path_is_404_with_request_id() -> None:
+    response = TestClient(create_app()).get("/no-such-path")
+    assert response.status_code == 404
+    assert REQUEST_ID_HEADER in response.headers
+
+
+# --- Error envelope ---------------------------------------------------------------
+
+_CONNECTION_ERROR = openai.APIConnectionError(
+    request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+)
+_TIMEOUT_ERROR = openai.APITimeoutError(
+    request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+)
+
+_CASES: list[tuple[Exception, int, ErrorCode]] = [
+    (NotReadyError("index missing"), 503, ErrorCode.NOT_READY),
+    (ServiceDegradedError("all tasks failed"), 503, ErrorCode.SERVICE_DEGRADED),
+    (QueryTimeoutError("30 s"), 504, ErrorCode.TIMEOUT),
+    (RateLimitedError("budget"), 429, ErrorCode.RATE_LIMITED),
+    (VectorStoreError("chroma closed"), 503, ErrorCode.NOT_READY),
+    (FigureGuardError("db unreadable"), 503, ErrorCode.NOT_READY),
+    (_CONNECTION_ERROR, 503, ErrorCode.LLM_UNAVAILABLE),
+    (_TIMEOUT_ERROR, 503, ErrorCode.LLM_UNAVAILABLE),
+    (RuntimeError("unexpected"), 500, ErrorCode.INTERNAL_ERROR),
+]
+
+
+def _client_raising(exc: Exception) -> TestClient:
+    """A client for a fresh app whose /boom route raises exc."""
+    app = create_app()
+
+    @app.get("/boom")
+    async def boom() -> None:
+        raise exc
+
+    # Starlette re-raises unhandled exceptions after answering, for server
+    # logs; the client must not turn that into a test failure.
+    return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.mark.parametrize(("exc", "status_code", "code"), _CASES)
+def test_each_error_maps_to_one_envelope(exc: Exception, status_code: int, code: ErrorCode) -> None:
+    response = _client_raising(exc).get("/boom")
+    body = response.json()
+    assert response.status_code == status_code
+    assert set(body) == {"error", "message", "request_id"}
+    assert body["error"] == code.value
+    assert body["message"] == ERROR_MESSAGES[code]
+    assert body["request_id"] == response.headers[REQUEST_ID_HEADER]
+
+
+def test_exception_text_never_reaches_the_client() -> None:
+    """Paths, SQL and keys in an exception message stay in the logs."""
+    secret = "sk-test-123 at /home/user/db/metadata.db"
+    response = _client_raising(RuntimeError(secret)).get("/boom")
+    assert "sk-test" not in response.text
+    assert "metadata.db" not in response.text
+    assert "Traceback" not in response.text
+
+
+def test_validation_error_keeps_fastapi_format() -> None:
+    """422 is not wrapped: Swagger and clients understand FastAPI's format."""
+    app = create_app()
+
+    @app.post("/echo")
+    async def echo(body: QueryRequest) -> dict[str, str]:
+        return {"question": body.question}
+
+    response = TestClient(app).post("/echo", json={"question": "   "})
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "question"]
+    assert REQUEST_ID_HEADER in response.headers
+
+
+# --- CORS -------------------------------------------------------------------------
+
+
+def test_no_cross_origin_access_by_default() -> None:
+    """CORS_ALLOW_ORIGINS is empty, so a page on another site cannot read responses."""
+    response = TestClient(_app_with_probe()).get(
+        "/probe", headers={"Origin": "http://other-site.example"}
+    )
+    assert "access-control-allow-origin" not in response.headers
