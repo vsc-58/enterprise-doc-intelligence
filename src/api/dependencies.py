@@ -30,6 +30,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from src.api.errors import NotReadyError
+from src.api.limits import UsageLimiter
 from src.api.readiness import DATABASE, FIGURE_GUARD, INDEX, VECTOR_STORE, Readiness
 from src.query.resolve import CorpusIndex
 
@@ -49,6 +50,19 @@ def get_readiness(request: Request) -> Readiness:
         app.state.readiness.
     """
     return request.app.state.readiness
+
+
+def get_limiter(request: Request) -> UsageLimiter:
+    """
+    The usage limiter create_app() attached. Never raises.
+
+    Args:
+        request: The current request.
+
+    Returns:
+        app.state.limiter.
+    """
+    return request.app.state.limiter
 
 
 async def require(readiness: Readiness, needs: frozenset[str]) -> Readiness:

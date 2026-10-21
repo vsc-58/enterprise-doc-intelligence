@@ -314,12 +314,33 @@ Consequences to know:
 | `QUERY_TIMEOUT_SECONDS` | 30 | §8 |
 | `OPENAI_TIMEOUT_SECONDS` | 10 | §8 |
 | `OPENAI_MAX_RETRIES` | 1 | §8 |
+| `READINESS_RETRY_SECONDS` | 5 | Minimum gap between readiness re-tries; `Retry-After` on 503 |
 | `CORS_ALLOW_ORIGINS` | `[]` | No cross-origin browser access; Swagger is same-origin |
 | `RATE_LIMIT_PER_MINUTE` | `None` (off) | Per client IP, `/query` only → 429. Phase 8 switches on |
 | `DAILY_QUERY_BUDGET` | `None` (off) | Max `/query` calls per UTC day → 429. Phase 8 switches on |
 
-Rate limit and budget are in-memory counters — correct only because there is
-one worker (§1). The OpenAI dashboard spending limit stays the final guard.
+### Usage limits (D55, `src/api/limits.py`)
+
+- **What is counted:** `/query` requests that are about to spend money — checked
+  after body validation and readiness, immediately before the planner. A 422 or
+  a not-ready 503 is not counted. A request refused by one limit is not counted
+  against the other. `/health`, `/documents` and `/export` are never limited.
+- **Why requests, not tokens:** a request's cost has a ceiling (≤ 3 tasks,
+  ≤ `QUERY_MAX_CHARS`, the costliest kind about $0.004), so a budget of N
+  requests is a dollar cap of about N × $0.004. Count tokens if that ceiling
+  ever goes.
+- **Per client:** sliding 60-second window per client IP. `Retry-After` is the
+  seconds until that client's oldest counted request leaves the window.
+- **Daily:** all clients together, per UTC day. `Retry-After` is the seconds
+  until UTC midnight.
+- **Client identity** is the address the server sees. Behind a proxy (the
+  Hugging Face Space) run uvicorn with `--proxy-headers --forwarded-allow-ips`
+  so it is the real client's; to confirm in Phase 8 with two devices.
+  `X-Forwarded-For` is never parsed in code: any client can send it.
+- In-memory counters — correct only because there is one worker (§1) — and
+  reset on restart.
+- The OpenAI dashboard spend limit stays the final guard (it also covers a
+  leaked key, which nothing in this code can).
 
 ---
 
@@ -331,7 +352,8 @@ src/api/main.py            app, lifespan, middleware, exception handlers, CORS
 src/api/context.py         request-id header name, request timer
 src/api/errors.py          API error types and fixed messages
 src/api/readiness.py       which data parts are usable; warm-up and re-try
-src/api/dependencies.py    per-endpoint readiness checks
+src/api/dependencies.py    per-endpoint readiness checks, limiter access
+src/api/limits.py          per-client rate limit and daily budget (§9)
 src/api/mapping.py         plan + outcomes + answer → QueryResponse (pure, tested)
 src/api/routes/query.py
 src/api/routes/documents.py

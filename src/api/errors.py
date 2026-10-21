@@ -40,10 +40,22 @@ class ApiError(Exception):
     Attributes:
         code: The ErrorCode in the response body.
         status_code: The HTTP status of the response.
+        retry_after_s: Seconds the client should wait, sent as Retry-After.
+            None means the handler's default (the readiness interval for 503s,
+            none otherwise).
     """
 
     code: ErrorCode = ErrorCode.INTERNAL_ERROR
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    def __init__(self, detail: str = "", retry_after_s: int | None = None) -> None:
+        """
+        Args:
+            detail: What went wrong, for the logs only.
+            retry_after_s: Seconds until a retry can succeed, when known.
+        """
+        super().__init__(detail)
+        self.retry_after_s = retry_after_s
 
 
 class NotReadyError(ApiError):
@@ -68,7 +80,7 @@ class QueryTimeoutError(ApiError):
 
 
 class RateLimitedError(ApiError):
-    """A per-client limit or the daily budget was hit (Phase 8; off by default)."""
+    """A per-client limit or the daily budget was hit (src/api/limits.py; off by default)."""
 
     code = ErrorCode.RATE_LIMITED
     status_code = status.HTTP_429_TOO_MANY_REQUESTS

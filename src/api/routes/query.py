@@ -15,6 +15,7 @@
 #
 # Status codes this route produces (the rest come from main.py's handlers):
 #   200  any answer, refusal or partial answer
+#   429  usage limit reached (RateLimitedError; off unless configured, D55)
 #   503  every task failed (ServiceDegradedError)
 #   504  timeout (QueryTimeoutError)
 # Refusals are 200 because they are correct answers about the corpus.
@@ -24,9 +25,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Request
 
-from src.api.context import elapsed_ms, request_id_of
-from src.api.dependencies import get_readiness, query_ready_index
+from src.api.context import client_address, elapsed_ms, request_id_of
+from src.api.dependencies import get_limiter, get_readiness, query_ready_index
 from src.api.errors import QueryTimeoutError, ServiceDegradedError
+from src.api.limits import UsageLimiter
 from src.api.mapping import build_query_response, nothing_answered
 from src.api.models import QUERY_EXAMPLES, ErrorBody, QueryRequest, QueryResponse
 from src.api.readiness import Readiness
@@ -48,6 +50,8 @@ _ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
         "the question failed. Retry-After says when to try again.",
     },
     504: {"model": ErrorBody, "description": "The question took too long to answer."},
+    429: {"model": ErrorBody, "description": "Usage limit reached (off unless "
+          "configured). Retry-After says when to try again."},
     500: {"model": ErrorBody, "description": "Unexpected error."},
 }
 
@@ -68,6 +72,7 @@ async def query(
     request: Request,
     body: Annotated[QueryRequest, Body(openapi_examples=QUERY_EXAMPLES)],
     readiness: Annotated[Readiness, Depends(get_readiness)],
+    limiter: Annotated[UsageLimiter, Depends(get_limiter)],
 ) -> QueryResponse:
     """
     Answer one question.
@@ -77,17 +82,21 @@ async def query(
         body: The validated question; malformed bodies never reach here (422).
         readiness: The app's readiness state. Checked here, after validation,
             so a malformed request gets 422 even while the server is not ready.
+        limiter: Usage limits. Checked after readiness and immediately before
+            the planner, so only a request about to spend money is counted.
 
     Returns:
         The answer, its tasks, figures with quality flags, and sources.
 
     Raises:
         NotReadyError: a needed data part is missing (-> 503 not_ready).
+        RateLimitedError: a usage limit is reached (-> 429, with Retry-After).
         QueryTimeoutError: QUERY_TIMEOUT_SECONDS passed (-> 504).
         ServiceDegradedError: every task failed (-> 503).
         openai errors on the planner call propagate to main.py's handlers (-> 503).
     """
     index = await query_ready_index(readiness)
+    limiter.check(client_address(request))
     try:
         async with asyncio.timeout(settings.QUERY_TIMEOUT_SECONDS):
             plan = await asyncio.to_thread(plan_query, body.question)

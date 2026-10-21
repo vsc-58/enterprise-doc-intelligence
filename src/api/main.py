@@ -34,6 +34,7 @@ from sqlalchemy.exc import OperationalError
 
 from src.api.context import REQUEST_ID_HEADER, elapsed_ms
 from src.api.errors import ERROR_MESSAGES, ApiError
+from src.api.limits import UsageLimiter
 from src.api.models import ErrorBody, ErrorCode
 from src.api.readiness import Readiness
 from src.api.routes import documents as documents_routes
@@ -138,7 +139,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     readiness = Readiness()
     await readiness.warm()
     app.state.readiness = readiness
-    logger.info("api_started", ready=readiness.ready, unavailable=sorted(readiness.failures))
+    limiter: UsageLimiter = app.state.limiter
+    logger.info(
+        "api_started", ready=readiness.ready, unavailable=sorted(readiness.failures),
+        rate_limit_per_minute=limiter.per_minute, daily_query_budget=limiter.daily_budget,
+    )
     yield
     logger.info("api_stopped")
 
@@ -190,7 +195,9 @@ async def request_context(
 # --- Exception handlers -------------------------------------------------------
 
 
-def error_response(request: Request, code: ErrorCode, status_code: int) -> JSONResponse:
+def error_response(
+    request: Request, code: ErrorCode, status_code: int, retry_after_s: int | None = None
+) -> JSONResponse:
     """
     Build the one error envelope (contract §7).
 
@@ -200,6 +207,9 @@ def error_response(request: Request, code: ErrorCode, status_code: int) -> JSONR
         request: The failed request.
         code: The error code.
         status_code: The HTTP status.
+        retry_after_s: Seconds until a retry can succeed, when the error knows
+            (429: until a slot frees or the budget resets). Otherwise 503s get
+            the readiness re-try interval and other statuses no header.
 
     Returns:
         A JSON response carrying ErrorBody and the X-Request-ID header.
@@ -207,7 +217,9 @@ def error_response(request: Request, code: ErrorCode, status_code: int) -> JSONR
     request_id = getattr(request.state, "request_id", None) or uuid.uuid4().hex
     body = ErrorBody(error=code, message=ERROR_MESSAGES[code], request_id=request_id)
     headers = {REQUEST_ID_HEADER: request_id}
-    if status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+    if retry_after_s is not None:
+        headers["Retry-After"] = str(retry_after_s)
+    elif status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
         # When to try again: the readiness re-try interval, the earliest moment
         # a not-ready server can have recovered. Whole seconds, per HTTP.
         headers["Retry-After"] = str(math.ceil(settings.READINESS_RETRY_SECONDS))
@@ -233,7 +245,7 @@ async def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
         "api_error", error=exc.code.value, status=exc.status_code, detail=str(exc),
         request_id=getattr(request.state, "request_id", None),
     )
-    return error_response(request, exc.code, exc.status_code)
+    return error_response(request, exc.code, exc.status_code, exc.retry_after_s)
 
 
 async def handle_llm_unavailable(request: Request, exc: Exception) -> JSONResponse:
@@ -347,6 +359,9 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     for router in _ROUTERS:
         app.include_router(router)
+    # Built here, not in the lifespan, so tests that skip the lifespan still
+    # have it. Both limits are off unless set (D55).
+    app.state.limiter = UsageLimiter.from_settings()
     return app
 
 
