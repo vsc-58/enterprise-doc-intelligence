@@ -238,7 +238,7 @@ of a crash loop.
 | 200 | Any answer: success, refusal, clarification, unsupported, out_of_scope, partial (some tasks failed) | `QueryResponse` |
 | 404 | Unknown path | FastAPI default |
 | 422 | Body malformed: missing/empty/too long `question`, extra fields, not JSON | FastAPI's validation format (kept: Swagger understands it) |
-| 429 | Rate limit or daily budget exceeded — **off by default** (§9) | error envelope |
+| 429 | One client over `RATE_LIMIT_PER_MINUTE`, or all clients over `DAILY_QUERY_BUDGET` today — **off by default** (§9) | error envelope: `rate_limited` ("wait a moment") or `daily_budget_exhausted` ("resets at 00:00 UTC"), with `Retry-After` |
 | 500 | Unexpected exception | error envelope, `internal_error` |
 | 503 | Not ready (§6); OpenAI unreachable/timeout/rate-limited/auth on the planner call; every task in the plan `failed` | error envelope: `not_ready`, `llm_unavailable`, `service_degraded` |
 | 504 | `QUERY_TIMEOUT_SECONDS` exceeded | error envelope, `timeout` |

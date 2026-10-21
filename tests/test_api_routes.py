@@ -234,3 +234,63 @@ def test_health_live_checks_never_create_a_store(monkeypatch: pytest.MonkeyPatch
     assert health_route.database_ok() is False
     assert health_route.chunk_count() is None
     assert not (tmp_path / "db").exists()
+
+
+# --- /health live checks, run for real ---------------------------------------------------
+# The tests above replace database_ok and chunk_count. These run the real
+# functions, with only the session and the chunk count faked.
+
+
+class _Session:
+    """Stands in for get_session(): optionally fails like a locked SQLite file."""
+
+    def __init__(self, error: Exception | None = None) -> None:
+        self.error = error
+        self.executed: list[str] = []
+
+    def __enter__(self) -> "_Session":
+        if self.error is not None:
+            raise self.error
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def execute(self, statement: object) -> None:
+        self.executed.append(str(statement))
+
+
+@pytest.fixture
+def present_stores(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Both stores exist on disk, so the live checks get past the file checks."""
+    from src.utils.config import settings
+    db_file = tmp_path / "metadata.db"
+    db_file.write_bytes(b"")
+    chroma = tmp_path / "chroma"
+    chroma.mkdir()
+    (chroma / "chroma.sqlite3").write_bytes(b"")
+    monkeypatch.setattr(settings, "SQLITE_DB_PATH", str(db_file))
+    monkeypatch.setattr(settings, "CHROMA_DB_PATH", str(chroma))
+
+
+def test_database_check_runs_select_one(present_stores, monkeypatch: pytest.MonkeyPatch) -> None:
+    session = _Session()
+    monkeypatch.setattr(health_route, "get_session", lambda: session)
+    assert health_route.database_ok() is True
+    assert session.executed == ["SELECT 1"]
+
+
+def test_database_check_reports_a_locked_database(present_stores, monkeypatch: pytest.MonkeyPatch) -> None:
+    from sqlalchemy.exc import OperationalError
+    locked = OperationalError("SELECT 1", {}, Exception("database is locked"))
+    monkeypatch.setattr(health_route, "get_session", lambda: _Session(locked))
+    assert health_route.database_ok() is False
+
+
+@pytest.mark.parametrize(("count", "expected"), [(1958, 1958), (0, 0), (-1, None)])
+def test_chunk_count_reads_the_store(
+    present_stores, monkeypatch: pytest.MonkeyPatch, count: int, expected: int | None
+) -> None:
+    """-1 is collection_count's 'unreadable'; it must become None, not a count."""
+    monkeypatch.setattr(health_route, "collection_count", lambda: count)
+    assert health_route.chunk_count() == expected

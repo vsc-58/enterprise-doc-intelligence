@@ -25,7 +25,12 @@ ERROR_MESSAGES: dict[ErrorCode, str] = {
         "Try again shortly."
     ),
     ErrorCode.TIMEOUT: "The question took too long to answer. Try a narrower question.",
-    ErrorCode.RATE_LIMITED: "Too many requests. Try again later.",
+    ErrorCode.RATE_LIMITED: (
+        "Too many questions in a short time. Please wait a moment and try again."
+    ),
+    ErrorCode.DAILY_BUDGET_EXHAUSTED: (
+        "This demo's daily question budget is used up. It resets at 00:00 UTC."
+    ),
     ErrorCode.INTERNAL_ERROR: "Something went wrong on our side.",
 }
 
@@ -80,7 +85,14 @@ class QueryTimeoutError(ApiError):
 
 
 class RateLimitedError(ApiError):
-    """A per-client limit or the daily budget was hit (src/api/limits.py; off by default)."""
+    """One client passed RATE_LIMIT_PER_MINUTE (src/api/limits.py; off by default)."""
 
     code = ErrorCode.RATE_LIMITED
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+
+
+class DailyBudgetError(ApiError):
+    """All clients together passed DAILY_QUERY_BUDGET today (off by default)."""
+
+    code = ErrorCode.DAILY_BUDGET_EXHAUSTED
     status_code = status.HTTP_429_TOO_MANY_REQUESTS

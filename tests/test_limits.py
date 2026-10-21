@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api.dependencies import get_readiness
-from src.api.errors import RateLimitedError
+from src.api.errors import DailyBudgetError, RateLimitedError
 from src.api.limits import WINDOW_SECONDS, UsageLimiter
 from src.api.main import create_app
 from src.api.readiness import VECTOR_STORE, Readiness
@@ -123,7 +123,7 @@ def test_daily_budget_covers_all_clients(clocks: Clocks) -> None:
     limiter = _limiter(clocks, budget=3)
     for client in ("a", "b", "c"):
         limiter.check(client)
-    with pytest.raises(RateLimitedError) as caught:
+    with pytest.raises(DailyBudgetError) as caught:
         limiter.check("d")
     assert caught.value.retry_after_s == 60                    # until UTC midnight
     assert limiter.used_today == 3
@@ -132,7 +132,7 @@ def test_daily_budget_covers_all_clients(clocks: Clocks) -> None:
 def test_daily_budget_resets_at_utc_midnight(clocks: Clocks) -> None:
     limiter = _limiter(clocks, budget=1)
     limiter.check("a")
-    with pytest.raises(RateLimitedError):
+    with pytest.raises(DailyBudgetError):
         limiter.check("a")
     clocks.advance(61)                                          # past midnight UTC
     limiter.check("a")
@@ -185,6 +185,22 @@ def test_query_over_the_limit_is_429_with_retry_after(app_with_limit) -> None:
     assert response.json()["error"] == "rate_limited"
     assert response.headers["Retry-After"] == "60"
     assert len(planned) == 1                                   # the second never reached the planner
+
+
+def test_daily_budget_has_its_own_code_and_message(app_with_limit, clocks: Clocks) -> None:
+    """An interviewer must read "come back tomorrow", not "slow down"."""
+    app, _, _ = app_with_limit
+    app.state.limiter = _limiter(clocks, budget=1)
+    client = TestClient(app)
+    client.post("/query", json=QUESTION)
+    response = client.post("/query", json=QUESTION)
+    body = response.json()
+    assert response.status_code == 429
+    assert body["error"] == "daily_budget_exhausted"
+    assert body["message"] == (
+        "This demo's daily question budget is used up. It resets at 00:00 UTC."
+    )
+    assert response.headers["Retry-After"] == "60"            # fake clock: 60 s to midnight
 
 
 def test_malformed_request_is_not_counted(app_with_limit) -> None:

@@ -145,3 +145,9 @@ def test_every_task_failed_is_nothing_answered() -> None:
 
 def test_taskless_plan_is_an_answer() -> None:
     assert not nothing_answered(assemble(UNSUPPORTED_PLAN, []))
+
+
+def test_refused_task_without_any_reason_maps_to_none() -> None:
+    """Defensive: the executor never does this, but the API must not crash if it did."""
+    odd = INTEL_SECTION_ABSENT.model_copy(update={"narrative_result": None})
+    assert refusal_reason(odd) is None

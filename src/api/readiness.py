@@ -202,6 +202,9 @@ class Readiness:
         if self.ready or not self._due():
             return
         async with self._lock:
+            # Unreachable today: warm() stamps _last_attempt before its first
+            # await, so a second request already stops at the check above.
+            # Kept so a future warm() that awaits first cannot run twice at once.
             if self.ready or not self._due():
                 return
             await self.warm()

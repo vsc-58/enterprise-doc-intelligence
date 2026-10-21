@@ -19,6 +19,7 @@ from src.api.errors import (
     ERROR_MESSAGES,
     NotReadyError,
     QueryTimeoutError,
+    DailyBudgetError,
     RateLimitedError,
     ServiceDegradedError,
 )
@@ -130,7 +131,8 @@ _CASES: list[tuple[Exception, int, ErrorCode]] = [
     (NotReadyError("index missing"), 503, ErrorCode.NOT_READY),
     (ServiceDegradedError("all tasks failed"), 503, ErrorCode.SERVICE_DEGRADED),
     (QueryTimeoutError("30 s"), 504, ErrorCode.TIMEOUT),
-    (RateLimitedError("budget"), 429, ErrorCode.RATE_LIMITED),
+    (RateLimitedError("per client"), 429, ErrorCode.RATE_LIMITED),
+    (DailyBudgetError("budget"), 429, ErrorCode.DAILY_BUDGET_EXHAUSTED),
     (VectorStoreError("chroma closed"), 503, ErrorCode.NOT_READY),
     (FigureGuardError("db unreadable"), 503, ErrorCode.NOT_READY),
     (_CONNECTION_ERROR, 503, ErrorCode.LLM_UNAVAILABLE),

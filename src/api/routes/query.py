@@ -15,7 +15,8 @@
 #
 # Status codes this route produces (the rest come from main.py's handlers):
 #   200  any answer, refusal or partial answer
-#   429  usage limit reached (RateLimitedError; off unless configured, D55)
+#   429  usage limit reached: rate_limited or daily_budget_exhausted
+#        (off unless configured, D55)
 #   503  every task failed (ServiceDegradedError)
 #   504  timeout (QueryTimeoutError)
 # Refusals are 200 because they are correct answers about the corpus.
@@ -90,7 +91,8 @@ async def query(
 
     Raises:
         NotReadyError: a needed data part is missing (-> 503 not_ready).
-        RateLimitedError: a usage limit is reached (-> 429, with Retry-After).
+        RateLimitedError / DailyBudgetError: a usage limit is reached
+            (-> 429 rate_limited / daily_budget_exhausted, with Retry-After).
         QueryTimeoutError: QUERY_TIMEOUT_SECONDS passed (-> 504).
         ServiceDegradedError: every task failed (-> 503).
         openai errors on the planner call propagate to main.py's handlers (-> 503).

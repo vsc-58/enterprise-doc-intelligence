@@ -427,7 +427,10 @@ class ErrorCode(str, Enum):
         rejected the key on the planner call.
     SERVICE_DEGRADED (503): every task in the plan failed.
     TIMEOUT (504): QUERY_TIMEOUT_SECONDS exceeded.
-    RATE_LIMITED (429): per-client limit or daily budget hit (Phase 8, off).
+    RATE_LIMITED (429): one client sent too many questions in the last minute.
+    DAILY_BUDGET_EXHAUSTED (429): the demo's daily question budget is used up;
+        it resets at 00:00 UTC. Separate from RATE_LIMITED because the client's
+        action differs: wait a moment versus come back tomorrow (D55).
     INTERNAL_ERROR (500): anything unexpected.
     """
 
@@ -436,6 +439,7 @@ class ErrorCode(str, Enum):
     SERVICE_DEGRADED = "service_degraded"
     TIMEOUT = "timeout"
     RATE_LIMITED = "rate_limited"
+    DAILY_BUDGET_EXHAUSTED = "daily_budget_exhausted"
     INTERNAL_ERROR = "internal_error"
 
 

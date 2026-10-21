@@ -5,7 +5,8 @@
 #          set (D55):
 #            RATE_LIMIT_PER_MINUTE  per client IP, sliding 60-second window
 #            DAILY_QUERY_BUDGET     all clients together, per UTC day
-#          A blocked request gets 429 rate_limited with Retry-After.
+#          A blocked request gets 429 with Retry-After: rate_limited (wait a
+#          moment) or daily_budget_exhausted (resets 00:00 UTC).
 # Depends on: src.api.errors, src.utils.config, src.utils.logger
 #
 # WHY COUNT REQUESTS, NOT TOKENS OR DOLLARS. A request's cost has a ceiling:
@@ -41,7 +42,7 @@ from collections import deque
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
-from src.api.errors import RateLimitedError
+from src.api.errors import DailyBudgetError, RateLimitedError
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
@@ -122,7 +123,8 @@ class UsageLimiter:
             client: The client's identity (its IP address).
 
         Raises:
-            RateLimitedError: with retry_after_s set to the seconds until the
+            RateLimitedError: per-client limit; DailyBudgetError: daily budget.
+                Both carry retry_after_s, the seconds until the
                 request would be accepted.
         """
         if not self.enabled:
@@ -147,7 +149,7 @@ class UsageLimiter:
         if self.daily_budget is not None and self._used_today >= self.daily_budget:
             logger.warning("rate_limited", limit="daily_budget", client=client,
                            daily_budget=self.daily_budget)
-            raise RateLimitedError(
+            raise DailyBudgetError(
                 f"daily budget of {self.daily_budget} used",
                 retry_after_s=self._seconds_to_utc_midnight(),
             )
