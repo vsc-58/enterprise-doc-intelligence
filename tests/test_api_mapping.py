@@ -72,6 +72,9 @@ def test_filter_reports_dropped_flagged_company_and_counts() -> None:
     assert task.flagged_not_shown[0].quality.reason.value == "scale_ambiguous"
     assert "two different scales" in task.flagged_not_shown[0].quality.note
     assert task.excluded_null_count == 1
+    assert [f.ticker for f in task.excluded_null] == ["JNJ"]
+    assert task.excluded_null[0].value is None
+    assert task.excluded_null[0].quality.note == "This figure was not extracted from the filing."
 
 
 def test_survey_findings_use_display_names() -> None:

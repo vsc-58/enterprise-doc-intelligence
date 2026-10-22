@@ -181,6 +181,7 @@ def task_out(task: Task, outcome: TaskOutcome | None) -> TaskOut:
         flagged_not_shown=(
             [figure_out(row) for row in metric.flagged_not_shown] if metric else []
         ),
+        excluded_null=[figure_out(row) for row in metric.excluded_null] if metric else [],
         excluded_null_count=metric.excluded_null_count if metric else 0,
         mixed_years=metric.mixed_years if metric else False,
         findings=[finding_out(f) for f in narrative.findings] if narrative else [],

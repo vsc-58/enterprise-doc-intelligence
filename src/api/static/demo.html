@@ -1,0 +1,428 @@
+<!doctype html>
+<!--
+  src/api/static/demo.html — the demo page served at "/".
+  Purpose: let a non-developer ask a question and read the answer: prose with
+  line breaks, every figure with its quality mark (D29), companies left out
+  (D53/D56), numbered sources. Swagger stays at /docs for developers.
+  Depends on: POST /query, GET /documents, GET /openapi.json (for the examples).
+
+  Security: every value from the server is inserted with textContent, never as
+  HTML — answers contain model-written text. tests/test_demo_page.py checks
+  that no HTML-parsing API is used.
+  __QUERY_MAX_CHARS__ is replaced with settings.QUERY_MAX_CHARS when served.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the 10-K filings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EEF2EC;
+    --sheet: #F8FAF7;
+    --ink: #17211D;
+    --ink-soft: #4B5A53;
+    --rule: #C8D3CB;
+    --tick: #2E6B4E;
+    --audit: #A8261C;
+    --pen: #1D4C7A;
+    --unchecked: #6F7A74;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #121A16;
+      --sheet: #18221D;
+      --ink: #E4EBE6;
+      --ink-soft: #A3B1A9;
+      --rule: #33433A;
+      --tick: #6DBE93;
+      --audit: #F08A80;
+      --pen: #8DB8E6;
+      --unchecked: #8E9A93;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 16px/1.55 var(--sans);
+    font-variant-numeric: tabular-nums;
+  }
+  main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+  a { color: var(--pen); }
+  a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--pen); outline-offset: 2px;
+  }
+
+  header h1 {
+    font: 600 2.1rem/1.15 var(--serif);
+    letter-spacing: -0.01em;
+    margin: 0 0 0.6rem;
+  }
+  header p { margin: 0; color: var(--ink-soft); max-width: 38rem; }
+  nav { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-size: 0.93rem; }
+
+  form { margin-top: 2rem; display: flex; gap: 0.5rem; }
+  #question {
+    flex: 1; min-width: 0;
+    font: 400 1.05rem/1.4 var(--sans);
+    color: var(--ink); background: var(--sheet);
+    border: 1px solid var(--rule); border-bottom: 2px solid var(--ink);
+    padding: 0.7rem 0.8rem;
+  }
+  #ask {
+    font: 600 1rem var(--sans);
+    color: var(--sheet); background: var(--pen);
+    border: 0; padding: 0 1.3rem; cursor: pointer;
+  }
+  #ask:disabled { opacity: 0.6; cursor: progress; }
+
+  .examples { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  .examples span { color: var(--ink-soft); font-size: 0.9rem; align-self: center; margin-right: 0.2rem; }
+  .examples button {
+    font: 400 0.88rem var(--sans); color: var(--ink);
+    background: transparent; border: 1px solid var(--rule);
+    padding: 0.3rem 0.65rem; cursor: pointer;
+  }
+  .examples button:hover { border-color: var(--pen); color: var(--pen); }
+
+  #result { margin-top: 2.4rem; }
+  .status { color: var(--ink-soft); font-size: 0.9rem; margin: 0 0 0.6rem; }
+  .status.problem { color: var(--audit); }
+  .sheet {
+    background: var(--sheet);
+    border-top: 2px solid var(--ink);
+    padding: 1.4rem 1.5rem 1.2rem;
+  }
+  .answer {
+    font: 400 1.12rem/1.65 var(--serif);
+    white-space: pre-wrap;
+    margin: 0;
+    max-width: 40rem;
+  }
+  h2 { font: 600 1rem var(--sans); margin: 1.6rem 0 0.5rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  th { text-align: left; font-weight: 500; color: var(--ink-soft); padding: 0.35rem 0.5rem 0.35rem 0; border-bottom: 1px solid var(--rule); }
+  td { padding: 0.55rem 0.5rem 0.55rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  td.value { text-align: right; white-space: nowrap; }
+  th.value { text-align: right; }
+
+  /* The audit marks: the one thing on this page with colour of its own. */
+  .mark { display: inline-flex; align-items: baseline; gap: 0.4rem; }
+  .mark b {
+    display: inline-grid; place-items: center;
+    width: 1.35rem; height: 1.35rem; border-radius: 50%;
+    border: 1.5px solid currentColor; font: 600 0.8rem var(--sans);
+    flex: none; position: relative; top: 0.2rem;
+  }
+  .mark.verified { color: var(--tick); }
+  .mark.disputed { color: var(--audit); }
+  .mark.unverified { color: var(--unchecked); }
+  .mark[title] { cursor: help; }
+  .table-scroll { overflow-x: auto; }
+
+  ol.sources { margin: 0; padding-left: 1.6rem; font-size: 0.92rem; }
+  ol.sources li { margin: 0.25rem 0; }
+  ul.left-out { margin: 0; padding-left: 1.1rem; font-size: 0.93rem; }
+  ul.left-out li { margin: 0.35rem 0; }
+
+  details { margin-top: 1.4rem; font-size: 0.9rem; color: var(--ink-soft); }
+  summary { cursor: pointer; color: var(--ink); }
+  details dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; margin: 0.7rem 0 0; }
+  details dt { color: var(--ink-soft); }
+  details dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+  .corpus { margin-top: 3rem; }
+  .corpus table { margin-top: 0.6rem; }
+
+  @media (max-width: 34rem) {
+    main { padding-top: 2rem; }
+    header h1 { font-size: 1.7rem; }
+    form { flex-direction: column; }
+    #ask { padding: 0.75rem; }
+    .sheet { padding: 1.1rem 1rem; }
+    table { font-size: 0.88rem; }
+    td, th { padding-right: 0.35rem; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Ask the 10-K filings</h1>
+    <p>Questions about 20 companies' annual reports. Figures come from a table the
+      system extracted from the filings, with a mark showing how far each one could
+      be checked; explanations are quoted from the filing text, with sources.</p>
+    <nav>
+      <a href="#corpus">Which companies and years</a>
+      <a href="/export">Download all figures (CSV)</a>
+      <a href="/docs">API documentation</a>
+    </nav>
+  </header>
+
+  <form id="ask-form">
+    <input id="question" name="question" type="text" autocomplete="off"
+           maxlength="__QUERY_MAX_CHARS__"
+           placeholder="What was Apple's total revenue in fiscal 2021?" aria-label="Question">
+    <button id="ask" type="submit">Ask</button>
+  </form>
+  <div class="examples" id="examples" aria-label="Example questions"></div>
+
+  <section id="result" aria-live="polite"></section>
+
+  <details class="corpus" id="corpus">
+    <summary>Which companies and years can it answer about?</summary>
+    <p>One annual filing per company. A question about another year is answered
+      with the year that is held.</p>
+    <div id="corpus-body"></div>
+  </details>
+</main>
+
+<script>
+"use strict";
+
+const form = document.getElementById("ask-form");
+const input = document.getElementById("question");
+const button = document.getElementById("ask");
+const result = document.getElementById("result");
+
+/** Create an element with optional class and text — text only, never HTML. */
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+const SCALES = [[1e12, "trillion"], [1e9, "billion"], [1e6, "million"]];
+/** Dollars at a readable scale, as the answers print them. */
+function money(value) {
+  if (value === null || value === undefined) return "not extracted";
+  const abs = Math.abs(value);
+  for (const [size, word] of SCALES) {
+    if (abs >= size) {
+      return "$" + (value / size).toLocaleString("en-US", { maximumFractionDigits: 2 }) + " " + word;
+    }
+  }
+  return "$" + value.toLocaleString("en-US");
+}
+
+const MARKS = {
+  verified: { symbol: "✓", words: "Verified" },
+  disputed: { symbol: "!", words: "Disputed" },
+  unverified: { symbol: "?", words: "Not checked" },
+};
+const REASONS = {
+  scale_ambiguous: "scale ambiguous",
+  scale_disagreement: "wrong scale",
+  evidence_mismatch: "citation does not match",
+  scale_not_checkable: "scale not checkable",
+};
+const VERIFIED_HELP = "The stored value appears in the line of the filing it was extracted from, at the filing's scale.";
+/**
+ * An audit mark for one figure: symbol and a short label. The full explanation
+ * is the tooltip; the answer text above already states it in full.
+ */
+function mark(quality) {
+  const kind = MARKS[quality.verdict] ? quality.verdict : "unverified";
+  const wrap = el("span", "mark " + kind);
+  wrap.title = quality.note || VERIFIED_HELP;
+  wrap.appendChild(el("b", "", MARKS[kind].symbol));
+  let words = MARKS[kind].words;
+  if (quality.reason === "null_field") words = "Not extracted";
+  else if (kind === "disputed" && REASONS[quality.reason]) words += ": " + REASONS[quality.reason];
+  wrap.appendChild(el("span", "", words));
+  return wrap;
+}
+
+function figuresTable(figures) {
+  const table = el("table");
+  const head = table.createTHead().insertRow();
+  for (const [label, cls] of [["Company", ""], ["Year", ""], ["Value", "value"], ["Check", ""]]) {
+    head.appendChild(el("th", cls, label));
+  }
+  const body = table.createTBody();
+  for (const f of figures) {
+    const row = body.insertRow();
+    row.appendChild(el("td", "", f.company_name + " (" + f.ticker + ")"));
+    row.appendChild(el("td", "", "FY" + f.fiscal_year));
+    row.appendChild(el("td", "value", money(f.value)));
+    const check = el("td");
+    check.appendChild(mark(f.quality));
+    row.appendChild(check);
+  }
+  return table;
+}
+
+const INTENTS = {
+  financial_metric: "figure lookup", financial_ranking: "ranking", financial_filter: "filter",
+  company_overview: "company overview", strategy: "strategy", risk_factors: "risk factors",
+  management_commentary: "management's discussion", market_risk: "market risk",
+  competition_and_regulation: "competition and regulation",
+};
+
+/** The answer text without its trailing "Sources:" block, which is shown as a list. */
+function answerProse(answer) {
+  const cut = answer.indexOf("\n\nSources:\n");
+  return cut >= 0 ? answer.slice(0, cut) : answer;
+}
+
+function renderAnswer(body) {
+  result.replaceChildren();
+  const seconds = (body.latency_ms / 1000).toFixed(1);
+  const refused = body.tasks.filter(t => t.status === "refused").length;
+  const status = body.tasks.length === 0 || refused === body.tasks.length
+    ? "Not answerable from these filings"
+    : refused ? "Partly answered" : "Answered";
+  result.appendChild(el("p", "status", status + " in " + seconds + " s"));
+
+  const sheet = el("div", "sheet");
+  sheet.appendChild(el("p", "answer", answerProse(body.answer)));
+
+  const figures = body.tasks.flatMap(t => t.figures);
+  if (figures.length) {
+    sheet.appendChild(el("h2", "", figures.length === 1 ? "The figure, checked" : "The figures, checked"));
+    const scroll = el("div", "table-scroll");
+    scroll.appendChild(figuresTable(figures));
+    sheet.appendChild(scroll);
+  }
+
+  const leftOut = body.tasks.flatMap(t => t.flagged_not_shown.concat(t.excluded_null));
+  if (leftOut.length) {
+    sheet.appendChild(el("h2", "", "Left out, but may belong"));
+    const list = el("ul", "left-out");
+    for (const f of leftOut) {
+      const item = el("li");
+      item.appendChild(el("span", "", f.company_name + " (" + f.ticker + "), FY" + f.fiscal_year + ": " + money(f.value) + " "));
+      item.appendChild(mark(f.quality));
+      list.appendChild(item);
+    }
+    sheet.appendChild(list);
+  }
+
+  if (body.sources.length) {
+    sheet.appendChild(el("h2", "", "Sources"));
+    const list = el("ol", "sources");
+    for (const s of body.sources) {
+      const item = el("li", "", s.label.replace(/^\[\d+\]\s*/, ""));
+      item.value = s.number;
+      list.appendChild(item);
+    }
+    sheet.appendChild(list);
+  }
+
+  const details = el("details");
+  details.appendChild(el("summary", "", "How it was answered"));
+  const dl = el("dl");
+  const add = (term, value) => { dl.appendChild(el("dt", "", term)); dl.appendChild(el("dd", "", value)); };
+  add("Plan", body.plan_type.replace(/_/g, " ") + (body.unsupported_reason ? " (" + body.unsupported_reason.replace(/_/g, " ") + ")" : ""));
+  body.tasks.forEach((t, i) => {
+    const parts = [INTENTS[t.intent] || t.intent, "from " + (t.tool === "sql" ? "the figures table" : "the filing text"), t.status];
+    if (t.refusal_reason) parts.push(t.refusal_reason.replace(/_/g, " "));
+    add("Part " + (i + 1), parts.join(", "));
+  });
+  add("Request id", body.request_id);
+  add("Prompt versions", "planner " + body.planner_version.slice(0, 8) + ", answer " + body.chain_version.slice(0, 8));
+  details.appendChild(dl);
+  sheet.appendChild(details);
+
+  result.appendChild(sheet);
+}
+
+function renderProblem(text) {
+  result.replaceChildren(el("p", "status problem", text));
+}
+
+let timer = null;
+async function ask(question) {
+  const q = question.trim();
+  if (!q) { renderProblem("Type a question first."); input.focus(); return; }
+  button.disabled = true;
+  button.textContent = "Asking…";
+  const started = Date.now();
+  result.replaceChildren(el("p", "status", "Working…"));
+  timer = setInterval(() => {
+    const s = Math.round((Date.now() - started) / 1000);
+    result.replaceChildren(el("p", "status", "Working… " + s + " s (narrative answers take 5–10 s)"));
+  }, 1000);
+  try {
+    const response = await fetch("/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q }),
+    });
+    const body = await response.json().catch(() => null);
+    if (response.ok && body) {
+      renderAnswer(body);
+    } else if (response.status === 422) {
+      renderProblem("That question could not be read. Keep it under __QUERY_MAX_CHARS__ characters.");
+    } else if (body && body.message) {
+      renderProblem(body.message);
+    } else {
+      renderProblem("The server answered with status " + response.status + ".");
+    }
+  } catch (error) {
+    renderProblem("Could not reach the API. Check that the server is running.");
+  } finally {
+    clearInterval(timer);
+    button.disabled = false;
+    button.textContent = "Ask";
+  }
+}
+
+form.addEventListener("submit", event => { event.preventDefault(); ask(input.value); });
+
+/** Example buttons, read from the API's own OpenAPI examples: one list, not two. */
+async function loadExamples() {
+  const holder = document.getElementById("examples");
+  try {
+    const spec = await (await fetch("/openapi.json")).json();
+    const examples = spec.paths["/query"].post.requestBody.content["application/json"].examples;
+    holder.appendChild(el("span", "", "Try:"));
+    for (const example of Object.values(examples)) {
+      const chip = el("button", "", example.summary);
+      chip.type = "button";
+      chip.title = example.value.question;
+      chip.addEventListener("click", () => { input.value = example.value.question; ask(input.value); });
+      holder.appendChild(chip);
+    }
+  } catch (error) {
+    holder.replaceChildren();
+  }
+}
+
+/** The corpus list, loaded once when first opened. */
+const corpus = document.getElementById("corpus");
+corpus.addEventListener("toggle", async () => {
+  const target = document.getElementById("corpus-body");
+  if (!corpus.open || target.childElementCount) return;
+  try {
+    const response = await fetch("/documents");
+    if (!response.ok) throw new Error(String(response.status));
+    const docs = await response.json();
+    const table = el("table");
+    const head = table.createTHead().insertRow();
+    for (const label of ["Company", "Fiscal year held", "Period end"]) head.appendChild(el("th", "", label));
+    const body = table.createTBody();
+    for (const d of docs) {
+      const row = body.insertRow();
+      row.appendChild(el("td", "", d.company_name + " (" + d.ticker + ")"));
+      row.appendChild(el("td", "", "FY" + d.fiscal_year));
+      row.appendChild(el("td", "", d.fiscal_year_end || ""));
+    }
+    target.appendChild(table);
+  } catch (error) {
+    target.appendChild(el("p", "", "The corpus list is not available right now."));
+  }
+});
+
+loadExamples();
+</script>
+</body>
+</html>

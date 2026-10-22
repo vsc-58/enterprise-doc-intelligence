@@ -37,6 +37,7 @@ from src.api.errors import ERROR_MESSAGES, ApiError
 from src.api.limits import UsageLimiter
 from src.api.models import ErrorBody, ErrorCode
 from src.api.readiness import Readiness
+from src.api.routes import demo as demo_routes
 from src.api.routes import documents as documents_routes
 from src.api.routes import export as export_routes
 from src.api.routes import health as health_routes
@@ -79,6 +80,7 @@ _ROUTERS: list[APIRouter] = [
     documents_routes.router,
     export_routes.router,
     health_routes.router,
+    demo_routes.router,
 ]
 
 _DESCRIPTION = (

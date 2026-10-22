@@ -138,7 +138,8 @@ def test_filter_names_the_flagged_company_it_left_out(db) -> None:
     assert result.threshold_value == 1e12
     assert result.mixed_years                                 # JPM FY2023, GS FY2021
     text = render(task, result, None)
-    assert "BAC — not listed, but its total assets are flagged, so it may belong here." in text
+    assert ("Not included: Bank of America Corp. (BAC) — its total assets are flagged, "
+            "and at a 1,000x different scale it would be in this list.") in text
     assert "not like-for-like" in text
 
 
@@ -149,26 +150,27 @@ def test_filter_threshold_in_words_is_refused_not_guessed(db) -> None:
         run_financial_task(task, None)
 
 
-def test_empty_filter_still_names_the_flagged_company(db) -> None:
+def test_filter_no_correction_could_pass_names_nobody(db) -> None:
+    """BAC is $3.05 trillion at most: it cannot pass $5 trillion, so it is not named (D56)."""
     task = Task(task_id="t1", intent=Intent.FINANCIAL_FILTER, metric=MetricField.TOTAL_ASSETS,
                 comparison=Comparison.GT, threshold_text="$5 trillion")
     result = run_financial_task(task, None)
-    assert result.rows == []
-    assert _tickers(result.flagged_not_shown) == ["BAC"]
-    assert "BAC — not listed" in render(task, result, None)
+    assert result.rows == [] and result.flagged_not_shown == []
+    assert render(task, result, None) == "No company in the corpus matches that total assets criterion."
 
 
 # --- Ranking (D36, null exclusion) -----------------------------------------------------------
 
 
-def test_highest_cash_flow_counts_the_null_and_names_the_flagged(db) -> None:
-    """BAC's cash flow is null (counted); GS's is flagged and too small to rank (named)."""
+def test_highest_cash_flow_names_the_null_but_not_the_flag_that_could_not_win(db) -> None:
+    """BAC's cash flow is missing (named); GS's likely $921 million cannot beat Apple (not named)."""
     task = Task(task_id="t1", intent=Intent.FINANCIAL_RANKING,
                 metric=MetricField.OPERATING_CASH_FLOW, direction=Direction.HIGHEST, limit=1)
     result = run_financial_task(task, None)
     assert _tickers(result.rows) == ["AAPL"]
-    assert result.excluded_null_count == 1
-    assert _tickers(result.flagged_not_shown) == ["GS"]
+    assert _tickers(result.excluded_null) == ["BAC"] and result.excluded_null_count == 1
+    assert result.flagged_not_shown == []
+    assert "so it may be higher than any figure shown." in render(task, result, None)
 
 
 def test_lowest_cash_flow_puts_the_flagged_figure_first_and_says_so(db) -> None:
@@ -181,7 +183,8 @@ def test_lowest_cash_flow_puts_the_flagged_figure_first_and_says_so(db) -> None:
     assert result.flagged_not_shown == []                     # shown, so disclosed beside it
     text = render(task, result, None)
     assert "the ordering itself may be wrong" in text
-    assert "1 company was excluded because operating cash flow was not extracted" in text
+    assert ("Not included: Bank of America Corp. (BAC) — its operating cash flow was not "
+            "extracted from the filing, so it may be lower than any figure shown.") in text
 
 
 def test_ranking_orders_every_company_by_value(db) -> None:

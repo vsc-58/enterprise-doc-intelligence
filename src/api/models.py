@@ -62,35 +62,37 @@ class QueryRequest(BaseModel):
 
 
 # Named examples for the Swagger dropdown, passed to Body(openapi_examples=...)
-# by the /query route. One per behaviour the demo should show. Chosen from the
+# by the /query route, and shown as buttons on the demo page at "/". One per
+# behaviour the demo should show. Summaries are plain language: recruiters read
+# them on the demo page, not only developers in Swagger. Chosen from the
 # end-to-end cases already run in Phases 5A-5C, so each has a known outcome.
 QUERY_EXAMPLES: dict[str, dict[str, object]] = {
     "figure": {
-        "summary": "Exact figure (SQL)",
+        "summary": "A figure",
         "value": {"question": "What was Apple's total revenue in fiscal 2021?"},
     },
     "year_not_held": {
-        "summary": "Refusal: year not held",
+        "summary": "A year that is not held",
         "value": {"question": "What was Apple's revenue in 2022?"},
     },
     "narrative": {
-        "summary": "Narrative with cited sources (RAG)",
+        "summary": "An answer with sources",
         "value": {"question": "What does Walmart say about its liquidity?"},
     },
     "flagged": {
-        "summary": "Flagged figure (D29)",
+        "summary": "A figure flagged as uncertain",
         "value": {"question": "What were Bank of America's total assets?"},
     },
     "filter_flagged_not_shown": {
-        "summary": "Filter naming a flagged company it left out (D53)",
+        "summary": "A list that names a company it may have missed",
         "value": {"question": "Which companies had total assets above $1 trillion?"},
     },
     "hybrid_partial": {
-        "summary": "Hybrid: figure answered, narrative refused",
+        "summary": "Two questions in one, one not answerable",
         "value": {"question": "What was Intel's net income, and why did its margins fall?"},
     },
     "not_in_corpus": {
-        "summary": "Refusal: company not in the corpus",
+        "summary": "A company not in the filings",
         "value": {"question": "What was Nvidia's revenue?"},
     },
 }
@@ -203,10 +205,12 @@ class TaskOut(BaseModel):
             the corpus; failed means something broke.
         refusal_reason: Set only when status is refused.
         figures: SQL tasks: the rows served, in answer order.
-        flagged_not_shown: Rankings and filters: flagged companies the query
-            left out, which may belong in the answer (D53).
-        excluded_null_count: Rankings and filters: companies left out because
-            the figure was not extracted.
+        flagged_not_shown: Rankings and filters: scale-flagged companies the
+            query left out that a 1,000x correction would bring in (D53, D56).
+        excluded_null: Rankings and filters: companies left out because the
+            figure was not extracted (value null), named in the answer (D56).
+        excluded_null_count: len(excluded_null); kept for clients that only
+            need the number.
         mixed_years: Rankings and filters: whether rows span fiscal years (D33).
         findings: Corpus-wide narrative tasks: one per company.
     """
@@ -220,6 +224,7 @@ class TaskOut(BaseModel):
     refusal_reason: RefusalReason | None = None
     figures: list[FigureOut] = Field(default_factory=list)
     flagged_not_shown: list[FigureOut] = Field(default_factory=list)
+    excluded_null: list[FigureOut] = Field(default_factory=list)
     excluded_null_count: int = 0
     mixed_years: bool = False
     findings: list[FindingOut] = Field(default_factory=list)
@@ -306,6 +311,7 @@ class QueryResponse(BaseModel):
                                 }
                             ],
                             "flagged_not_shown": [],
+                            "excluded_null": [],
                             "excluded_null_count": 0,
                             "mixed_years": False,
                             "findings": [],

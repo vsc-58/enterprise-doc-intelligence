@@ -224,5 +224,5 @@ def test_swagger_shows_the_demo_examples(client_for) -> None:
     spec = client_for(Stub(single(APPLE_TASK), [])).get("/openapi.json").json()
     operation = spec["paths"]["/query"]["post"]
     examples = operation["requestBody"]["content"]["application/json"]["examples"]
-    assert examples["figure"]["summary"] == "Exact figure (SQL)"
+    assert examples["figure"]["summary"] == "A figure"
     assert {"200", "422", "503", "504"} <= set(operation["responses"])

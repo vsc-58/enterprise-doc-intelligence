@@ -35,6 +35,8 @@ APPLE_SENTENCE = (
 YEAR_SENTENCE = "I hold one Apple Inc. filing, for fiscal year 2021. I don't have 2022."
 VERIFIED = QualityFlag(field="total_revenue", verdict=QualityVerdict.VERIFIED,
                        reason=QualityReason.CONSISTENT)
+NOT_EXTRACTED = QualityFlag(field="total_assets", verdict=QualityVerdict.UNVERIFIED,
+                            reason=QualityReason.NULL_FIELD)
 AMBIGUOUS = QualityFlag(field="total_assets", verdict=QualityVerdict.DISPUTED,
                         reason=QualityReason.SCALE_AMBIGUOUS)
 
@@ -72,7 +74,7 @@ UNSUPPORTED_PLAN = QueryPlan(plan_type=PlanType.UNSUPPORTED,
 # --- Outcomes ---------------------------------------------------------------------
 
 
-def _row(ticker: str, name: str, metric: MetricField, value: float, quality: QualityFlag,
+def _row(ticker: str, name: str, metric: MetricField, value: float | None, quality: QualityFlag,
          year: int = 2021, end: str | None = "2021-09-25") -> MetricRow:
     return MetricRow(ticker=ticker, company_name=name, fiscal_year=year, fiscal_year_end=end,
                      metric=metric, value=value, quality=quality)
@@ -81,6 +83,8 @@ def _row(ticker: str, name: str, metric: MetricField, value: float, quality: Qua
 APPLE_ROW = _row("AAPL", "Apple Inc.", MetricField.TOTAL_REVENUE, 365817000000.0, VERIFIED)
 BAC_ROW = _row("BAC", "Bank of America Corp.", MetricField.TOTAL_ASSETS, 3051375000.0,
                AMBIGUOUS, year=2022, end="2022-12-31")
+NULL_ASSETS_ROW = _row("JNJ", "Johnson & Johnson", MetricField.TOTAL_ASSETS, None,
+                       NOT_EXTRACTED, end="2022-01-02")
 
 APPLE_OUTCOME = TaskOutcome(
     task_id="t1", intent=Intent.FINANCIAL_METRIC, tool=Tool.SQL, status=TaskStatus.SUCCESS,
@@ -101,7 +105,8 @@ THRESHOLD_REFUSED = TaskOutcome(
 )
 FILTER_WITH_DROPPED_FLAG = TaskOutcome(
     task_id="t1", intent=Intent.FINANCIAL_FILTER, tool=Tool.SQL, status=TaskStatus.SUCCESS,
-    metric_result=MetricResult(rows=[], flagged_not_shown=[BAC_ROW], excluded_null_count=1,
+    metric_result=MetricResult(rows=[], flagged_not_shown=[BAC_ROW],
+                               excluded_null=[NULL_ASSETS_ROW], excluded_null_count=1,
                                mixed_years=False, threshold_value=5e10),
     message="No company in the corpus matches that total assets criterion.",
 )

@@ -20,6 +20,7 @@ wins and the reason is in D54.
 | `/export` | GET | `extracted_records` as CSV, with D29 quality columns |
 | `/health` | GET | Readiness: database, vector store, corpus index |
 | `/docs`, `/openapi.json` | GET | Swagger UI and the OpenAPI schema (FastAPI built-in) |
+| `/` | GET | Demo page for non-developers: one static HTML page calling the endpoints above. Not in the OpenAPI schema (D56) |
 
 **Not in the API (D54):** `/ingest`, `/extract`. Acquisition, extraction and
 embedding stay as the existing scripts. Reasons: they call SEC and paid
@@ -101,6 +102,7 @@ and the plan type in `QueryPlan`. The route reads all three.
         }
       ],
       "flagged_not_shown": [],
+      "excluded_null": [],
       "excluded_null_count": 0,
       "mixed_years": false,
       "findings": []
@@ -123,7 +125,8 @@ and the plan type in `QueryPlan`. The route reads all three.
 | `tasks[].status` | `TaskOutcome.status` | success, refused, failed |
 | `tasks[].refusal_reason` | see §3.1 | `null` when status is success |
 | `tasks[].figures` | `metric_result.rows` | SQL tasks only. `quality` always present (D29) |
-| `tasks[].flagged_not_shown` | `metric_result.flagged_not_shown` | Rankings/filters only (D53) |
+| `tasks[].flagged_not_shown` | `metric_result.flagged_not_shown` | Rankings/filters: scale-flagged companies left out that a 1,000x correction would bring in (D53, D56) |
+| `tasks[].excluded_null` | `metric_result.excluded_null` | Rankings/filters: companies left out because the figure was not extracted (value `null`), named in the answer (D56) |
 | `tasks[].excluded_null_count`, `mixed_years` | `metric_result` | Rankings/filters (D33) |
 | `tasks[].findings` | `narrative_result.findings` | Corpus-wide RAG only: `{ticker, status}` per company |
 | `sources` | `AssembledAnswer.sources` | `{number, ticker, company_name, fiscal_year, section, chunk_index, label}` |
@@ -359,6 +362,7 @@ src/api/routes/query.py
 src/api/routes/documents.py
 src/api/routes/export.py
 src/api/routes/health.py
+src/api/routes/demo.py     GET / — serves src/api/static/demo.html
 tests/test_api.py          TestClient, stubs, no network or database
 ```
 
