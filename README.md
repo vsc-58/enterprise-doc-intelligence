@@ -581,5 +581,163 @@ python -m scripts.run_routing_eval               # planner accuracy, 3 runs
 python -m scripts.run_execution_eval             # oracle + end to end, 3 runs
 python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
 python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
-pytest tests                                     # 186 tests, no API key or database needed
+pytest tests                                     # 186 tests at the end of Phase 5; see Phase 6
 ```
+
+## Phase 6 — FastAPI Layer
+
+Phase 6 puts the Phase 5 query path behind a REST API, adds a CSV export, a
+health check and a one-page demo. **No prompt changed:** the API runs planner
+`d4bc8e36` and chain `b1d8ee5c`, the versions measured in Phase 5C, so the
+evaluation numbers above describe exactly what the API serves. Decisions
+D53–D57; the full contract is `docs/api_contract.md`.
+
+### Run it locally
+
+```bash
+cp .env.example .env                  # then set OPENAI_API_KEY and EDGAR_IDENTITY
+uvicorn src.api.main:app --reload     # http://localhost:8000
+```
+
+- `http://localhost:8000/` — demo page; `/docs` — Swagger with example requests.
+- The API needs the built corpus in `db/` (SQLite + Chroma). `data/` and `db/`
+  are gitignored, so a fresh clone has no corpus: the server still starts, and
+  `/health` returns 503 naming the missing part. To build it: the Phase 1, 3
+  and 4 scripts above (`acquire_filings`, `build_sections`, `run_extraction`,
+  `build_narrative_sections`, `embed_documents`).
+- Run with **one worker**. Chroma's local store is single-process, and the
+  rate-limit counters live in memory.
+- Tests: `pytest` — 380 tests, no network, no database. The settings still
+  require `OPENAI_API_KEY` and `EDGAR_IDENTITY` to exist; any value works.
+
+### Endpoints
+
+| Endpoint | What it does |
+|---|---|
+| `POST /query` | Answers one question: `{"question": "..."}`. Returns the answer text, plan type, each task's status and typed refusal reason, every figure with its quality flag, numbered sources, and the planner and chain versions |
+| `GET /documents` | The 20 filings held: ticker, name, fiscal year. The one year per company the system can answer for |
+| `GET /export` | `extracted_records` as CSV: 35 columns, each figure next to its quality flag, reason, note and the line the extraction cited |
+| `GET /health` | Readiness, with no LLM call: `database`, `vector_store`, `index`, `figure_guard`. 200 when ready, 503 when not, same body, and a 503 always names the part that is down |
+| `GET /` | Demo page for non-developers (not part of the API schema) |
+| `GET /docs` | Swagger UI |
+
+The API is **read-only**. There is no `/ingest` or `/extract` (the original
+plan had both): those jobs call SEC and paid OpenAI, run for minutes, and write
+to the Chroma store that `/query` reads — and that store allows one process
+(D54). They stay as scripts. `/query` also takes no company or year filter:
+the resolver alone decides which companies and years are held (D32), and a
+filter could silently drop half of a two-company question.
+
+### Status codes: refused is not failed
+
+| Code | When |
+|---|---|
+| 200 | Every answer — including refusals (year not held, company not in the corpus, section not captured) and partial answers where one part of a two-part question failed |
+| 422 | Malformed input: empty or too-long question (500 characters), unknown fields, not JSON |
+| 429 | Usage limit reached: `rate_limited` or `daily_budget_exhausted`, with `Retry-After`. Off unless configured |
+| 503 | `not_ready` (a data store is missing), `llm_unavailable` (OpenAI down on the planner call), `service_degraded` (every task failed) |
+| 504 | No answer within 30 s |
+| 500 | Anything unexpected |
+
+A refusal is a correct answer about the corpus, so it is a 200 with a typed
+`refusal_reason` per task. Only a failure can produce a 5xx. Every non-422
+error has the same body — `{error, message, request_id}` — where `message` is a
+fixed sentence: exception text, paths and SQL go to the logs only. Every
+response carries `X-Request-ID`, which appears in every log line of that
+request.
+
+Three ordering details, each found by running the server rather than assumed:
+
+- **422 wins over 503.** FastAPI runs dependencies before it validates the
+  body, so an empty question first got "not ready, try again in 5 s" — wrong
+  advice for a request that can never succeed. `/query` now checks readiness
+  inside the handler, after validation.
+- **Readiness never creates a store.** Opening a missing SQLite file or Chroma
+  folder creates an empty one, which then looks present. Both are checked on
+  disk first. While not ready, the server re-checks at most every 5 s, so it
+  recovers without a restart.
+- **Only requests that will spend money are counted** against the usage
+  limits: a 422 or a not-ready 503 uses nobody's allowance.
+- **A 503 from `/health` names the part that is down.** At first the body had
+  three checks while readiness tracked four parts, so a failed figure guard
+  gave 503 with every check "ok". Each check now reads both the readiness state
+  and its live test, and a test keeps one field per readiness part (D57).
+
+### Timeouts and async
+
+The planner is a blocking call, so it runs in a thread (`asyncio.to_thread`);
+the executor is already async. Both run inside one 30-second request timeout.
+A request timeout cannot stop a thread, so the OpenAI clients get their own
+limit: 10 s per call, 1 retry. The rule is per-call × (retries + 1) < request
+timeout — 10 × 2 = 20 < 30 — so a stuck planner call ends before the request
+does instead of running, and costing money, after the user got a 504. The
+server logs a warning at startup if the settings break this rule.
+
+### Usage limits (off by default)
+
+The public demo spends the project's OpenAI credit on every question (about
+$0.001 for a lookup, $0.004 for a 20-company survey). Two limits protect it
+(D55): a per-client 60-second sliding window and a daily budget for all
+clients, reset at 00:00 UTC. Requests, not tokens, are counted, because a
+request's cost has a ceiling (at most 3 tasks, 500 characters): N requests
+cost at most about N × $0.004. The client is the address the server sees;
+`X-Forwarded-For` is never parsed in code, because any client can send it.
+
+### What the answers disclose
+
+Two changes to SQL answers came from reading real output (D53, D56):
+
+- **A list names the flagged company it may have missed.** "Which companies
+  had total assets above $1 trillion?" — Bank of America's stored figure is
+  $3.05 billion, flagged `scale_ambiguous`, so the filter dropped it silently.
+  The answer now names a left-out company only when its figure is
+  scale-flagged **and** a ×1,000 or ÷1,000 reading would put it in the list.
+  The first version named every flagged company and listed Intel ($1.69
+  billion net income) under "above $50 billion" — a warning that cannot be
+  true teaches the reader to skip the one that matters.
+- **A missing figure is named, with what it means.** "Which company had the
+  lowest operating cash flow?" used to end with "1 company was excluded". That
+  company is Bank of America, whose cash flow was not extracted because it is
+  negative — so it is probably the real answer. The answer now says so: "may be
+  lower than any figure shown".
+
+The export carries the same flags as the answers: one function computes them,
+so the CSV, the API and the answer text cannot disagree. A test checks that
+the export module imports nothing from the evaluation code or edgartools: the
+XBRL answer key never reaches it.
+
+### Demo page
+
+`GET /` serves one static HTML page: a question box, the example questions as
+buttons, the answer with each figure marked verified, disputed or not checked,
+the companies left out, and numbered sources. It calls the public endpoints
+like any other client — no second way into the pipeline — and inserts server
+text only as text, never as HTML. It exists because answers read as raw JSON
+in Swagger, and `/` returned `{"detail": "Not Found"}` — the first thing a
+visitor would see.
+
+### Verified on the real corpus
+
+| Check | Result |
+|---|---|
+| `/health` | 20 documents, 1,958 chunks |
+| Extracted figures with quality `verified` | 88 of 100 |
+| `verify_export` (CSV vs the database, read independently with plain SQL) | PASS: 220 values match — 20 rows × (5 figures + 5 cited lines + fiscal year end) |
+| Manual run of 12 demo questions | 10 as predicted |
+| Narrative answer latency | 5–7 s, of which about 2.5 s is the answer LLM call |
+| Unit tests | 380, no network |
+
+### Known limitations
+
+- **One question planned differently than in Phase 5C.** "Which companies
+  flagged interest rate risk?" was planned as `risk_factors` instead of the
+  labelled `market_risk`, although all three 5C runs matched the label: either
+  run-to-run variation (D35) or a model update behind the `gpt-4o-mini` name.
+  It is kept out of the demo examples.
+- **Latency close to a limit.** One Walmart narrative answer took 10.4 s; the
+  per-call limit is 10 s. To watch on the hosted Space.
+- **Counters reset on restart** and are correct only with one worker.
+- **CSV injection** is not handled: a cell starting with `=` could be read as a
+  formula. Every value comes from the filings and the pipeline, not from users.
+- **No authentication.** The API is a public read-only demo; the usage limits
+  and the OpenAI account's spend limit are the protection.
