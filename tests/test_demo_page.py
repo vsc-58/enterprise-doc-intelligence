@@ -44,3 +44,20 @@ def test_page_uses_only_the_public_endpoints() -> None:
     source = DEMO_PAGE_PATH.read_text(encoding="utf-8")
     called = set(re.findall(r'fetch\("([^"]+)"', source))
     assert called == {"/query", "/openapi.json", "/documents"}
+
+
+def test_developer_links_sit_in_the_footer_not_the_header() -> None:
+    """The top of the page serves the question box; API and source links are for engineers."""
+    page = _page()
+    header = page[page.index("<header>"):page.index("</header>")]
+    footer = page[page.index("<footer>"):page.index("</footer>")]
+    assert "/docs" not in header and "/export" not in header
+    for link in ('href="/docs"', 'href="/export"', 'href="https://github.com/'):
+        assert link in footer
+
+
+def test_corpus_list_sits_next_to_the_question_box() -> None:
+    """One place to see which companies and years exist, before the answer area."""
+    page = _page()
+    assert 'href="#corpus"' not in page
+    assert page.index('id="corpus"') < page.index('id="result"')
