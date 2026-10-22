@@ -18,7 +18,7 @@ wins and the reason is in D54.
 | `/query` | POST | Answer one question through the existing query path |
 | `/documents` | GET | List the filings the corpus holds |
 | `/export` | GET | `extracted_records` as CSV, with D29 quality columns |
-| `/health` | GET | Readiness: database, vector store, corpus index |
+| `/health` | GET | Readiness: database, vector store, corpus index, figure guard |
 | `/docs`, `/openapi.json` | GET | Swagger UI and the OpenAPI schema (FastAPI built-in) |
 | `/` | GET | Demo page for non-developers: one static HTML page calling the endpoints above. Not in the OpenAPI schema (D56) |
 
@@ -162,7 +162,8 @@ Mapped in the API layer, so no Phase 5 code changes (D54). A `failed` task has
   "plan_type": "single",
   "tasks": [{"task_id": "t1", "intent": "financial_metric", "tool": "sql",
              "status": "refused", "refusal_reason": "year_not_held",
-             "figures": [], "flagged_not_shown": [], "excluded_null_count": 0,
+             "figures": [], "flagged_not_shown": [], "excluded_null": [],
+             "excluded_null_count": 0,
              "mixed_years": false, "findings": []}],
   "sources": [], "...": "..."
 }
@@ -202,8 +203,11 @@ ticker. No query parameters: 20 rows.
 | for each of the 5 metrics: `<m>`, `<m>_quality`, `<m>_quality_reason`, `<m>_quality_note`, `<m>_source_line` | value in actual dollars + D29 flag + its sentence + the cited line |
 | `extraction_strategy_used, prompt_version, model_name, extracted_at` | provenance |
 
-Test: the column list is asserted in `tests/test_api.py`; the values are
-checked by hand against DB Browser (step 10).
+Tests: the column list, the quality columns and the boundary rule (the export
+module imports nothing from `src.eval` or edgartools) are asserted in
+`tests/test_api_routes.py`. The values were checked against the database in
+step 10 by `scripts/diagnostic/verify_export.py`, which reads SQLite with plain
+SQL rather than the export's own code path: 220 values matched.
 
 ---
 
@@ -213,18 +217,29 @@ No LLM call. Checks run in a thread.
 
 ```json
 200 {"status": "ok",
-     "checks": {"database": "ok", "vector_store": "ok", "index": "ok"},
-     "documents": 20, "chunks": 1750,          (example values)
+     "checks": {"database": "ok", "vector_store": "ok", "index": "ok",
+                "figure_guard": "ok"},
+     "documents": 20, "chunks": 1958,
      "planner_version": "…", "chain_version": "…"}
 
 503 {"status": "not_ready",
-     "checks": {"database": "ok", "vector_store": "unavailable", "index": "ok"},
+     "checks": {"database": "ok", "vector_store": "unavailable", "index": "ok",
+                "figure_guard": "ok"},
      "documents": 20, "chunks": null, "...": "..."}
 ```
 
-- `database`: `SELECT 1` through the existing engine.
-- `vector_store`: `collection_count()`.
-- `index`: the lifespan built a non-empty corpus index.
+One check per readiness part (D57). A check is `ok` only when the readiness
+state counts the part as usable **and** its live check, if it has one, passes,
+so a 503 always names at least one part.
+
+- `database`: the SQLite file exists and `SELECT 1` succeeds (live).
+- `vector_store`: the Chroma folder exists and `collection_count()` is above 0 (live).
+- `index`: the corpus index is loaded (readiness state).
+- `figure_guard`: the stored figures the guard masks are loaded (readiness
+  state). `/query` cannot run without them (D41).
+
+Live checks look for the file or folder before opening it: opening a missing
+SQLite file or Chroma folder creates an empty one.
 
 **Startup never crashes on a missing store (D54).** If `load_index()` raises
 (empty database) or the store cannot open, the lifespan logs the error and
@@ -363,7 +378,14 @@ src/api/routes/documents.py
 src/api/routes/export.py
 src/api/routes/health.py
 src/api/routes/demo.py     GET / — serves src/api/static/demo.html
-tests/test_api.py          TestClient, stubs, no network or database
+tests/test_api_main.py     app, middleware, error envelope, exception handlers
+tests/test_api_models.py   request validation, enums in step with the query layer
+tests/test_api_mapping.py  plan + outcomes + answer -> response
+tests/test_api_query.py    POST /query: statuses, timeout, 422 before readiness
+tests/test_api_routes.py   /documents, /export, /health
+tests/test_demo_page.py    GET /, server text inserted as text only
+tests/test_limits.py       usage limits, including the 429s through /query
+tests/test_readiness.py, test_dependencies.py, test_llm_clients.py
 ```
 
 `mapping.py` is separate so the largest piece of logic (§3, §3.1) is a pure

@@ -17,7 +17,8 @@ from fastapi.testclient import TestClient
 
 from src.api.dependencies import get_readiness
 from src.api.main import create_app
-from src.api.readiness import VECTOR_STORE, Readiness
+from src.api.models import HealthChecks
+from src.api.readiness import ALL_PARTS, FIGURE_GUARD, VECTOR_STORE, Readiness
 from src.api.routes import export as export_route
 from src.api.routes import health as health_route
 from src.query.resolve import CorpusIndex
@@ -197,7 +198,8 @@ def test_health_ready_is_200(stores, index: CorpusIndex) -> None:
     body = response.json()
     assert response.status_code == 200
     assert body["status"] == "ok"
-    assert body["checks"] == {"database": "ok", "vector_store": "ok", "index": "ok"}
+    assert body["checks"] == {"database": "ok", "vector_store": "ok", "index": "ok",
+                              "figure_guard": "ok"}
     assert body["documents"] == len(index.entries) and body["chunks"] == 1750
     assert len(body["planner_version"]) == 32
 
@@ -219,11 +221,31 @@ def test_health_catches_a_store_that_broke_after_startup(stores, index: CorpusIn
     assert _client(_state(index)).get("/health").status_code == 503
 
 
-def test_health_reports_readiness_failures_the_live_checks_miss(stores, index: CorpusIndex) -> None:
-    """figure_guard has no live check of its own; readiness still counts it."""
-    response = _client(_state(index, {"figure_guard": "FigureGuardError"})).get("/health")
+def test_health_names_a_failed_figure_guard(stores, index: CorpusIndex) -> None:
+    """figure_guard has no live check; its readiness state is shown (D57).
+
+    Before D57 this case returned 503 with every check "ok": the body could
+    not name the part that blocked /query.
+    """
+    response = _client(_state(index, {FIGURE_GUARD: "FigureGuardError"})).get("/health")
     assert response.status_code == 503
-    assert response.json()["checks"] == {"database": "ok", "vector_store": "ok", "index": "ok"}
+    assert response.json()["checks"] == {"database": "ok", "vector_store": "ok", "index": "ok",
+                                         "figure_guard": "unavailable"}
+
+
+@pytest.mark.parametrize("part", sorted(ALL_PARTS))
+def test_health_503_always_names_a_part(stores, index: CorpusIndex, part: str) -> None:
+    """Any single readiness failure, even with live checks passing, is named in the body."""
+    response = _client(_state(index, {part: "SomeError"})).get("/health")
+    assert response.status_code == 503
+    checks = response.json()["checks"]
+    assert checks[part] == "unavailable"
+    assert [name for name, state in checks.items() if state == "unavailable"] == [part]
+
+
+def test_health_has_one_check_per_readiness_part() -> None:
+    """A readiness part added later must get a field in the /health body too."""
+    assert set(HealthChecks.model_fields) == set(ALL_PARTS)
 
 
 def test_health_live_checks_never_create_a_store(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

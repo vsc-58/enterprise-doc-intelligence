@@ -384,12 +384,19 @@ class HealthState(str, Enum):
 
 class HealthChecks(BaseModel):
     """
-    The individual readiness checks. None of them calls an LLM.
+    The individual readiness checks, one per readiness part. None calls an LLM.
+
+    A check is ok only when the readiness state counts that part as usable AND,
+    where there is one, its live check passes. So a 503 always names at least
+    one unavailable part (D57). A test keeps these fields equal to the
+    readiness parts, so a new part cannot be left out of the body.
 
     Attributes:
-        database: SELECT 1 on the SQLite engine.
-        vector_store: collection_count() on the Chroma store.
-        index: The lifespan built a non-empty corpus index.
+        database: SQLite file present and SELECT 1 succeeds (live).
+        vector_store: Chroma folder present and holds chunks (live).
+        index: The corpus index is loaded (readiness state).
+        figure_guard: The stored figures the guard masks are loaded (readiness
+            state). /query cannot run without them (D41).
     """
 
     model_config = ConfigDict(frozen=True)
@@ -397,6 +404,7 @@ class HealthChecks(BaseModel):
     database: CheckState
     vector_store: CheckState
     index: CheckState
+    figure_guard: CheckState
 
 
 class HealthResponse(BaseModel):
