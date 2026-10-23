@@ -85,8 +85,9 @@ def main() -> None:
     parser.add_argument(
         "--strategy",
         type=str,
-        default="S3",
-        help="Strategy id to apply. Defaults to the Phase 2 winner.",
+        default=settings.EXTRACTION_STRATEGY,
+        help="Strategy id to apply (default: settings.EXTRACTION_STRATEGY, the "
+        "strategy selected by the prompt-strategy comparison).",
     )
     parser.add_argument(
         "--limit",

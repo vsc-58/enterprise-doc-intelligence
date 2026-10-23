@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     MODEL_INPUT_TOKEN_BUDGET: int = 120000   # leave headroom under gpt-4o-mini's 128k for output
     COVER_MAX_CHARS: int = 12000
 
+    # Extraction strategy the pipeline runs by default: S3 (rules + evidence),
+    # selected by the prompt-strategy comparison. The figures in the database
+    # and every result built on them were produced with it.
+    EXTRACTION_STRATEGY: str = "S3"
+
     # Relative tolerance when scoring an extracted figure against the answer key.
     NUMERIC_REL_TOLERANCE: float = 1e-5   # tight: catches digit-level misreads, absorbs true rounding
 

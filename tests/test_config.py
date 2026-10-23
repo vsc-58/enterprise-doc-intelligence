@@ -32,3 +32,10 @@ def test_clients_receive_the_real_key_not_the_mask(monkeypatch: pytest.MonkeyPat
             assert expected != "**********"
     finally:
         vector_store._embeddings.cache_clear()
+
+
+def test_default_extraction_strategy_is_a_known_strategy() -> None:
+    from src.extraction.prompts import STRATEGIES
+
+    assert settings.EXTRACTION_STRATEGY in STRATEGIES
+    assert settings.EXTRACTION_STRATEGY == "S3"   # the strategy the stored figures came from

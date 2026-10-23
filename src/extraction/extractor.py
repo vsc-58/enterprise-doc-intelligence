@@ -507,7 +507,7 @@ def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, boo
 
 
 def run_extraction_pipeline(
-    document_ids: list[int], strategy_id: str = "S3"
+    document_ids: list[int], strategy_id: str | None = None
 ) -> dict[str, object]:
     """Extract a batch of documents, writing one record per attempt.
 
@@ -521,8 +521,9 @@ def run_extraction_pipeline(
 
     Args:
         document_ids: documents to process, in order.
-        strategy_id: the strategy to apply. Defaults to S3 (rules + evidence),
-            the strategy selected by the prompt-strategy comparison.
+        strategy_id: the strategy to apply. None means
+            settings.EXTRACTION_STRATEGY (S3, rules + evidence, the strategy
+            selected by the prompt-strategy comparison).
 
     Returns:
         Summary with processed, succeeded, extraction_failed, technical_failed,
@@ -532,6 +533,7 @@ def run_extraction_pipeline(
         KeyError: if strategy_id is not a known strategy (raised before any work
             begins, so a typo cannot half-run a batch).
     """
+    strategy_id = strategy_id or settings.EXTRACTION_STRATEGY
     version = prompt_version(strategy_id)  # fails fast on an unknown strategy
     logger.info(
         "extraction_pipeline_start",

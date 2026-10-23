@@ -134,7 +134,7 @@ and the plan type in `QueryPlan`. The route reads all three.
 | `request_id`, `latency_ms` | middleware | Also in the `X-Request-ID` response header |
 
 **Never in the response:** `QueryPlan.rationale` (docstring: never shown to
-the user), `MetricResult.sql_preview`, retrieved chunk text, any XBRL value.
+the user), the SQL statement, retrieved chunk text, any XBRL value.
 
 `quality.note` is `QualityFlag.note()` — the same sentence the answer text and
 the CSV use, so the three never drift apart.

@@ -23,6 +23,7 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from typing import Any
 
 import openai
 import structlog
@@ -34,7 +35,7 @@ from sqlalchemy.exc import OperationalError
 from src.api.context import REQUEST_ID_HEADER, elapsed_ms
 from src.api.errors import ERROR_MESSAGES, ApiError
 from src.api.limits import UsageLimiter
-from src.api.models import ErrorBody, ErrorCode
+from src.api.models import OPENAPI_SCHEMA_DESCRIPTIONS, ErrorBody, ErrorCode
 from src.api.readiness import Readiness
 from src.api.routes import demo as demo_routes
 from src.api.routes import documents as documents_routes
@@ -321,6 +322,34 @@ def register_exception_handlers(app: FastAPI) -> None:
 # --- App ----------------------------------------------------------------------
 
 
+def use_public_schema_descriptions(app: FastAPI) -> None:
+    """Serve API-owned descriptions for planner enums in the OpenAPI schema.
+
+    The API reuses planner enums (Intent, UnsupportedReason) whose docstrings
+    are planner prompt text and stay frozen at the measured prompt version.
+    FastAPI copies a class docstring into the schema, so Swagger would show
+    that text. This replaces the description of each listed component once,
+    when the schema is first built; the classes themselves are not changed.
+
+    Args:
+        app: The application whose openapi() is wrapped.
+    """
+    build_schema = app.openapi
+
+    def openapi() -> dict[str, Any]:
+        """Build the schema once, with the public descriptions applied, and cache it."""
+        schema = app.openapi_schema
+        if schema is None:
+            schema = build_schema()   # FastAPI caches this dict on the app
+            components = schema.get("components", {}).get("schemas", {})
+            for name, text in OPENAPI_SCHEMA_DESCRIPTIONS.items():
+                if name in components:
+                    components[name]["description"] = text
+        return schema
+
+    app.openapi = openapi  # type: ignore[method-assign]
+
+
 def create_app() -> FastAPI:
     """Build the application.
 
@@ -349,6 +378,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     for router in _ROUTERS:
         app.include_router(router)
+    use_public_schema_descriptions(app)
     # Built here, not in the lifespan, so tests that skip the lifespan still
     # have it. Both limits are off unless set.
     app.state.limiter = UsageLimiter.from_settings()

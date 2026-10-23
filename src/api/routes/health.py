@@ -106,7 +106,7 @@ def chunk_count() -> int | None:
     "/health",
     response_model=HealthResponse,
     responses={503: {"model": HealthResponse, "description": "Not ready; `checks` names the part."}},
-    summary="Readiness of the database, vector store and corpus index",
+    summary="Readiness of the database, vector store, corpus index and figure guard",
 )
 async def health(
     response: Response,

@@ -355,7 +355,6 @@ def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResul
         excluded_null_count=len(excluded),
         mixed_years=mixed_years,
         threshold_value=threshold,
-        sql_preview=str(stmt.compile(compile_kwargs={"literal_binds": False})),
     )
 
 

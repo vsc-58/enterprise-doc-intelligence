@@ -392,9 +392,6 @@ class MetricResult(BaseModel):
             otherwise skip the correct answer.
         mixed_years: Whether rows span more than one fiscal year; the answer
             then says the figures are not like-for-like.
-        sql_preview: The parameterized statement as text, values not inlined.
-            Kept for debugging; nothing in the pipeline reads it, and it is
-            never sent to API clients.
         threshold_value: The parsed filter threshold in dollars, or None for
             non-filter intents. Carried rather than reparsed so the number that
             selected the rows and the number quoted back to the user are the
@@ -417,7 +414,6 @@ class MetricResult(BaseModel):
     excluded_null: list[MetricRow] = Field(default_factory=list)
     excluded_null_count: int = 0
     mixed_years: bool = False
-    sql_preview: str | None = None
     threshold_value: float | None = None
 
 

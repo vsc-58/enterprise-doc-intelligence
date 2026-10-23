@@ -100,6 +100,32 @@ QUERY_EXAMPLES: dict[str, dict[str, object]] = {
 }
 
 
+# Swagger descriptions for the two planner enums the API reuses. Their own
+# docstrings are part of the planner prompt (sent to the model and hashed into
+# planner_version), so they cannot be edited for API readers without changing
+# the measured prompt. main.py puts these texts in the OpenAPI schema instead;
+# the classes and the planner prompt are untouched.
+OPENAPI_SCHEMA_DESCRIPTIONS: dict[str, str] = {
+    "Intent": (
+        "What information one task needs. The three financial intents "
+        "(financial_metric, financial_ranking, financial_filter) are answered "
+        "by the SQL tool from the extracted figures. The six narrative intents "
+        "are answered from cited filing text, each searching its own set of "
+        "10-K sections. The application, not the planner, maps an intent to "
+        "its tool."
+    ),
+    "UnsupportedReason": (
+        "A capability gap the planner declared. cross_year: needs two fiscal "
+        "years of one company; the corpus holds one. aggregation: an aggregate "
+        "across companies (average, total, count). ratio_or_derived: a figure "
+        "computed from stored ones (margin, growth). multi_condition: more "
+        "than one filter condition at once. field_not_queryable: a fact in the "
+        "filing that neither tool serves, such as the auditor's name. Whether "
+        "a company or year is held is decided later, by the resolver."
+    ),
+}
+
+
 # --- /query response ---------------------------------------------------------
 
 
