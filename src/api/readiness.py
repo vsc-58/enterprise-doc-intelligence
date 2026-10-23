@@ -1,34 +1,33 @@
-# src/api/readiness.py
-# Module: API readiness
-# Purpose: Know which data parts the API can use right now, warm them once at
-#          startup, and re-try while any part is missing — so the server
-#          recovers without a restart when data appears after it started.
-# Depends on: sqlalchemy, src.query.resolve, src.rag.figure_guard,
-#             src.storage.vector_store, src.utils.*
-#
-# Four parts, each needed by different endpoints (contract §6, step 5):
-#   database      the SQLite file exists        /export, and everything below
-#   index         corpus index loaded           /query, /documents
-#   vector_store  Chroma holds chunks           /query
-#   figure_guard  stored figures readable       /query (masking needs them, D41)
-#
-# NEVER CREATES A STORE. Opening a missing SQLite file or Chroma folder creates
-# an empty one, which then looks present (found in step 4 against an empty
-# checkout: two empty files appeared). Both paths are checked before anything
-# is opened.
-#
-# ONCE READY, STAYS READY. A store that breaks mid-request raises inside the
-# query path and the exception handlers in main.py answer 503 there. While NOT
-# ready, every request may re-try the warm-up, at most once per
-# READINESS_RETRY_SECONDS, under a lock so a burst of requests runs it once.
-#
-# The caches being warmed already exist at module level (load_index's
-# _cached_index, get_store's singleton, load_guard_values' lru_cache). None of
-# them caches a failure, so a re-try reads the stores again.
-#
-# Not for rebuilding the corpus under a running server: embed_documents would
-# write to Chroma while the API reads it, and the local store is single-process.
-# Stop the server, rebuild, start.
+"""API readiness: which data parts are usable, warmed at startup and re-tried until ready.
+
+Knows which data parts the API can use right now, warm them once at startup, and
+re-try while any part is missing — so the server recovers without a restart
+when data appears after it started.
+
+Four parts, each needed by different endpoints (docs/api_contract.md §6):
+  database      the SQLite file exists        /export, and everything below
+  index         corpus index loaded           /query, /documents
+  vector_store  Chroma holds chunks           /query
+  figure_guard  stored figures readable       /query (masking needs them)
+
+NEVER CREATES A STORE. Opening a missing SQLite file or Chroma folder creates
+an empty one, which then looks present (found by starting the server on an
+empty checkout: two empty files appeared). Both paths are checked before
+anything is opened.
+
+ONCE READY, STAYS READY. A store that breaks mid-request raises inside the
+query path and the exception handlers in main.py answer 503 there. While NOT
+ready, every request may re-try the warm-up, at most once per
+READINESS_RETRY_SECONDS, under a lock so a burst of requests runs it once.
+
+The caches being warmed already exist at module level (load_index's
+_cached_index, get_store's singleton, load_guard_values' lru_cache). None of
+them caches a failure, so a re-try reads the stores again.
+
+Not for rebuilding the corpus under a running server: embed_documents would
+write to Chroma while the API reads it, and the local store is single-process.
+Stop the server, rebuild, start.
+"""
 
 import asyncio
 import time
@@ -58,8 +57,7 @@ EMPTY_VECTOR_STORE = "EmptyVectorStore"
 
 
 def database_present(path: str) -> bool:
-    """
-    Whether the SQLite file exists, checked without opening it.
+    """Whether the SQLite file exists, checked without opening it.
 
     Args:
         path: settings.SQLITE_DB_PATH.
@@ -71,8 +69,7 @@ def database_present(path: str) -> bool:
 
 
 def vector_store_present(path: str) -> bool:
-    """
-    Whether the Chroma folder exists and holds anything, checked without opening it.
+    """Whether the Chroma folder exists and holds anything, checked without opening it.
 
     Args:
         path: settings.CHROMA_DB_PATH.
@@ -85,8 +82,7 @@ def vector_store_present(path: str) -> bool:
 
 
 class Readiness:
-    """
-    Which parts are usable, and the corpus index once it has loaded.
+    """Which parts are usable, and the corpus index once it has loaded.
 
     Attributes:
         index: The corpus index, or None until it loads.
@@ -99,8 +95,7 @@ class Readiness:
         retry_seconds: float = settings.READINESS_RETRY_SECONDS,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        """
-        Create an un-warmed state. Nothing is checked until warm() runs.
+        """Create an un-warmed state. Nothing is checked until warm() runs.
 
         Args:
             retry_seconds: Minimum gap between re-tries while not ready.
@@ -119,8 +114,7 @@ class Readiness:
         return not self.failures
 
     def missing(self, needs: Iterable[str]) -> list[str]:
-        """
-        The needed parts that are not usable.
+        """The needed parts that are not usable.
 
         Args:
             needs: Parts an endpoint requires.
@@ -131,8 +125,7 @@ class Readiness:
         return sorted(part for part in needs if part in self.failures)
 
     def _fail(self, part: str, error_type: str, detail: str) -> None:
-        """
-        Record one unusable part and log it.
+        """Record one unusable part and log it.
 
         Args:
             part: Which part.
@@ -143,11 +136,10 @@ class Readiness:
         logger.error("readiness_part_unavailable", part=part, error_type=error_type, error=detail)
 
     async def warm(self) -> None:
-        """
-        Check every part from scratch and load what is present, off the event loop.
+        """Check every part from scratch and load what is present, off the event loop.
 
         Each part is tried on its own, so one failure does not hide another, and
-        none of them raises: a missing part is recorded, never fatal (D54).
+        none of them raises: a missing part is recorded, never fatal.
         """
         self._last_attempt = self._clock()
         self.failures = {}
@@ -192,8 +184,7 @@ class Readiness:
         )
 
     async def refresh_if_due(self) -> None:
-        """
-        Re-try the warm-up when not ready and the retry interval has passed.
+        """Re-try the warm-up when not ready and the retry interval has passed.
 
         Called by every request that needs a part. When ready it returns at
         once. The lock makes a burst of requests share one re-try; the second

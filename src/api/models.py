@@ -1,19 +1,20 @@
-# src/api/models.py
-# Module: API request and response models
-# Purpose: The HTTP contract of docs/api_contract.md as Pydantic v2 models. FastAPI
-#          validates requests against these before any handler runs (malformed
-#          input -> 422, no planner call), filters responses through them, and
-#          generates the OpenAPI schema and Swagger UI from them.
-# Depends on: pydantic v2, src.query.schemas, src.storage.quality, src.utils.config
-#
-# Data only. The logic that builds a QueryResponse from a plan, its outcomes and
-# the assembled answer lives in src/api/mapping.py (step 6), so it can be tested
-# as a pure function.
-#
-# Enums are reused from the query layer rather than copied as strings, so the
-# OpenAPI schema lists their exact values and a renamed member breaks loudly.
-# RefusalReason is the one API-owned enum: it merges two query-layer enums plus
-# two API-only codes (contract §3.1); a test keeps it in step with its sources.
+"""API request and response models: the HTTP contract as Pydantic v2 classes.
+
+The HTTP contract of docs/api_contract.md as Pydantic v2 models. FastAPI
+validates requests against these before any handler runs (malformed input ->
+422, no planner call), filters responses through them, and generates the
+OpenAPI schema and Swagger UI from them.
+
+Data only. The logic that builds a QueryResponse from a plan, its outcomes and
+the assembled answer lives in src/api/mapping.py, so it can be tested
+as a pure function.
+
+Enums are reused from the query layer rather than copied as strings, so the
+OpenAPI schema lists their exact values and a renamed member breaks loudly.
+RefusalReason is the one API-owned enum: it merges two query-layer enums plus
+two API-only codes (docs/api_contract.md §3.1); a test keeps it in step with
+its sources.
+"""
 
 from enum import Enum
 
@@ -35,12 +36,13 @@ from src.utils.config import settings
 
 
 class QueryRequest(BaseModel):
-    """
-    Body of POST /query.
+    """Body of POST /query.
 
-    Only `question`. Extra fields are rejected, so a client sending the dropped
-    company/year filters (D54) gets a 422 rather than having them silently
-    ignored. Whitespace is stripped before the length check, so "   " is empty.
+    Only `question`. Extra fields are rejected, so a client sending company or
+    year filters gets a 422 rather than having them silently ignored. There are
+    no filters by design: the resolver alone decides which companies and years
+    are held, and a filter could silently drop half of a two-company question.
+    Whitespace is stripped before the length check, so "   " is empty.
 
     Attributes:
         question: The user's question, verbatim apart from outer whitespace.
@@ -65,7 +67,7 @@ class QueryRequest(BaseModel):
 # by the /query route, and shown as buttons on the demo page at "/". One per
 # behaviour the demo should show. Summaries are plain language: recruiters read
 # them on the demo page, not only developers in Swagger. Chosen from the
-# end-to-end cases already run in Phases 5A-5C, so each has a known outcome.
+# end-to-end cases already run during evaluation, so each has a known outcome.
 QUERY_EXAMPLES: dict[str, dict[str, object]] = {
     "figure": {
         "summary": "A figure",
@@ -102,15 +104,15 @@ QUERY_EXAMPLES: dict[str, dict[str, object]] = {
 
 
 class RefusalReason(str, Enum):
-    """
-    Why a refused task gave no answer (contract §3.1).
+    """Why a refused task gave no answer (docs/api_contract.md §3.1).
 
     One field for three sources: the resolver's ResolutionFailure, the chain's
     NarrativeRefusal (minus FAILED, which is a failure, not a refusal), and two
     codes the API assigns to SQL refusals that carry no typed reason.
 
     THRESHOLD_UNPARSED: a filter threshold the Python parser could not read
-        ("fifty billion dollars"). Planner output is copied text by design (D27).
+        ("fifty billion dollars"). The planner copies the phrase and Python
+        parses it; the model never converts scale words to numbers.
     SQL_NOT_RUNNABLE: any other SQL refusal without a resolver failure.
         Defensive: not reachable with the current resolver and policy table.
     """
@@ -129,8 +131,10 @@ class RefusalReason(str, Enum):
 
 
 class QualityOut(BaseModel):
-    """
-    The D29 assurance on one served figure.
+    """The data-quality flag on one served figure.
+
+    Computed from the stored extraction evidence only, never from the
+    evaluation answer key.
 
     Attributes:
         verdict: verified, unverified or disputed.
@@ -147,19 +151,19 @@ class QualityOut(BaseModel):
 
 
 class FigureOut(BaseModel):
-    """
-    One stored figure, exactly as the SQL path served it.
+    """One stored figure, exactly as the SQL path served it.
 
     The value is in actual dollars and comes from extracted_records — never from
-    XBRL (edgartools boundary rule). No LLM produced or saw it (D27).
+    XBRL (edgartools boundary rule). It was rendered in Python: no LLM produced
+    or saw it.
 
     Attributes:
         ticker, company_name: Which company. company_name is display_name().
         metric: Which of the five fields.
         value: Actual dollars, or None when not extracted.
         fiscal_year, fiscal_year_end: The filing's period. Shown on every row
-            because rows from different companies mix fiscal years (D33).
-        quality: Its D29 flag. Always present.
+            because rows from different companies mix fiscal years.
+        quality: Its data-quality flag. Always present.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -174,8 +178,7 @@ class FigureOut(BaseModel):
 
 
 class FindingOut(BaseModel):
-    """
-    One company's result in a corpus-wide narrative task (D39).
+    """One company's result in a corpus-wide narrative task (one verdict per company).
 
     The claim text is not repeated here: it is already in `answer`, with its
     citation markers. This gives a client the coverage in structured form.
@@ -194,24 +197,23 @@ class FindingOut(BaseModel):
 
 
 class TaskOut(BaseModel):
-    """
-    One planned task and what happened to it.
+    """One planned task and what happened to it.
 
     Attributes:
         task_id: Identifier within the plan.
         intent: One of the nine intents.
-        tool: sql or rag, from the policy table — never chosen by the plan (D25).
+        tool: sql or rag, from the policy table — never chosen by the plan.
         status: success, refused or failed. Refused is a correct answer about
             the corpus; failed means something broke.
         refusal_reason: Set only when status is refused.
         figures: SQL tasks: the rows served, in answer order.
         flagged_not_shown: Rankings and filters: scale-flagged companies the
-            query left out that a 1,000x correction would bring in (D53, D56).
+            query left out that a 1,000x correction would bring in.
         excluded_null: Rankings and filters: companies left out because the
-            figure was not extracted (value null), named in the answer (D56).
+            figure was not extracted (value null), named in the answer.
         excluded_null_count: len(excluded_null); kept for clients that only
             need the number.
-        mixed_years: Rankings and filters: whether rows span fiscal years (D33).
+        mixed_years: Rankings and filters: whether rows span fiscal years.
         findings: Corpus-wide narrative tasks: one per company.
     """
 
@@ -231,11 +233,10 @@ class TaskOut(BaseModel):
 
 
 class SourceOut(BaseModel):
-    """
-    One entry in the answer's numbered Sources list.
+    """One entry in the answer's numbered Sources list.
 
     Section granularity is the honest limit of a citation: a chunk cites the
-    section it came from, not a page (Phase 4).
+    10-K item it came from, not a page.
 
     Attributes:
         number: The [n] used in the answer text.
@@ -257,11 +258,10 @@ class SourceOut(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    """
-    Response of POST /query for every answered request — answers and refusals.
+    """Response of POST /query for every answered request — answers and refusals.
 
     Never carries the planner's rationale, the SQL preview, retrieved chunk text
-    or any XBRL value (contract §3).
+    or any XBRL value (docs/api_contract.md §3).
 
     Attributes:
         question: The validated question, echoed.
@@ -343,8 +343,7 @@ class QueryResponse(BaseModel):
 
 
 class DocumentOut(BaseModel):
-    """
-    One filing the corpus holds, read from the corpus index (no DB call).
+    """One filing the corpus holds, read from the corpus index (no DB call).
 
     Attributes:
         ticker, company_name, cik: Which company. company_name is display_name().
@@ -383,12 +382,11 @@ class HealthState(str, Enum):
 
 
 class HealthChecks(BaseModel):
-    """
-    The individual readiness checks, one per readiness part. None calls an LLM.
+    """The individual readiness checks, one per readiness part. None calls an LLM.
 
     A check is ok only when the readiness state counts that part as usable AND,
     where there is one, its live check passes. So a 503 always names at least
-    one unavailable part (D57). A test keeps these fields equal to the
+    one unavailable part. A test keeps these fields equal to the
     readiness parts, so a new part cannot be left out of the body.
 
     Attributes:
@@ -396,7 +394,7 @@ class HealthChecks(BaseModel):
         vector_store: Chroma folder present and holds chunks (live).
         index: The corpus index is loaded (readiness state).
         figure_guard: The stored figures the guard masks are loaded (readiness
-            state). /query cannot run without them (D41).
+            state). /query cannot run without them.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -408,8 +406,7 @@ class HealthChecks(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """
-    Body of GET /health, for both 200 (ready) and 503 (not ready).
+    """Body of GET /health, for both 200 (ready) and 503 (not ready).
 
     Attributes:
         status: ok or not_ready.
@@ -433,8 +430,7 @@ class HealthResponse(BaseModel):
 
 
 class ErrorCode(str, Enum):
-    """
-    Machine-readable error codes for every non-422 error (contract §7).
+    """Machine-readable error codes for every non-422 error (docs/api_contract.md §7).
 
     NOT_READY (503): database, store or index unavailable.
     LLM_UNAVAILABLE (503): OpenAI unreachable, timed out, rate-limited or
@@ -444,7 +440,7 @@ class ErrorCode(str, Enum):
     RATE_LIMITED (429): one client sent too many questions in the last minute.
     DAILY_BUDGET_EXHAUSTED (429): the demo's daily question budget is used up;
         it resets at 00:00 UTC. Separate from RATE_LIMITED because the client's
-        action differs: wait a moment versus come back tomorrow (D55).
+        action differs: wait a moment versus come back tomorrow.
     INTERNAL_ERROR (500): anything unexpected.
     """
 
@@ -458,8 +454,7 @@ class ErrorCode(str, Enum):
 
 
 class ErrorBody(BaseModel):
-    """
-    The one error envelope. 422 keeps FastAPI's own format instead.
+    """The one error envelope. 422 keeps FastAPI's own format instead.
 
     `message` is fixed text written in our code. Exception text, stack traces,
     paths, SQL and keys go to the logs only; `request_id` connects the two.

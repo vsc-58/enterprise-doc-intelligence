@@ -1,16 +1,18 @@
-"""
-src/extraction/schemas.py
-Pydantic v2 extraction schemas for the prompt-strategy bake-off.
+"""Pydantic v2 extraction schemas, bound to the model with with_structured_output.
 
 Two schemas:
-  - FilingExtraction            : the target shape (S1, S2, S4)
+  - FilingExtraction            : the target shape (S0, S1, S2, S4)
   - FilingExtractionWithEvidence: S3's grounded variant; each numeric field
                                   carries the source line it was read from,
                                   and projects down to FilingExtraction via
-                                  .to_extraction() so all four arms are scored
+                                  .to_extraction() so all five arms are scored
                                   on identical `value` fields.
 
-Dependencies: pydantic v2.
+These classes are sent to the model as its output schema, docstrings and field
+descriptions included, so they are prompt text. The response cache key does
+not include the schema: editing a class docstring or a field here would change
+what the model is asked while cached responses keep being served. Leave them
+as they are unless the extractions are re-run.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -165,7 +167,7 @@ class FilingExtractionWithEvidence(BaseModel):
     def evidence_map(self) -> dict[str, NumericEvidence]:
         """
         Return the five numeric fields keyed by name, for grounding validation
-        in Phase 3 (check each source_line is a substring of the source text).
+        at write time (check each source_line is a substring of the source text).
 
         Returns:
             Mapping of field name to its NumericEvidence.

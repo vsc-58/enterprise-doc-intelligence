@@ -1,22 +1,21 @@
-# src/api/main.py
-# Module: FastAPI application
-# Purpose: Build the app: lifespan startup, request-id and timing middleware,
-#          CORS, and the exception handlers that turn every error into the one
-#          error envelope (docs/api_contract.md §7). Routes live in
-#          src/api/routes/ and are registered here.
-# Depends on: fastapi, starlette, structlog, openai, sqlalchemy, src.api.*,
-#             src.rag.figure_guard, src.storage.vector_store, src.utils.*
-#
-# Run locally:  uvicorn src.api.main:app --reload            (port 8000)
-# One worker only: Chroma's local store is single-process and the caches the
-# readiness warm-up fills live per process (contract §1).
-#
-# Startup never crashes on a missing store (D54). The lifespan warms the data
-# parts through src/api/readiness.py and stores the state on app.state.readiness;
-# a missing part is logged and the server starts anyway. Routes declare what
-# they need through src/api/dependencies.py, which re-tries readiness while not
-# ready and otherwise answers 503 not_ready with Retry-After. On a hosted Space
-# this shows the cause in a browser instead of a crash loop.
+"""FastAPI application: app factory, startup, middleware and error handling.
+
+Builds the app: lifespan startup, request-id and timing middleware, CORS, and
+the exception handlers that turn every error into the one error envelope
+(docs/api_contract.md §7). Routes live in src/api/routes/ and are registered
+here.
+
+Run locally:  uvicorn src.api.main:app --reload            (port 8000)
+One worker only: Chroma's local store is single-process and the caches the
+readiness warm-up fills live per process (docs/api_contract.md §1).
+
+Startup never crashes on a missing store. The lifespan warms the data
+parts through src/api/readiness.py and stores the state on app.state.readiness;
+a missing part is logged and the server starts anyway. Routes declare what
+they need through src/api/dependencies.py, which re-tries readiness while not
+ready and otherwise answers 503 not_ready with Retry-After. On a hosted Space
+this shows the cause in a browser instead of a crash loop.
+"""
 
 import math
 import re
@@ -95,9 +94,7 @@ _DESCRIPTION = (
 
 
 def timeouts_consistent(request_s: float, per_call_s: float, retries: int) -> bool:
-    """
-    Check the D54 timeout rule: one OpenAI call, with all its retries, must end
-    before the request times out.
+    """Check that one OpenAI call, with all its retries, ends before the request does.
 
     The planner call runs in a worker thread that a request timeout cannot stop,
     so only the per-call limit bounds it. If the rule fails, a timed-out request
@@ -116,8 +113,7 @@ def timeouts_consistent(request_s: float, per_call_s: float, retries: int) -> bo
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    Run startup before the first request and shutdown after the last.
+    """Run startup before the first request and shutdown after the last.
 
     Args:
         app: The application.
@@ -156,8 +152,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 async def request_context(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
-    """
-    Give every request an id and a timer, and log one line when it ends.
+    """Give every request an id and a timer, and log one line when it ends.
 
     The id is reused from an incoming X-Request-ID header when it is safe, else
     generated. It is bound to structlog's context so every log line written
@@ -200,8 +195,7 @@ async def request_context(
 def error_response(
     request: Request, code: ErrorCode, status_code: int, retry_after_s: int | None = None
 ) -> JSONResponse:
-    """
-    Build the one error envelope (contract §7).
+    """Build the one error envelope (docs/api_contract.md §7).
 
     The message is the fixed sentence for the code, never exception text.
 
@@ -233,8 +227,7 @@ def error_response(
 
 
 async def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
-    """
-    Map an error the API raised on purpose to its status and code.
+    """Map an error the API raised on purpose to its status and code.
 
     Args:
         request: The failed request.
@@ -251,11 +244,10 @@ async def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
 
 
 async def handle_llm_unavailable(request: Request, exc: Exception) -> JSONResponse:
-    """
-    OpenAI unreachable, timed out, rate-limited or rejecting the key -> 503.
+    """OpenAI unreachable, timed out, rate-limited or rejecting the key -> 503.
 
     Reaches here only from the planner call: failures inside the executor are
-    caught per task and reported as failed parts (contract §7).
+    caught per task and reported as failed parts (docs/api_contract.md §7).
 
     Args:
         request: The failed request.
@@ -274,8 +266,7 @@ async def handle_llm_unavailable(request: Request, exc: Exception) -> JSONRespon
 
 
 async def handle_store_unavailable(request: Request, exc: Exception) -> JSONResponse:
-    """
-    SQLite or Chroma unavailable during a request -> 503 not_ready.
+    """SQLite or Chroma unavailable during a request -> 503 not_ready.
 
     Args:
         request: The failed request.
@@ -292,8 +283,7 @@ async def handle_store_unavailable(request: Request, exc: Exception) -> JSONResp
 
 
 async def handle_unexpected(request: Request, exc: Exception) -> JSONResponse:
-    """
-    Anything else -> 500 with a fixed message; the traceback goes to the log.
+    """Anything else -> 500 with a fixed message; the traceback goes to the log.
 
     Starlette runs this outside the request middleware, so the request id is
     passed explicitly rather than read from the logging context.
@@ -315,8 +305,7 @@ async def handle_unexpected(request: Request, exc: Exception) -> JSONResponse:
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    """
-    Attach every handler. 422 keeps FastAPI's own validation format.
+    """Attach every handler. 422 keeps FastAPI's own validation format.
 
     Args:
         app: The application.
@@ -333,8 +322,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
 
 def create_app() -> FastAPI:
-    """
-    Build the application.
+    """Build the application.
 
     A factory rather than only a module-level object so tests can build a fresh
     app, add throwaway routes, and choose whether the lifespan runs.
@@ -362,7 +350,7 @@ def create_app() -> FastAPI:
     for router in _ROUTERS:
         app.include_router(router)
     # Built here, not in the lifespan, so tests that skip the lifespan still
-    # have it. Both limits are off unless set (D55).
+    # have it. Both limits are off unless set.
     app.state.limiter = UsageLimiter.from_settings()
     return app
 

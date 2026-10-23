@@ -1,24 +1,23 @@
-# src/eval/ground_truth.py
-# Module: XBRL ground-truth capture (EVALUATION SIDE ONLY)
-# Purpose: Read five financial fields STRICTLY from a specific 10-K's XBRL —
-#          by exact concept, undimensioned, for the filing's own period — and
-#          write them to data/eval/ground_truth.json as the Phase 2 answer key.
-# Depends on: edgartools, src.ingestion.acquire (shared selector),
-#             src.utils.config, src.utils.logger
-#
-# BOUNDARY RULE (non-negotiable): these XBRL values are the EVALUATION answer
-# key ONLY. They are written to data/eval/ground_truth.json and must NEVER be
-# written into the extraction store (extracted_records in SQLite). The fields
-# the system PRODUCES come from the LLM extraction pipeline — the project's
-# contribution. XBRL as output would collapse the thesis.
-#
-# WHY STRICT DATAFRAME READS, not the get_*() accessors:
-#   get_total_liabilities() and friends substitute a *resembling* concept when
-#   the exact one is untagged — e.g. Amazon has no us-gaap:Liabilities, so the
-#   accessor returned LiabilitiesAndStockholdersEquity (= total assets), a
-#   silent wrong value scored as "captured". We instead match the exact XBRL
-#   concept, take only the undimensioned consolidated row, and store null when
-#   the concept is genuinely absent. Missing-means-null, never substituted.
+"""XBRL ground-truth capture (EVALUATION SIDE ONLY).
+
+Read five financial fields STRICTLY from a specific 10-K's XBRL — by exact
+concept, undimensioned, for the filing's own period — and write them to
+data/eval/ground_truth.json as the answer key extraction is scored against.
+
+BOUNDARY RULE (non-negotiable): these XBRL values are the EVALUATION answer
+key ONLY. They are written to data/eval/ground_truth.json and must NEVER be
+written into the extraction store (extracted_records in SQLite). The fields
+the system PRODUCES come from the LLM extraction pipeline — the project's
+contribution. XBRL as output would collapse the thesis.
+
+WHY STRICT DATAFRAME READS, not the get_*() accessors:
+  get_total_liabilities() and friends substitute a *resembling* concept when
+  the exact one is untagged — e.g. Amazon has no us-gaap:Liabilities, so the
+  accessor returned LiabilitiesAndStockholdersEquity (= total assets), a
+  silent wrong value scored as "captured". We instead match the exact XBRL
+  concept, take only the undimensioned consolidated row, and store null when
+  the concept is genuinely absent. Missing-means-null, never substituted.
+"""
 
 from __future__ import annotations
 
@@ -77,8 +76,7 @@ _FIELD_SPECS: dict[str, dict[str, object]] = {
 
 
 def _period_column(df: pd.DataFrame, period_of_report: str) -> str | None:
-    """
-    Pick the statement's value column matching the filing's fiscal period.
+    """Pick the statement's value column matching the filing's fiscal period.
 
     Statement dataframes name their period columns by date, but the format
     differs by statement type: point-in-time statements (balance sheet) use a
@@ -116,8 +114,7 @@ def _period_column(df: pd.DataFrame, period_of_report: str) -> str | None:
 def _read_concept(
     df: pd.DataFrame, concepts: list[str], value_col: str
 ) -> float | None:
-    """
-    Read the first matching concept's consolidated value, strictly.
+    """Read the first matching concept's consolidated value, strictly.
 
     Tries each concept in `concepts` in order and returns the value of the
     first one that resolves to a real consolidated figure. For each concept,
@@ -154,8 +151,7 @@ def _read_concept(
 
 
 def capture_ground_truth(ticker: str, year: int) -> dict | None:
-    """
-    Capture XBRL ground-truth financials for one company-year 10-K, strictly.
+    """Capture XBRL ground-truth financials for one company-year 10-K, strictly.
 
     Locates the SAME filing acquisition uses, then for each of the five fields
     reads its exact XBRL concept from the relevant statement — undimensioned,
@@ -199,6 +195,7 @@ def capture_ground_truth(ticker: str, year: int) -> dict | None:
         statement_dfs: dict[str, pd.DataFrame | None] = {}
 
         def _statement_df(name: str) -> pd.DataFrame | None:
+            """Return one statement as a dataframe, cached per filing; None if absent."""
             if name not in statement_dfs:
                 try:
                     stmt = getattr(financials, name)()
@@ -253,9 +250,7 @@ def capture_ground_truth(ticker: str, year: int) -> dict | None:
         )
         return None
 def write_ground_truth(records: list[dict]) -> str:
-    """
-    Write ground-truth records to data/eval/ground_truth.json, keyed by
-    {cik}_{year}, MERGING with any existing file.
+    """Merge ground-truth records into data/eval/ground_truth.json, keyed by {cik}_{year}.
 
     Merge rather than overwrite: the acquisition pipeline skips
     already-acquired documents, so a re-run's `records` list holds only newly

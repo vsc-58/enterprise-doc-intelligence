@@ -1,9 +1,9 @@
-# src/ingestion/acquire.py
-# Module: Filing acquisition (edgartools wrapper)
-# Purpose: Locate a company's 10-K for a target fiscal year, save its clean
-#          text to disk, and return tracking metadata. TEXT side only — XBRL
-#          ground truth is captured separately in src/eval/ground_truth.py.
-# Depends on: edgartools, src.utils.config, src.utils.logger
+"""Filing acquisition: fetch one company's 10-K for a fiscal year with edgartools.
+
+Locate a company's 10-K for a target fiscal year, save its clean text to disk,
+and return tracking metadata. TEXT side only — XBRL ground truth is captured
+separately in src/eval/ground_truth.py.
+"""
 
 from __future__ import annotations
 
@@ -29,8 +29,7 @@ _identity_set: bool = False
 
 ## added for filing_date extraction
 def to_iso_date(value: object) -> str | None:
-    """
-    Normalise edgartools' filing_date to an ISO 'YYYY-MM-DD' string.
+    """Normalise edgartools' filing_date to an ISO 'YYYY-MM-DD' string.
 
     edgartools' return type varies by code path (date | datetime | str |
     pandas Timestamp); this coerces every shape to one stored form.
@@ -57,9 +56,11 @@ def to_iso_date(value: object) -> str | None:
         return None
 
 def ensure_identity() -> None:
-    """Set the SEC identity for edgartools exactly once per process. (Renamed
-    from _ensure_identity — now part of acquire.py's shared public surface,
-    used by both acquisition and ground-truth capture.)"""
+    """Set the SEC identity for edgartools exactly once per process.
+
+    Shared by acquisition and ground-truth capture. The SEC requires a name and
+    email on every request; the value comes from settings.EDGAR_IDENTITY.
+    """
     global _identity_set
     if not _identity_set:
         set_identity(settings.EDGAR_IDENTITY)
@@ -69,14 +70,21 @@ def ensure_identity() -> None:
 
 def normalize_cik(cik: int | str) -> str:
     """Normalise a CIK to EDGAR's canonical zero-padded 10-digit string.
-    (Renamed from _normalize_cik — shared so the raw-text filename, the SQLite
-    cik column, and the ground_truth.json key all use the identical form.)"""
+
+    Shared so the raw-text filename, the SQLite cik column and the
+    ground_truth.json key all use the identical form.
+
+    Args:
+        cik: The CIK as an int or a string, padded or not.
+
+    Returns:
+        The 10-digit string, e.g. "0000320193".
+    """
     return f"{int(cik):010d}"
 
 
 def _period_end_year(filing: Filing) -> int | None:
-    """
-    Return the calendar year in which a filing's fiscal period ends.
+    """Return the calendar year in which a filing's fiscal period ends.
 
     Reads filing.period_of_report (the fiscal-period-end date, e.g.
     "2023-09-30" for Apple's FY2023). This is the selection discriminator,
@@ -102,8 +110,7 @@ def _period_end_year(filing: Filing) -> int | None:
 
 
 def _extract_accession(filing: Filing) -> str | None:
-    """
-    Read the accession number, tolerant of edgartools' attribute naming.
+    """Read the accession number, tolerant of edgartools' attribute naming.
 
     The accession identifier is exposed as `accession_number` in some
     edgartools versions and `accession_no` in others. This reads whichever
@@ -121,14 +128,13 @@ def _extract_accession(filing: Filing) -> str | None:
 
 
 def select_10k_for_fiscal_year(ticker: str, year: int) -> Filing | None:
-    """
-    Locate a company's original 10-K whose fiscal period ENDS in `year`.
+    """Locate a company's original 10-K whose fiscal period ENDS in `year`.
 
     Shared by acquisition (filing text) and ground-truth capture (XBRL) so
     both operate on the IDENTICAL filing — same period, same accession. That
     shared identity is what keeps the {cik}_{year} raw-text file and the
     {cik}_{year} ground-truth key aligned; if the two selected different
-    filings, the Phase 2 evaluator would score extraction against the wrong
+    filings, the extraction evaluator would score extraction against the wrong
     answer key. Selection is by period_of_report (fiscal-period-end year),
     NOT edgartools' `year` filter, which keys on filing/calendar year.
 
@@ -172,7 +178,8 @@ def acquire_filing(ticker: str, year: int) -> dict | None:
     Returns:
         A dict with keys company_name, cik (zero-padded 10-digit string),
         accession_number, filing_year (the period-end year), and local_path;
-        or None if no matching 10-K is found or acquisition fails."""
+        or None if no matching 10-K is found or acquisition fails.
+    """
     logger.info("acquire_filing_start", ticker=ticker, year=year)
     try:
         matched_filing = select_10k_for_fiscal_year(ticker, year)

@@ -1,21 +1,20 @@
-"""
-src/extraction/prompts.py
-Prompt templates for the four extraction strategies (the experiment's only
-independent variable).
+"""Prompt templates for the five extraction strategies (the experiment's only variable).
 
-Every template carries three INVARIANT rules — held constant across all arms so
-the arms differ only in their intended intervention:
+Every template except S0 carries three INVARIANT rules — held constant across
+the ruled arms so they differ only in their intended intervention:
   1. actual-dollar units   (the project's top silent failure)
   2. current year / first data column
   3. null, never guess
 
 Arms:
-  S1 zero_shot     : baseline — rules + task, nothing else
+  S0 naive         : the task only, no rules (shows what the rules are worth)
+  S1 zero_shot     : rule-based — rules + task, nothing else
   S2 few_shot      : S1 + two worked examples of reading a flattened table
   S3 evidence      : quote-the-source-line-then-normalise (binds the evidence schema)
   S4 context_aware : S1 + structural orientation (what the section is, where figures sit)
 
-Dependencies: langchain-core.
+The template text is hashed into prompt_version and into the response cache
+key: any edit to a template is a new prompt.
 """
 
 from langchain_core.prompts import ChatPromptTemplate

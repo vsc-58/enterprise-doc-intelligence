@@ -1,10 +1,9 @@
-"""
-src/ingestion/narrative_sections.py
-Section slicing for the RAG corpus (Phase 4).
+"""Section slicing for the retrieval corpus: Items 1A, 7, 1 and 7A.
 
 Separate from sections.py by design. That module slices the EXTRACTION input
-(cover + Item 8) and its output is hashed into the Phase 2/3 cache key — any
-change there re-bills the eval-10. This module slices the RETRIEVAL corpus and
+(cover + Item 8) and its output is hashed into the extraction cache key — any
+change there re-bills the cached extractions and invalidates the measured
+extraction results. This module slices the RETRIEVAL corpus and
 shares nothing with it but the FilingLike Protocol.
 
 Items sliced, in acceptance priority:
@@ -39,9 +38,6 @@ There is NO full-text fallback. Item 1A is present on every document, so no
 document can vanish from the corpus. A per-item gap (INTC/JPM/XOM have no usable
 Item 7) is accepted and logged: the RAG chain then refuses MD&A questions about
 those companies rather than answering from the wrong section.
-
-Dependencies: tiktoken, pydantic v2, src.ingestion.sections (Protocol only),
-src.utils.config, src.utils.logger.
 """
 
 import tiktoken
@@ -65,8 +61,7 @@ NARRATIVE_ITEMS: tuple[str, ...] = ("Item 1A", "Item 7", "Item 1", "Item 7A")
 
 
 class NarrativeSection(BaseModel):
-    """
-    One narrative section of a filing, ready to chunk.
+    """One narrative section of a filing, ready to chunk.
 
     Whitespace is NOT stripped, matching sections.py: the retrieval corpus and
     the extraction corpus should render the same source text the same way, and
@@ -109,7 +104,7 @@ def _normalize(text: str) -> str:
 
     edgartools' item view line-breaks table cells differently from other text
     paths, so a raw substring test reports false negatives on identical content
-    (the same artifact that made Phase 3 D14's token counts diverge ~58%). Never
+    (the same artifact that makes the item view tokenise ~58% higher). Never
     used for stored text — only inside the overlap test.
 
     Args:

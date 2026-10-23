@@ -1,10 +1,9 @@
-# src/ingestion/pipeline.py
-# Module: Acquisition orchestration
-# Purpose: Drive the corpus acquisition loop — for each (ticker, year): skip
-#          if already present, else acquire filing text, capture XBRL ground
-#          truth, and persist a tracking row only when BOTH succeed.
-# Depends on: src.ingestion.acquire, src.eval.ground_truth,
-#             src.storage.metadata_store, src.utils.logger
+"""Acquisition orchestration: the per-filing loop that builds the corpus.
+
+Drive the corpus acquisition loop — for each (ticker, year): skip if already
+present, else acquire filing text, capture XBRL ground truth, and persist a
+tracking row only when BOTH succeed.
+"""
 
 from __future__ import annotations
 
@@ -19,8 +18,7 @@ logger = get_logger(__name__)
 
 
 def _cleanup_partial(local_path: str | None) -> None:
-    """
-    Delete an orphaned raw-text file left by a half-completed acquisition.
+    """Delete an orphaned raw-text file left by a half-completed acquisition.
 
     When text was saved but the document did not fully succeed (ground-truth
     capture failed, or the row write raised), the .txt would otherwise linger
@@ -45,9 +43,7 @@ def _cleanup_partial(local_path: str | None) -> None:
 
 
 def acquire_corpus(targets: list[tuple[str, int]]) -> dict:
-    """
-    Acquire a corpus of 10-K filings, tracking each in SQLite and capturing
-    XBRL ground truth.
+    """Acquire a corpus of 10-K filings, tracking each in SQLite and capturing ground truth.
 
     Per (ticker, year):
       1. Skip (INFO) if a Document row already exists — no network work.

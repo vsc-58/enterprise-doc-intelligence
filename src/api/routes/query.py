@@ -1,25 +1,25 @@
-# src/api/routes/query.py
-# Module: POST /query
-# Purpose: Answer one question through the existing query path and return the
-#          contract's response (docs/api_contract.md §2-§3, §7).
-# Depends on: fastapi, src.api.*, src.query.*, src.rag.chain, src.utils.*
-#
-# The query path is called, not rebuilt:
-#   plan_query()      sync, one LLM call      -> asyncio.to_thread (never blocks the loop)
-#   execute_plan()    async, tasks concurrent -> awaited directly
-#   assemble()        pure Python, fast       -> called directly
-#
-# Timeout: both awaited calls run inside asyncio.timeout(QUERY_TIMEOUT_SECONDS).
-# On expiry the async chain calls are cancelled; a planner thread already running
-# cannot be stopped and ends within its own per-call limit (D54).
-#
-# Status codes this route produces (the rest come from main.py's handlers):
-#   200  any answer, refusal or partial answer
-#   429  usage limit reached: rate_limited or daily_budget_exhausted
-#        (off unless configured, D55)
-#   503  every task failed (ServiceDegradedError)
-#   504  timeout (QueryTimeoutError)
-# Refusals are 200 because they are correct answers about the corpus.
+"""POST /query: answer one question through the existing query path.
+
+Answers one question through the existing query path and return the contract's
+response (docs/api_contract.md §2-§3, §7).
+
+The query path is called, not rebuilt:
+  plan_query()      sync, one LLM call      -> asyncio.to_thread (never blocks the loop)
+  execute_plan()    async, tasks concurrent -> awaited directly
+  assemble()        pure Python, fast       -> called directly
+
+Timeout: both awaited calls run inside asyncio.timeout(QUERY_TIMEOUT_SECONDS).
+On expiry the async chain calls are cancelled; a planner thread already running
+cannot be stopped and ends within its own per-call limit (10 s, 1 retry).
+
+Status codes this route produces (the rest come from main.py's handlers):
+  200  any answer, refusal or partial answer
+  429  usage limit reached: rate_limited or daily_budget_exhausted
+       (off unless configured)
+  503  every task failed (ServiceDegradedError)
+  504  timeout (QueryTimeoutError)
+Refusals are 200 because they are correct answers about the corpus.
+"""
 
 import asyncio
 from typing import Annotated
@@ -75,8 +75,7 @@ async def query(
     readiness: Annotated[Readiness, Depends(get_readiness)],
     limiter: Annotated[UsageLimiter, Depends(get_limiter)],
 ) -> QueryResponse:
-    """
-    Answer one question.
+    """Answer one question.
 
     Args:
         request: The current request (for its id and timer).

@@ -1,7 +1,10 @@
-# src/utils/text.py
-# Module: Display formatting for names
-# Purpose: Turn EDGAR registrant names into something readable in an answer.
-# Depends on: standard library only
+"""Display names: turn EDGAR registrant names into something readable in an answer.
+
+"BANK OF AMERICA CORP /DE/" is the name as filed and stays that way in the
+database, where it is the acquisition record and a join key. Display is a
+separate concern: display_name() is applied wherever a name enters user-facing
+text (answers, API responses, the CSV export).
+"""
 
 import re
 
@@ -23,8 +26,7 @@ DISPLAY_OVERRIDES: dict[str, str] = {
 
 
 def display_name(registrant: str, ticker: str | None = None) -> str:
-    """
-    Render a company name for display.
+    """Render a company name for display.
 
     EDGAR stores registrant names as filed: shouted ("MICROSOFT CORP"), with an
     incorporation-state suffix ("BANK OF AMERICA CORP /DE/"), or already mixed

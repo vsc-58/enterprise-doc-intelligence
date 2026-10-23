@@ -1,7 +1,9 @@
-# src/utils/logger.py
-# Module: Structured logging configuration
-# Purpose: Provides a configured structlog logger for use across all modules
-# Depends on: structlog, src/utils/config.py
+"""Structured logging: one structlog configuration and get_logger() for every module.
+
+Log events are key-value pairs, not formatted sentences, so they can be
+searched and filtered. Values bound with structlog.contextvars (the API's
+request id) appear in every line written while serving that request.
+"""
 
 import logging
 import sys
@@ -12,8 +14,7 @@ from src.utils.config import settings
 
 
 def _configure_logging() -> None:
-    """
-    Configure structlog with JSON output, timestamp, log level, and module name.
+    """Configure structlog with JSON output, timestamp, log level, and module name.
 
     Called once at import time. Subsequent imports reuse the same configuration.
     Sets both structlog and standard library logging to the level specified
@@ -55,8 +56,7 @@ _configure_logging()
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
-    """
-    Return a configured structlog logger bound to the given module name.
+    """Return a configured structlog logger bound to the given module name.
 
     Args:
         name: The module name, typically passed as __name__ from the calling module.

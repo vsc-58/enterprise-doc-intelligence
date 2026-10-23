@@ -1,26 +1,26 @@
-# src/api/routes/export.py
-# Module: GET /export
-# Purpose: The extracted figures as a CSV a reviewer can open in a spreadsheet,
-#          with every figure's D29 quality flag beside it (docs/api_contract.md §5).
-# Depends on: fastapi, pandas, src.api.*, src.query.schemas, src.storage.*,
-#             src.utils.text
-#
-# THE EDGARTOOLS BOUNDARY RULE: this reads extracted_records only, through
-# latest_successful_records() (D31). It never reads ground_truth.json or XBRL:
-# those are the evaluation answer key, and the values here are the system's own
-# output — the thing being evaluated.
-#
-# Encoding is UTF-8 WITH a byte-order mark ("utf-8-sig"). Source lines are
-# quoted filing text and contain characters like ’ and —; Excel on Windows reads
-# a UTF-8 file without the mark as the local code page and garbles them.
-#
-# Not streamed: 20 rows. A plain Response is simpler and lets the whole file be
-# built (and fail) before any byte is sent.
-#
-# Known limit, not handled: a cell beginning with = + - or @ can be read as a
-# formula by spreadsheet programs ("CSV injection"). Every value here comes from
-# the filings and our own pipeline, not from users, so the risk is low; a
-# public upload feature would change that.
+"""GET /export: the extracted figures as a CSV, each with its quality flag.
+
+A file a reviewer can open in a spreadsheet, with every figure's data-quality
+flag beside it (docs/api_contract.md §5).
+
+THE EDGARTOOLS BOUNDARY RULE: this reads extracted_records only, through
+latest_successful_records(), the one canonical read of the current extraction.
+It never reads ground_truth.json or XBRL: those are the evaluation answer key,
+and the values here are the system's own output, the thing being evaluated. A
+test checks that this module imports nothing from src.eval or edgartools.
+
+Encoding is UTF-8 WITH a byte-order mark ("utf-8-sig"). Source lines are
+quoted filing text and contain characters like ’ and —; Excel on Windows reads
+a UTF-8 file without the mark as the local code page and garbles them.
+
+Not streamed: 20 rows. A plain Response is simpler and lets the whole file be
+built (and fail) before any byte is sent.
+
+Known limit, not handled: a cell beginning with = + - or @ can be read as a
+formula by spreadsheet programs ("CSV injection"). Every value here comes from
+the filings and our own pipeline, not from users, so the risk is low; a
+public upload feature would change that.
+"""
 
 import asyncio
 from typing import Any
@@ -53,11 +53,10 @@ EXPORT_COLUMNS = (
 
 
 def export_row(doc: Document, record: ExtractedRecord) -> dict[str, Any]:
-    """
-    One CSV row: identity, then per metric its value, flag, flag note and the
-    line the model cited, then provenance.
+    """Build one CSV row: identity, then each figure with its flag and cited line, then provenance.
 
-    The flag comes from assess_record(), the same function the query path
+    Per metric: its value, quality flag, reason, note and the line the model
+    cited. The flag comes from assess_record(), the same function the query path
     uses, and the note from QualityFlag.note(), so the CSV, the API and the
     answer text say the same thing about a figure.
 
@@ -95,8 +94,7 @@ def export_row(doc: Document, record: ExtractedRecord) -> dict[str, Any]:
 
 
 def build_csv(pairs: list[tuple[Document, ExtractedRecord]]) -> bytes:
-    """
-    Render the export file.
+    """Render the export file.
 
     Args:
         pairs: (Document, latest successful ExtractedRecord), ordered by ticker.
@@ -125,8 +123,7 @@ def build_csv(pairs: list[tuple[Document, ExtractedRecord]]) -> bytes:
     ),
 )
 async def export_csv() -> Response:
-    """
-    Build and return the CSV.
+    """Build and return the CSV.
 
     Returns:
         text/csv as an attachment named extracted_records.csv.

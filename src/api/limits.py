@@ -1,40 +1,41 @@
-# src/api/limits.py
-# Module: Usage limits for /query
-# Purpose: Stop one client, or everyone together, from spending the OpenAI
-#          credit that keeps the public demo alive. Two limits, both OFF unless
-#          set (D55):
-#            RATE_LIMIT_PER_MINUTE  per client IP, sliding 60-second window
-#            DAILY_QUERY_BUDGET     all clients together, per UTC day
-#          A blocked request gets 429 with Retry-After: rate_limited (wait a
-#          moment) or daily_budget_exhausted (resets 00:00 UTC).
-# Depends on: src.api.errors, src.utils.config, src.utils.logger
-#
-# WHY COUNT REQUESTS, NOT TOKENS OR DOLLARS. A request's cost has a ceiling:
-# the planner allows at most three tasks, questions are capped at
-# QUERY_MAX_CHARS, and the most expensive kind (a corpus-wide survey, ~20 LLM
-# calls) costs about $0.004. So a budget of N requests is also a dollar cap of
-# about N x $0.004. If that ceiling ever goes — no task cap, long documents as
-# input — count tokens instead, as OpenAI's own limits do (requests AND tokens).
-#
-# ONLY REQUESTS THAT WILL SPEND MONEY ARE COUNTED. The route calls check() after
-# body validation and after the readiness check, immediately before the planner:
-# a 422 or a not-ready 503 uses up nobody's allowance. A request refused by one
-# limit is not counted against the other.
-#
-# IN-MEMORY, ONE WORKER. Counters live in this process (contract §1: one
-# worker, because Chroma's local store is single-process). They reset on
-# restart; for a demo that is acceptable and stated. Several workers would each
-# keep their own counts and multiply the limits.
-#
-# CLIENT IDENTITY is request.client.host. Behind a proxy (the Hugging Face
-# Space in Phase 8) that is the PROXY's address unless uvicorn runs with
-# --proxy-headers and --forwarded-allow-ips, which make it the real client's.
-# X-Forwarded-For is deliberately NOT parsed here: any client can send that
-# header, so trusting it in code would let one client pose as many. The daily
-# budget does not depend on client identity and works either way.
-#
-# Thread-safety: check() never awaits, so on one event loop it runs to the end
-# without interleaving; no lock is needed.
+"""Usage limits for /query: a per-client rate limit and a daily budget.
+
+Stop one client, or everyone together, from spending the OpenAI credit that
+keeps the public demo alive. Two limits, both OFF unless set:
+
+  RATE_LIMIT_PER_MINUTE  per client IP, sliding 60-second window
+  DAILY_QUERY_BUDGET     all clients together, per UTC day
+
+A blocked request gets 429 with Retry-After: rate_limited (wait a moment) or
+daily_budget_exhausted (resets 00:00 UTC).
+
+WHY COUNT REQUESTS, NOT TOKENS OR DOLLARS. A request's cost has a ceiling:
+the planner allows at most three tasks, questions are capped at
+QUERY_MAX_CHARS, and the most expensive kind (a corpus-wide survey, ~20 LLM
+calls) costs about $0.004. So a budget of N requests is also a dollar cap of
+about N x $0.004. If that ceiling ever goes — no task cap, long documents as
+input — count tokens instead, as OpenAI's own limits do (requests AND tokens).
+
+ONLY REQUESTS THAT WILL SPEND MONEY ARE COUNTED. The route calls check() after
+body validation and after the readiness check, immediately before the planner:
+a 422 or a not-ready 503 uses up nobody's allowance. A request refused by one
+limit is not counted against the other.
+
+IN-MEMORY, ONE WORKER. Counters live in this process; the API runs one worker
+because Chroma's local store is single-process (docs/api_contract.md §1). They
+reset on restart; for a demo that is acceptable and stated. Several workers
+would each keep their own counts and multiply the limits.
+
+CLIENT IDENTITY is request.client.host. Behind a proxy (such as a Hugging
+Face Space) that is the PROXY's address unless uvicorn runs with
+--proxy-headers and --forwarded-allow-ips, which make it the real client's.
+X-Forwarded-For is deliberately NOT parsed here: any client can send that
+header, so trusting it in code would let one client pose as many. The daily
+budget does not depend on client identity and works either way.
+
+Thread-safety: check() never awaits, so on one event loop it runs to the end
+without interleaving; no lock is needed.
+"""
 
 import math
 import time
@@ -57,8 +58,7 @@ def _utc_now() -> datetime:
 
 
 class UsageLimiter:
-    """
-    Per-client and daily limits on /query, both optional.
+    """Per-client and daily limits on /query, both optional.
 
     Attributes:
         per_minute: Requests allowed per client per 60 s, or None for no limit.
@@ -72,8 +72,7 @@ class UsageLimiter:
         monotonic: Callable[[], float] | None = None,
         utc_now: Callable[[], datetime] = _utc_now,
     ) -> None:
-        """
-        Create a limiter with empty counters.
+        """Create a limiter with empty counters.
 
         Args:
             per_minute: RATE_LIMIT_PER_MINUTE.
@@ -92,8 +91,7 @@ class UsageLimiter:
 
     @classmethod
     def from_settings(cls) -> "UsageLimiter":
-        """
-        Build the limiter from the current settings.
+        """Build the limiter from the current settings.
 
         Returns:
             A limiter; with both settings None it never blocks.
@@ -113,8 +111,7 @@ class UsageLimiter:
         return self._used_today
 
     def check(self, client: str) -> None:
-        """
-        Count one request from a client, or refuse it.
+        """Count one request from a client, or refuse it.
 
         Per-client limit first, then the daily budget. A refused request is
         counted against neither.
@@ -172,8 +169,7 @@ class UsageLimiter:
         return max(1, math.ceil((midnight - now).total_seconds()))
 
     def _sweep(self, now: float) -> None:
-        """
-        Forget clients with no request inside the window, at most once a window.
+        """Forget clients with no request inside the window, at most once a window.
 
         Without this, every address that ever called would stay in memory
         forever; a scan of many addresses could grow it without bound.

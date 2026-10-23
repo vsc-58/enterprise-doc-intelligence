@@ -1,19 +1,18 @@
-# src/api/mapping.py
-# Module: Query result -> API response
-# Purpose: Build the /query response body from the three things the query path
-#          produces: the plan, the per-task outcomes, and the assembled answer
-#          (docs/api_contract.md §3, §3.1).
-# Depends on: src.api.models, src.query.*, src.rag.*, src.storage.quality,
-#             src.utils.text
-#
-# Pure functions: no I/O, no FastAPI, no model call. The answer text is passed
-# through unchanged — every figure in it was rendered by sql_path in Python
-# (D27) — so this module only re-shapes typed fields that already exist.
-#
-# Why AssembledAnswer alone is not enough: it carries text, sources and
-# statuses. Figures and their D29 flags live in TaskOutcome.metric_result,
-# refusal reasons in TaskOutcome.resolution_failure / narrative_result.refusal,
-# and the plan type in QueryPlan.
+"""Build the /query response from the plan, the task outcomes and the assembled answer.
+
+Builds the /query response body from the three things the query path produces:
+the plan, the per-task outcomes, and the assembled answer (docs/api_contract.md
+§3, §3.1).
+
+Pure functions: no I/O, no FastAPI, no model call. The answer text is passed
+through unchanged (every figure in it was rendered by sql_path in Python, never
+by a model), so this module only re-shapes typed fields that already exist.
+
+Why AssembledAnswer alone is not enough: it carries text, sources and
+statuses. Figures and their quality flags live in TaskOutcome.metric_result,
+refusal reasons in TaskOutcome.resolution_failure / narrative_result.refusal,
+and the plan type in QueryPlan.
+"""
 
 from src.api.models import (
     FigureOut,
@@ -44,8 +43,7 @@ logger = get_logger(__name__)
 
 
 def figure_out(row: MetricRow) -> FigureOut:
-    """
-    Project one served row, with its D29 flag.
+    """Project one served row, with its quality flag.
 
     company_name is already a display name: sql_path applies display_name().
 
@@ -71,8 +69,7 @@ def figure_out(row: MetricRow) -> FigureOut:
 
 
 def finding_out(finding: CompanyFinding) -> FindingOut:
-    """
-    Project one corpus-wide finding to its structured coverage line.
+    """Project one corpus-wide finding to its structured coverage line.
 
     Args:
         finding: A CompanyFinding. Its company_name is the registrant as filed.
@@ -89,8 +86,7 @@ def finding_out(finding: CompanyFinding) -> FindingOut:
 
 
 def source_out(source: NumberedSource) -> SourceOut:
-    """
-    Project one numbered source.
+    """Project one numbered source.
 
     Args:
         source: An entry of AssembledAnswer.sources.
@@ -111,8 +107,7 @@ def source_out(source: NumberedSource) -> SourceOut:
 
 
 def refusal_reason(outcome: TaskOutcome) -> RefusalReason | None:
-    """
-    The one typed reason for a refused task (contract §3.1).
+    """The one typed reason for a refused task (docs/api_contract.md §3.1).
 
     Order: the resolver decided first (company or year), then the narrative
     chain, then the two API-owned codes for SQL refusals that carry no type.
@@ -149,8 +144,7 @@ def refusal_reason(outcome: TaskOutcome) -> RefusalReason | None:
 
 
 def task_out(task: Task, outcome: TaskOutcome | None) -> TaskOut:
-    """
-    One planned task and what happened to it.
+    """One planned task and what happened to it.
 
     Args:
         task: The planned task.
@@ -189,8 +183,7 @@ def task_out(task: Task, outcome: TaskOutcome | None) -> TaskOut:
 
 
 def nothing_answered(answer: AssembledAnswer) -> bool:
-    """
-    Whether every task in a plan failed (contract §7: 503 service_degraded).
+    """Whether every task in a plan failed, which answers 503 service_degraded.
 
     Refused tasks count as answered: a refusal is a correct statement about the
     corpus. A plan with no tasks (clarification, unsupported, out_of_scope) is
@@ -219,8 +212,7 @@ def build_query_response(
     request_id: str,
     latency_ms: int,
 ) -> QueryResponse:
-    """
-    Build the /query body.
+    """Build the /query body.
 
     Tasks follow plan order, like the answer text. Fields the contract keeps
     out — the planner's rationale, the SQL preview, chunk text — are simply

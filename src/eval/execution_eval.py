@@ -1,21 +1,20 @@
-# src/eval/execution_eval.py
-# Module: Query-path evaluation — execution outcomes (refusal, guard, provenance)
-# Purpose: Build gold ("oracle") plans from the frozen labels, reduce each
-#          executed TaskOutcome to an outcome class comparable with the labels,
-#          and record what the attribution and guard metrics need.
-# Depends on: pydantic v2, src.eval.query_eval, src.query.schemas,
-#             src.storage.quality, src.utils.config, src.utils.logger
-#
-# Two modes are scored by the runner (scripts/run_execution_eval.py):
-#   end_to_end — the planner's plan: what a user actually receives.
-#   oracle     — the label's strict plan, handed straight to the executor: the
-#                downstream system with routing assumed perfect.
-# The gap between them is the cost of routing errors; a miss in BOTH modes is a
-# downstream failure that no routing fix would cure.
-#
-# Outcome classes are enums the code already emits, never parsed text:
-# resolver failures, NarrativeRefusal values, the D29 quality verdict and the
-# D44 fallback flag. A label's expected outcome uses the same vocabulary.
+"""Query-path evaluation: execution outcomes (refusals, figure guard, provenance).
+
+Build gold ("oracle") plans from the frozen labels, reduce each executed
+TaskOutcome to an outcome class comparable with the labels, and record what the
+attribution and guard metrics need.
+
+Two modes are scored by the runner (scripts/run_execution_eval.py):
+  end_to_end — the planner's plan: what a user actually receives.
+  oracle     — the label's strict plan, handed straight to the executor: the
+               downstream system with routing assumed perfect.
+The gap between them is the cost of routing errors; a miss in BOTH modes is a
+downstream failure that no routing fix would cure.
+
+Outcome classes are enums the code already emits, never parsed text:
+resolver failures, NarrativeRefusal values, the figure quality verdict and the
+section-fallback flag. A label's expected outcome uses the same vocabulary.
+"""
 
 import json
 from pathlib import Path
@@ -75,8 +74,7 @@ class FilterParams(BaseModel):
 
 
 class OracleParams(BaseModel):
-    """
-    Parameters an oracle plan needs that the frozen labels do not carry.
+    """Parameters an oracle plan needs that the frozen labels do not carry.
 
     Attributes:
         filters: Question id -> filter threshold, copied from the question text.
@@ -95,8 +93,7 @@ class OracleParams(BaseModel):
 
 
 def load_oracle_params(path: Path | None = None) -> OracleParams:
-    """
-    Load the oracle parameters.
+    """Load the oracle parameters.
 
     Kept outside the frozen label file: they were added after the freeze, and are
     literal copies of (or minimal edits to) each question's own text.
@@ -121,8 +118,7 @@ def load_oracle_params(path: Path | None = None) -> OracleParams:
 
 
 def is_executable(question: EvalQuestion) -> bool:
-    """
-    Whether a question's strict label carries tasks to execute.
+    """Whether a question's strict label carries tasks to execute.
 
     Clarification, unsupported and out-of-scope plans have nothing downstream;
     routing already scores them.
@@ -142,8 +138,7 @@ def _oracle_task(
     question: EvalQuestion,
     params: OracleParams,
 ) -> Task:
-    """
-    Build one executable Task from one labelled task.
+    """Build one executable Task from one labelled task.
 
     Raises:
         OracleError: if a filter label has no threshold, or a narrative task of a
@@ -182,8 +177,7 @@ def _oracle_task(
 
 
 def oracle_plan(question: EvalQuestion, params: OracleParams) -> QueryPlan:
-    """
-    The label's strict plan as an executable QueryPlan.
+    """The label's strict plan as an executable QueryPlan.
 
     A single-task narrative label retrieves with the original question text — the
     planner would normally rephrase it, which the oracle deliberately does not
@@ -214,16 +208,15 @@ def oracle_plan(question: EvalQuestion, params: OracleParams) -> QueryPlan:
 
 
 def outcome_class(outcome: TaskOutcome) -> str:
-    """
-    Reduce an executed task to the label vocabulary.
+    """Reduce an executed task to the label vocabulary.
 
     Args:
         outcome: One executed task.
 
     Returns:
         One of: a ResolutionFailure value; answered / answered_flagged for SQL
-        (flagged when any served row is disputed, D29); answered /
-        fallback_answered for narrative (D44); a NarrativeRefusal value;
+        (flagged when any served row is disputed); answered /
+        fallback_answered for narrative; a NarrativeRefusal value;
         sql_refused; failed.
     """
     if outcome.resolution_failure is not None:
@@ -271,8 +264,7 @@ class TaskRecord(BaseModel):
 
 
 def record(outcome: TaskOutcome, company: str | None, expected: str | None) -> TaskRecord:
-    """
-    Record one executed task.
+    """Record one executed task.
 
     Args:
         outcome: The executed task.
@@ -281,7 +273,7 @@ def record(outcome: TaskOutcome, company: str | None, expected: str | None) -> T
 
     Returns:
         The record, including every claim with its cited sources — the input the
-        attribution judge (D43) and the blind human labels need.
+        attribution judge and its reference labels need.
     """
     result = outcome.narrative_result
     rows = outcome.metric_result.rows if outcome.metric_result else []
@@ -307,8 +299,7 @@ def record(outcome: TaskOutcome, company: str | None, expected: str | None) -> T
 
 
 def matched_alternative(observed: ObservedPlan, question: EvalQuestion) -> PlanAlternative | None:
-    """
-    The first acceptable label an observed plan matches.
+    """The first acceptable label an observed plan matches.
 
     Args:
         observed: The planner's plan, reduced.
@@ -321,8 +312,7 @@ def matched_alternative(observed: ObservedPlan, question: EvalQuestion) -> PlanA
 
 
 def expected_by_key(observed: ObservedPlan, alternative: PlanAlternative) -> list[str | None]:
-    """
-    Align a matched label's expected outcomes with the observed tasks.
+    """Align a matched label's expected outcomes with the observed tasks.
 
     Matching is by task key, since task order is not scored; each labelled task
     is consumed once, so two identical tasks map to two labelled ones.

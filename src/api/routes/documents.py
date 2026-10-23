@@ -1,11 +1,11 @@
-# src/api/routes/documents.py
-# Module: GET /documents
-# Purpose: List the filings the corpus holds (docs/api_contract.md §4).
-# Depends on: fastapi, src.api.*, src.query.resolve, src.utils.text
-#
-# Read from the corpus index built at startup: no database call per request.
-# The list answers the question every refusal raises — "which companies and
-# years DO you hold?" — so a demo viewer can ask answerable questions.
+"""GET /documents: the filings the corpus holds.
+
+Lists the filings the corpus holds (docs/api_contract.md §4).
+
+Read from the corpus index built at startup: no database call per request.
+The list answers the question every refusal raises — "which companies and
+years DO you hold?" — so a demo viewer can ask answerable questions.
+"""
 
 from typing import Annotated
 
@@ -32,8 +32,7 @@ router = APIRouter(tags=["corpus"])
 async def list_documents(
     index: Annotated[CorpusIndex, Depends(documents_index)],
 ) -> list[DocumentOut]:
-    """
-    List every filing in the corpus index, ordered by ticker.
+    """List every filing in the corpus index, ordered by ticker.
 
     Args:
         index: The corpus index; provided only when it is loaded.

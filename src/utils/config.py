@@ -1,15 +1,17 @@
-# src/utils/config.py
-# Module: Application configuration
-# Purpose: Single source of truth for all settings loaded from environment variables
-# Depends on: pydantic-settings, python-dotenv, .env file in project root
+"""Application configuration: the one Settings object every module imports.
+
+Single source of truth for paths, model names, limits and thresholds, loaded
+from environment variables and the .env file. Nothing else in the project
+hardcodes a value that belongs here. Import the singleton:
+`from src.utils.config import settings`.
+"""
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Application settings loaded from environment variables and .env file.
+    """Application settings loaded from environment variables and .env file.
 
     All configuration in the project flows through this class.
     Never hardcode values that belong here — always import from this module.
@@ -46,14 +48,15 @@ class Settings(BaseSettings):
     RAW_DATA_PATH: str = "data/raw"
     EVAL_DATA_PATH: str = "data/eval"
 
-    # Secion characters upper and lower limits
+    # Item 8 slice acceptance for extraction input. There is no upper limit on
+    # Item 8 itself: a slice is used unless Item 8 plus the cover exceeds the
+    # model input budget. (A 60,000-token ceiling fired three times, on PFE, BAC
+    # and GS; boundary inspection showed all three slices were genuine.)
     ITEM8_MIN_CHARS: int = 26136             # edgartools' floor; below = truncated heading
-    # removed in full extraction to incorporate GS, BAC and PFE
-    # ITEM8_MAX_TOKENS: int = 60000            # above = over-capture; GS hit 119591
     MODEL_INPUT_TOKEN_BUDGET: int = 120000   # leave headroom under gpt-4o-mini's 128k for output
     COVER_MAX_CHARS: int = 12000
 
-    # error tolerance threshold
+    # Relative tolerance when scoring an extracted figure against the answer key.
     NUMERIC_REL_TOLERANCE: float = 1e-5   # tight: catches digit-level misreads, absorbs true rounding
 
     # Tolerance for matching an extracted value against the numbers printed in
@@ -66,7 +69,8 @@ class Settings(BaseSettings):
     # Floor rejecting collapsed item slices. Set from measurement, not judgment:
     # observed collapses are 45-157 tokens; the smallest real section is 596.
     # Nothing sits between, so the threshold is in a genuine gap rather than
-    # tuned until the alarm stopped (the Phase 3 D14 lesson). Also rejects
+    # tuned until the alarm stopped (the lesson of the Item 8 ceiling above, which
+    # rested on a mis-measurement and had zero true positives). Also rejects
     # legitimate cross-references — BAC/GS/JPM incorporate Item 7A into Item 7,
     # so their 45-63 token 7A is a pointer, not a truncation. Same handling,
     # different meaning.
@@ -78,11 +82,12 @@ class Settings(BaseSettings):
     # Fires on 3/20: QCOM Item 1, META Item 1, TSLA Item 7A.
     SECTION_OVERLAP_PROBE_CHARS: int = 400
 
-    # --- Phase 4: narrative sections, chunking & vector store -----------------
+    # --- Narrative sections, chunking & vector store --------------------------
     # Section artifacts written by scripts/build_narrative_sections.py. Kept
     # separate from RAW_DATA_PATH because these are the item view's rendering of
-    # the filing, not filing.text() — the two differ (Phase 3 D14) and must not
-    # be confused for each other.
+    # the filing, not filing.text(). The two differ (the item view puts every
+    # table cell on its own line, so the same content tokenises ~58% higher) and
+    # must not be confused for each other.
     PROCESSED_DATA_PATH: str = "data/processed"
 
     # Chunk target and overlap, in TOKENS under cl100k_base — the encoding
@@ -102,13 +107,13 @@ class Settings(BaseSettings):
     CHUNK_MIN_CHARS: int = 100
 
     # Embedding batch size and inter-batch pause. Batching bounds the blast
-    # radius of a failed call; the pause keeps a ~1,750-chunk run inside rate
-    # limits.
+    # radius of a failed call; the pause keeps a full-corpus run (1,958 chunks)
+    # inside rate limits.
     EMBED_BATCH_SIZE: int = 100
     EMBED_BATCH_SLEEP_SECONDS: float = 0.5
 
     # Minimum number of fields with a checkable citation before the scale-coherence
-    # check runs (D29). Below this, one anomalous field could define the document
+    # check runs. Below this, one anomalous field could define the document
     # scale by itself, so the check abstains rather than asserting. Three is the
     # smallest count where a single minority field is still a minority; INTC, the
     # thinnest record in the corpus, has exactly three.
@@ -119,10 +124,10 @@ class Settings(BaseSettings):
     # from rendering an answer longer than anyone will read.
     SQL_RESULT_LIMIT_CAP: int = 20
 
-    # --- Phase 5B: narrative retrieval ----------------------------------------
+    # --- Narrative retrieval ---------------------------------------------------
     # Chunks per single-company narrative task. Fixed across intents: an
     # intent's sections are a union ranked by distance alone, so k does not grow
-    # with section count (D38). At ~402 tokens/chunk this is ~2k tokens of
+    # with section count. At ~402 tokens/chunk this is ~2k tokens of
     # context, about a quarter of a typical company's Item 1 — the constraint is
     # distraction, not cost.
     RAG_TOP_K: int = 5
@@ -131,7 +136,7 @@ class Settings(BaseSettings):
     # Each eligible company is searched separately so the largest filers cannot
     # crowd the rest out: plain top-50 reached 16 companies with BAC+GS holding
     # 28 of the 50 slots; per-company reached every company holding the
-    # sections (D39).
+    # sections.
     RAG_PER_COMPANY_K: int = 2
 
     # Ceiling on concurrent per-company verdict calls. Twenty unbounded calls
@@ -139,7 +144,7 @@ class Settings(BaseSettings):
     # per-minute limits rather than failing on them.
     RAG_VERDICT_CONCURRENCY: int = 5
 
-    # --- Phase 5C: query-path evaluation ---------------------------------------
+    # --- Query-path evaluation -------------------------------------------------
     # The frozen label file and its hash. The hash is of the file with line
     # endings normalised to LF, so a Windows checkout converting to CRLF does not
     # read as an edit. A mismatch means the labels changed after the freeze
@@ -151,7 +156,8 @@ class Settings(BaseSettings):
     )
 
     # Runs per LLM-dependent measurement. temperature=0 is not deterministic
-    # (D35), so every metric is reported as a mean over runs plus per-question
+    # (batched inference can resolve near-ties differently from run to run), so
+    # every metric is reported as a mean over runs plus per-question
     # disagreement.
     QUERY_EVAL_RUNS: int = 3
 
@@ -168,7 +174,7 @@ class Settings(BaseSettings):
 
     EXECUTION_RESULTS_FILE: str = "execution_results.json"
 
-    # Retrieval eval (step 4). The gold file is committed evidence; the to-label
+    # Retrieval eval. The gold file is committed evidence; the to-label
     # file holds chunk text and goes to PROCESSED_DATA_PATH (gitignored).
     RETRIEVAL_GOLD_FILE: str = "retrieval_gold.json"
     # Hash of the verified gold (LF-normalised, as for the eval set). Scoring
@@ -187,15 +193,17 @@ class Settings(BaseSettings):
     # rank is exact rather than censored.
     RETRIEVAL_EVAL_DEPTH: int = 200
 
-    # Attribution judge (D43). Evaluation tooling only; the system model is
-    # unchanged. Function calling on this model family requires reasoning
-    # effort "none" in Chat Completions; the probe script checks it.
+    # Attribution judge. Evaluation tooling only; the system model is unchanged.
+    # A different model from the system's, so the system is not grading itself.
+    # Function calling on this model family requires reasoning effort "none" in
+    # Chat Completions; the probe script checks it.
     JUDGE_MODEL: str = "gpt-6-luna"
     JUDGE_REASONING_EFFORT: str | None = "none"
     JUDGE_STRUCTURED_METHOD: str = "function_calling"
     JUDGE_MAX_RETRIES: int = 3
     JUDGE_CONCURRENCY: int = 8
-    # Pass criteria, committed before any judge output was seen (D43).
+    # Pass criteria, committed before any judge output was seen. The judge's
+    # score is used only if it meets all four.
     JUDGE_MIN_SEED_CATCH: float = 0.90
     JUDGE_MIN_SEED_CATCH_PER_TYPE: float = 0.80
     JUDGE_MIN_KAPPA: float = 0.70
@@ -208,19 +216,19 @@ class Settings(BaseSettings):
     ATTRIBUTION_SHEET_FILE: str = "attribution_label_sheet.md"
     ATTRIBUTION_REVIEW_FILE: str = "attribution_review.json"
 
-    # Relative tolerance for recognising a stored metric value in text (D41).
+    # Relative tolerance for recognising a stored metric value in text.
     # Wide enough for an answer's rounding ("$365.8 billion" vs 365,817,000,000
     # is 0.005%); narrow enough that a different figure rarely falls inside it,
     # since matching is scoped to one company's five values.
     FIGURE_GUARD_REL_TOLERANCE: float = 0.005
 
-    # --- Phase 6: API (docs/api_contract.md, D54) ------------------------------
+    # --- API (docs/api_contract.md) --------------------------------------------
     # Longest accepted question, in characters, after whitespace is stripped.
     # The longest of the 109 eval questions is 83; 500 leaves room for real
     # phrasing while bounding what one request can send to the planner.
     QUERY_MAX_CHARS: int = 500
 
-    # Timeouts (D54). The rule the defaults satisfy:
+    # Timeouts. The rule the defaults satisfy:
     #   OPENAI_TIMEOUT_SECONDS * (OPENAI_MAX_RETRIES + 1) < QUERY_TIMEOUT_SECONDS
     #   10 * 2 = 20 < 30
     # The planner call runs in a worker thread that a request timeout cannot
@@ -241,8 +249,9 @@ class Settings(BaseSettings):
     # as JSON in .env, e.g. CORS_ALLOW_ORIGINS=["http://localhost:3000"].
     CORS_ALLOW_ORIGINS: list[str] = []
 
-    # Phase 8 cost protection, OFF when None. In-memory counters: correct only
-    # because the API runs one worker (Chroma's local store is single-process).
+    # Cost protection for the public demo, OFF when None. In-memory counters:
+    # correct only because the API runs one worker (Chroma's local store is
+    # single-process).
     RATE_LIMIT_PER_MINUTE: int | None = None    # per client IP, /query only -> 429
     DAILY_QUERY_BUDGET: int | None = None       # /query calls per UTC day -> 429
 

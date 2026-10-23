@@ -1,25 +1,24 @@
-# src/api/routes/health.py
-# Module: GET /health
-# Purpose: Say whether the API can answer, and if not, which part is missing
-#          (docs/api_contract.md §6). 200 when ready, 503 when not — same body.
-# Depends on: fastapi, sqlalchemy, src.api.*, src.query.planner, src.rag.chain,
-#             src.storage.*
-#
-# /health never depends on readiness: it REPORTS it. It first lets readiness
-# re-try if due, so polling /health is enough for a not-ready server to
-# recover. The database and store checks are live, so they also catch a store
-# that broke after startup — which the cached readiness state would not.
-#
-# One field per readiness part (D57). database and vector_store also run a
-# live check; index and figure_guard follow the readiness state. A 503 body
-# therefore always names the part that is down. Before D57 the body had no
-# figure_guard field, so a guard failure gave 503 with every check "ok".
-#
-# No LLM call: hosts poll this endpoint, and a health check that spends money
-# or depends on OpenAI would report our server down whenever OpenAI is slow.
-#
-# Live checks never create a store: each looks for the file or folder first,
-# because opening a missing SQLite file or Chroma folder creates an empty one.
+"""GET /health: whether the API can answer, and if not, which part is missing.
+
+Says whether the API can answer, and if not, which part is missing
+(docs/api_contract.md §6). 200 when ready, 503 when not — same body.
+
+/health never depends on readiness: it REPORTS it. It first lets readiness
+re-try if due, so polling /health is enough for a not-ready server to
+recover. The database and store checks are live, so they also catch a store
+that broke after startup — which the cached readiness state would not.
+
+One field per readiness part. database and vector_store also run a live
+check; index and figure_guard follow the readiness state. A 503 body therefore
+always names the part that is down. An earlier version had no figure_guard
+field, so a guard failure gave 503 with every check "ok".
+
+No LLM call: hosts poll this endpoint, and a health check that spends money
+or depends on OpenAI would report our server down whenever OpenAI is slow.
+
+Live checks never create a store: each looks for the file or folder first,
+because opening a missing SQLite file or Chroma folder creates an empty one.
+"""
 
 import asyncio
 from typing import Annotated
@@ -52,8 +51,7 @@ router = APIRouter(tags=["health"])
 
 
 def database_ok() -> bool:
-    """
-    Whether the SQLite file exists and answers a trivial query.
+    """Whether the SQLite file exists and answers a trivial query.
 
     Returns:
         True if SELECT 1 succeeds; False if the file is missing (not opened)
@@ -71,8 +69,7 @@ def database_ok() -> bool:
 
 
 def check_state(readiness: Readiness, part: str, live_ok: bool = True) -> CheckState:
-    """
-    One check in the /health body (D57).
+    """One check in the /health body.
 
     Ok only when the readiness state counts the part as usable AND its live
     check, if it has one, passes. Reading both means the body can never say
@@ -93,8 +90,7 @@ def check_state(readiness: Readiness, part: str, live_ok: bool = True) -> CheckS
 
 
 def chunk_count() -> int | None:
-    """
-    Chunks in the vector store, without creating a missing store.
+    """Chunks in the vector store, without creating a missing store.
 
     Returns:
         The count, or None if the folder is missing or the collection cannot be
@@ -116,8 +112,7 @@ async def health(
     response: Response,
     readiness: Annotated[Readiness, Depends(get_readiness)],
 ) -> HealthResponse:
-    """
-    Report readiness; 503 with the same body when any part is not ready.
+    """Report readiness; 503 with the same body when any part is not ready.
 
     Args:
         response: Used only to set the status code.
