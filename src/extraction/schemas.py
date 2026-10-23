@@ -141,8 +141,7 @@ class FilingExtractionWithEvidence(BaseModel):
     auditor_name: str | None = Field(default=None)
 
     def to_extraction(self) -> FilingExtraction:
-        """
-        Project down to a plain FilingExtraction, discarding evidence.
+        """Project down to a plain FilingExtraction, discarding evidence.
 
         Used before scoring so the evidence arm is compared to the other arms
         on identical value fields.
@@ -165,9 +164,10 @@ class FilingExtractionWithEvidence(BaseModel):
         )
 
     def evidence_map(self) -> dict[str, NumericEvidence]:
-        """
-        Return the five numeric fields keyed by name, for grounding validation
-        at write time (check each source_line is a substring of the source text).
+        """Return the five numeric fields keyed by name, each with its evidence.
+
+        The extractor stores this as the evidence record, and the two citation
+        checks read each quoted source line from it.
 
         Returns:
             Mapping of field name to its NumericEvidence.

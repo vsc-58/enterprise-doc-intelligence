@@ -236,7 +236,7 @@ Apple Inc. filing, for fiscal year 2021. I don't have 2022."
 pytest -q
 ```
 
-399 tests, all without network, database or a real API key: LLM calls are
+403 tests, all without network, database or a real API key: LLM calls are
 stubbed. The settings class still requires `OPENAI_API_KEY` and `EDGAR_IDENTITY`
 to be present, so set them (any value works) in `.env` or the environment.
 `tests/test_prompt_versions.py` checks that the prompt versions in the code are

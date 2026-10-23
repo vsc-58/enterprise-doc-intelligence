@@ -145,6 +145,7 @@ class RefusalReason(str, Enum):
 
     NON_CORPUS_COMPANY = "non_corpus_company"
     COMPANY_NOT_EMBEDDED = "company_not_embedded"
+    COMPANY_NOT_EXTRACTED = "company_not_extracted"
     YEAR_NOT_HELD = "year_not_held"
     AMBIGUOUS_COMPANY = "ambiguous_company"
     NO_COMPANY_MENTION = "no_company_mention"

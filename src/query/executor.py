@@ -83,6 +83,7 @@ def _resolve_for(task: Task, index: CorpusIndex | None):
         requested_year=task.year,
         index=index,
         require_embedded=policy_for(task.intent).tool is Tool.RAG,
+        require_extracted=policy_for(task.intent).tool is Tool.SQL,
     )
 
 

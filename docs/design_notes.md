@@ -394,6 +394,12 @@ metric, not a feature. Limitation: a document scaled uniformly wrong passes.
   means ("may be lower than any figure shown"). BAC's operating cash flow is null
   because the true value is negative, so it is probably the real answer to
   "lowest operating cash flow".
+- A missing figure is blamed on the extraction, never on the filing. A lookup
+  on a null figure says it "was not extracted from the filing"; a filing with
+  no successful extraction at all is refused for figure questions with its own
+  reason (`company_not_extracted`) and is named in rankings and filters like a
+  null. An earlier version answered "the filing does not report it" — a false
+  statement about the document.
 - The system never re-sorts on a suspected value: that would present a computed
   value as extracted.
 

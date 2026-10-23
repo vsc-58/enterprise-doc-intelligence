@@ -59,8 +59,11 @@ def test_executor_serves_the_named_company_not_the_corpus_winner(
 ) -> None:
     seen: dict = {}
 
-    def resolve(mention, requested_year=None, index=None, require_embedded=False):
+    def resolve(mention, requested_year=None, index=None, require_embedded=False,
+                require_extracted=False):
+        """Record the call; a SQL task must ask for an extracted filing."""
         seen["mention"] = mention
+        assert require_extracted and not require_embedded
         return Resolution(entity=APPLE)
 
     def run_sql(task, entity):

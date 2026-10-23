@@ -193,3 +193,49 @@ def test_ranking_orders_every_company_by_value(db) -> None:
                 direction=Direction.HIGHEST, limit=20)
     result = run_financial_task(task, None)
     assert _tickers(result.rows) == ["AAPL", "JPM", "BAC", "GS"]
+
+
+# --- Missing figures are never blamed on the filing ------------------------------------
+
+
+def test_lookup_of_a_null_figure_says_it_was_not_extracted(db) -> None:
+    """BAC's operating cash flow is null: one sentence blaming the extraction, no repeat note."""
+    doc = db["BAC"]
+    bac = ResolvedEntity(mention="BofA", ticker="BAC", cik=doc.cik,
+                         company_name="Bank of America Corp.", document_id=doc.id, filing_year=2022)
+    task = Task(task_id="t1", intent=Intent.FINANCIAL_METRIC, company_mention="BofA",
+                metric=MetricField.OPERATING_CASH_FLOW)
+    text = render(task, run_financial_task(task, bac), bac)
+    assert text == (
+        "Bank of America Corp.'s operating cash flow for fiscal year 2022 (period ending "
+        "2022-12-31) was not extracted from the filing, so I can't give it."
+    )
+
+
+def test_ranking_names_a_company_whose_extraction_failed(db) -> None:
+    """A filing with only a failed attempt has no figures; a list must name it, not drop it."""
+    with metadata_store._SessionFactory() as session:
+        intel = Document(ticker="INTC", company_name="INTEL CORP", cik="0000050863",
+                         filing_year=2023)
+        session.add(intel)
+        session.flush()
+        session.add(_record(intel, datetime(2026, 9, 1), status="failed"))
+        session.commit()
+    task = Task(task_id="t1", intent=Intent.FINANCIAL_RANKING,
+                metric=MetricField.TOTAL_REVENUE, direction=Direction.HIGHEST, limit=20)
+    result = run_financial_task(task, None)
+    assert "INTC" not in _tickers(result.rows)
+    assert _tickers(result.excluded_null) == ["INTC"] and result.excluded_null_count == 1
+    assert result.excluded_null[0].quality.reason is QualityReason.NULL_FIELD
+    text = render(task, result, None)
+    assert "(INTC) — its total revenue was not extracted from the filing" in text
+
+
+def test_empty_lookup_never_says_the_filing_lacks_the_figure(db) -> None:
+    """Defensive path (the resolver refuses first): the wording still blames the extraction."""
+    entity = ResolvedEntity(mention="Intel", ticker="INTC", cik="0000050863",
+                            company_name="Intel Corp.", document_id=999, filing_year=2023)
+    task = Task(task_id="t1", intent=Intent.FINANCIAL_METRIC, company_mention="Intel",
+                metric=MetricField.NET_INCOME)
+    text = render(task, run_financial_task(task, entity), entity)
+    assert "have not been extracted" in text and "does not report" not in text

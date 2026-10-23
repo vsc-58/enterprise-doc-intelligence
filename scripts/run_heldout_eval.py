@@ -18,7 +18,7 @@ that decision was made.
 
 Reads cached responses only — no API cost.
 
-Run: python -m scripts.run_heldout_eval [--strategy S3]
+Run: python -m scripts.run_heldout_eval [--strategy ID]   (default: settings.EXTRACTION_STRATEGY)
 """
 
 import argparse
@@ -93,7 +93,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Score the winning strategy out of sample."
     )
-    parser.add_argument("--strategy", type=str, default="S3")
+    parser.add_argument(
+        "--strategy", type=str, default=settings.EXTRACTION_STRATEGY,
+        help="Strategy to score (default: the selected strategy, settings.EXTRACTION_STRATEGY).",
+    )
     args = parser.parse_args()
 
     held_out = _held_out_documents()

@@ -155,6 +155,7 @@ planner sees stay unchanged.
 | Company not in corpus | `non_corpus_company` | `ResolutionFailure` |
 | Year not held | `year_not_held` | `ResolutionFailure` |
 | Ambiguous company / no company named / not embedded | `ambiguous_company`, `no_company_mention`, `company_not_embedded` | `ResolutionFailure` |
+| Figure asked for a held filing whose extraction never succeeded | `company_not_extracted` | `ResolutionFailure` |
 | Section absent, not addressed, figure requested, uncited | `section_absent`, `not_addressed`, `figure_requested`, `uncited` | `NarrativeRefusal` |
 | SQL filter threshold unreadable ("fifty billion dollars") | `threshold_unparsed` | API mapping: SQL task, refused, no resolver failure, intent `financial_filter` |
 | Any other refused SQL task without a resolver failure | `sql_not_runnable` | API mapping (defensive; not reachable today) |

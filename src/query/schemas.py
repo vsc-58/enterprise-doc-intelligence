@@ -137,6 +137,9 @@ class ResolutionFailure(str, Enum):
     NON_CORPUS_COMPANY: no document for that company.
     COMPANY_NOT_EMBEDDED: the document exists but has no chunks, so a narrative
         task would retrieve nothing and look like an empty corpus.
+    COMPANY_NOT_EXTRACTED: the document exists but no figure extraction has
+        succeeded for it, so a financial task would find no record and the
+        answer would wrongly suggest the filing lacks the figure.
     YEAR_NOT_HELD: the company is held, for a different fiscal year.
     AMBIGUOUS_COMPANY: the mention matches more than one held company.
     NO_COMPANY_MENTION: the question named no company and the task needs one.
@@ -144,6 +147,7 @@ class ResolutionFailure(str, Enum):
 
     NON_CORPUS_COMPANY = "non_corpus_company"
     COMPANY_NOT_EMBEDDED = "company_not_embedded"
+    COMPANY_NOT_EXTRACTED = "company_not_extracted"
     YEAR_NOT_HELD = "year_not_held"
     AMBIGUOUS_COMPANY = "ambiguous_company"
     NO_COMPANY_MENTION = "no_company_mention"

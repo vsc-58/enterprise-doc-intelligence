@@ -28,6 +28,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    exists,
     select,
     Select,
 )
@@ -634,6 +635,24 @@ def latest_successful_stmt() -> Select[tuple[Document, ExtractedRecord]]:
         .join(ExtractedRecord, ExtractedRecord.document_id == Document.id)
         .where(ExtractedRecord.id == latest_id)
     )
+
+
+def unextracted_documents_stmt() -> Select[tuple[Document]]:
+    """Build the SELECT over documents with no successful extraction attempt.
+
+    The complement of latest_successful_stmt(), defined by the same rule (a
+    SUCCESS row exists), so the two can never disagree about which documents
+    have figures. The SQL path uses it to name, in a ranking or filter, the
+    companies it could not consider at all.
+
+    Returns:
+        A Select yielding Document rows, in unspecified order.
+    """
+    succeeded = exists().where(
+        ExtractedRecord.document_id == Document.id,
+        ExtractedRecord.extraction_status == ExtractionStatus.SUCCESS.value,
+    )
+    return select(Document).where(~succeeded)
 
 
 def latest_successful_records() -> list[tuple[Document, ExtractedRecord]]:

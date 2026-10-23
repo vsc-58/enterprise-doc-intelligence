@@ -297,11 +297,32 @@ def resolve_period(entity: ResolvedEntity, requested_year: int | None) -> Resolu
     )
 
 
+def not_extracted_sentence(entity: ResolvedEntity) -> str:
+    """Say that a held filing has no extracted figures, without blaming the filing.
+
+    The filing almost certainly reports the figure; it is the extraction that
+    failed. Saying the filing "does not report" it would be a false statement
+    about the document.
+
+    Args:
+        entity: The resolved company.
+
+    Returns:
+        The refusal sentence.
+    """
+    return (
+        f"I hold one {entity.company_name} filing, for fiscal year "
+        f"{entity.filing_year}, but its financial figures have not been extracted, "
+        "so I can't answer this from them."
+    )
+
+
 def resolve(
     mention: str | None,
     requested_year: int | None = None,
     index: CorpusIndex | None = None,
     require_embedded: bool = False,
+    require_extracted: bool = False,
 ) -> Resolution:
     """Resolve a mention and a period together, with the serving check applied.
 
@@ -312,6 +333,9 @@ def resolve(
         require_embedded: Set by narrative tasks. A document with no chunks would
             retrieve nothing and look identical to a silent corpus, so it is
             refused with a stated reason instead.
+        require_extracted: Set by financial tasks. A document with no successful
+            extraction has no figures, and an empty lookup would read as "the
+            filing does not report this", so it is refused with a stated reason.
 
     Returns:
         A Resolution carrying the entity or the first failure encountered.
@@ -329,5 +353,10 @@ def resolve(
         return Resolution(
             failure=ResolutionFailure.COMPANY_NOT_EMBEDDED,
             detail=f"{entity.company_name} has no indexed narrative text",
+        )
+    if require_extracted and not entity.is_extracted:
+        return Resolution(
+            failure=ResolutionFailure.COMPANY_NOT_EXTRACTED,
+            detail=not_extracted_sentence(entity),
         )
     return resolution

@@ -31,8 +31,15 @@ from src.query.schemas import (
     Tool,
 )
 from src.query.thresholds import ThresholdParseError, parse_threshold
-from src.storage.metadata_store import Document, ExtractedRecord, get_session, latest_successful_stmt
-from src.storage.quality import QualityReason, QualityVerdict, assess_record
+from src.query.resolve import not_extracted_sentence
+from src.storage.metadata_store import (
+    Document,
+    ExtractedRecord,
+    get_session,
+    latest_successful_stmt,
+    unextracted_documents_stmt,
+)
+from src.storage.quality import QualityFlag, QualityReason, QualityVerdict, assess_record
 from src.utils.config import settings
 from src.utils.numbers import SCALE_MULTIPLIERS
 from src.utils.logger import get_logger
@@ -141,12 +148,17 @@ def _build_statement(task: Task, entity: ResolvedEntity | None) -> tuple[Select,
 
 
 def _null_rows(task: Task) -> list[MetricRow]:
-    """The companies a ranking or filter leaves out because the figure is null.
+    """The companies a ranking or filter leaves out because the figure is missing.
 
     Named in the answer rather than counted: BAC's operating cash flow is
     null because the true value is negative, so for "lowest operating cash flow"
     the excluded company is probably the real answer, and an unnamed count
     ("1 company was excluded") hid exactly that.
+
+    Two cases, worded the same way to the user ("not extracted from the
+    filing"): the latest successful extraction holds null for this figure, or
+    no extraction of the filing has succeeded at all. Without the second case,
+    a company whose extraction failed would vanish from every list silently.
 
     Args:
         task: The task being run.
@@ -158,8 +170,35 @@ def _null_rows(task: Task) -> list[MetricRow]:
         pairs = session.execute(
             latest_successful_stmt().where(_column(task.metric).is_(None))
         ).all()
+        unextracted = session.execute(unextracted_documents_stmt()).scalars().all()
     rows = [_to_row(doc, record, task.metric) for doc, record in pairs]
+    rows += [_unextracted_row(doc, task.metric) for doc in unextracted]
     return sorted(rows, key=lambda row: row.ticker)
+
+
+def _unextracted_row(doc: Document, metric: MetricField) -> MetricRow:
+    """A row for a filing with no successful extraction: no value, nothing checked.
+
+    Args:
+        doc: The filing.
+        metric: The queried field.
+
+    Returns:
+        The row, value None, flagged unverified for a null field.
+    """
+    return MetricRow(
+        ticker=doc.ticker,
+        company_name=display_name(doc.company_name, doc.ticker),
+        fiscal_year=doc.filing_year,
+        fiscal_year_end=None,
+        metric=metric,
+        value=None,
+        quality=QualityFlag(
+            field=metric.value,
+            verdict=QualityVerdict.UNVERIFIED,
+            reason=QualityReason.NULL_FIELD,
+        ),
+    )
 
 
 # Intents that range over every company. Only these can drop a company from
@@ -365,10 +404,12 @@ def format_value(value: float | None) -> str:
         value: The figure in actual dollars.
 
     Returns:
-        Text such as "$365.82 billion", or "not reported" for None.
+        Text such as "$365.82 billion", or "not extracted" for None. Never "not
+        reported": a missing value means the extraction did not find it, not
+        that the filing lacks it.
     """
     if value is None:
-        return "not reported"
+        return "not extracted"
     magnitude = abs(value)
     for threshold, suffix in ((1e12, "trillion"), (1e9, "billion"), (1e6, "million")):
         if magnitude >= threshold:
@@ -465,10 +506,9 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
 
     if not result.rows:
         if entity is not None:
-            return (
-                f"I hold one {entity.company_name} filing, for fiscal year "
-                f"{entity.filing_year}, and it does not report {label}."
-            )
+            # Defensive: the resolver refuses a company with no successful
+            # extraction before this runs. Never "the filing does not report it".
+            return not_extracted_sentence(entity)
         empty = [f"No company in the corpus matches that {label} criterion."]
         return "\n".join(empty + _not_shown_lines(task, result) + _null_lines(task, result))
 
@@ -476,10 +516,17 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
     if task.intent is Intent.FINANCIAL_METRIC:
         row = result.rows[0]
         verb = "were" if task.metric in _PLURAL_METRICS else "was"
-        lines.append(
-            f"{row.company_name}'s {label} for {_period(row)} {verb} "
-            f"{format_value(row.value)}."
-        )
+        if row.value is None:
+            # Says it in the sentence, so the null-field note below is skipped.
+            lines.append(
+                f"{row.company_name}'s {label} for {_period(row)} {verb} not "
+                "extracted from the filing, so I can't give it."
+            )
+        else:
+            lines.append(
+                f"{row.company_name}'s {label} for {_period(row)} {verb} "
+                f"{format_value(row.value)}."
+            )
     else:
         if task.intent is Intent.FINANCIAL_RANKING:
             word = "highest" if task.direction is Direction.HIGHEST else "lowest"
@@ -498,7 +545,7 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
             )
 
     for row in result.rows:
-        if row.quality.verdict is not QualityVerdict.VERIFIED:
+        if row.quality.verdict is not QualityVerdict.VERIFIED and row.value is not None:
             note = row.quality.note()
             if note:
                 lines.append(f"{row.ticker} — {note}")
