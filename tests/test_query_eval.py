@@ -35,6 +35,7 @@ def _q(alternatives: list[dict], qid: str = "X1") -> EvalQuestion:
 
 def _obs(plan_type: str, tasks: list[tuple] = (), reason: str | None = None,
          fallback: bool = False) -> ObservedPlan:
+    """Build an observed plan; each task is (intent, company, metric), mention equal to company."""
     return ObservedPlan(
         plan_type=plan_type, unsupported_reason=reason, fallback=fallback,
         tasks=[ObservedTask(intent=i, mention=c, company=c, metric=m) for i, c, m in tasks],

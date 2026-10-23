@@ -36,6 +36,12 @@ INDEX = CorpusIndex(entries=[_entry("AAPL"), _entry("INTC"), _entry("ZZZ", embed
 
 @pytest.fixture
 def calls(monkeypatch: pytest.MonkeyPatch) -> dict:
+    """Replace the chain's two entry points and the resolver; record which one ran.
+
+    Returns:
+        State with the single-company calls, the survey calls (tickers per
+        call) and the NarrativeResult both fakes return.
+    """
     state: dict = {"single": [], "survey": [], "result": NarrativeResult()}
 
     async def single(question, intent, company):
@@ -103,7 +109,7 @@ def test_an_exception_outside_the_chain_fails_the_task_not_the_plan(
     assert outcome.status is TaskStatus.FAILED
     assert outcome.narrative_result.refusal is NarrativeRefusal.FAILED
 
-# --- Section fallback (D44) ---------------------------------------------------
+# --- Section fallback (market risk -> Item 1A) -------------------------------
 
 _ABSENT = frozenset({"Item 7", "Item 7A"})
 _USED = frozenset({"Item 1A"})

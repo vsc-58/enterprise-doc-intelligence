@@ -63,12 +63,14 @@ class Stub:
         self.plan_error: Exception | None = None
 
     def plan_query(self, question: str) -> QueryPlan:
+        """Record the question; raise plan_error if set, else return the stub's plan."""
         self.planned.append(question)
         if self.plan_error is not None:
             raise self.plan_error
         return self.plan
 
     async def execute_plan(self, plan: QueryPlan, index: CorpusIndex) -> list[TaskOutcome]:
+        """Record the index, wait delay_s (to trigger timeouts), return the outcomes."""
         self.executed_with = index
         await asyncio.sleep(self.delay_s)
         return self.outcomes
@@ -80,6 +82,7 @@ def client_for(
 ) -> Iterator[Callable[[Stub], TestClient]]:
     """Build a client for a fresh app whose route uses the given stub."""
     def make(stub: Stub) -> TestClient:
+        """Patch the route to use this stub and return a client with readiness overridden."""
         monkeypatch.setattr(query_route, "plan_query", stub.plan_query)
         monkeypatch.setattr(query_route, "execute_plan", stub.execute_plan)
         app = create_app()
@@ -202,9 +205,12 @@ def test_not_ready_is_503_before_planning(monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_malformed_body_is_422_even_when_not_ready(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Found running the real server in step 6: an empty question got 503 "try
-    again in 5 s". FastAPI runs dependencies before body validation, so the
-    readiness check now runs inside the handler and 422 wins."""
+    """A malformed body is a 422 even while the server is not ready.
+
+    Found by running the real server: an empty question got 503 "try again in
+    5 s". FastAPI runs dependencies before body validation, so the readiness
+    check now runs inside the handler and 422 wins.
+    """
     async def no_warm(self: Readiness) -> None:
         return None
 

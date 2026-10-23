@@ -64,6 +64,7 @@ def data_present(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, index: CorpusI
 
 
 def _warm(state: Readiness) -> Readiness:
+    """Run the async warm-up to completion and return the state."""
     anyio.run(state.warm)
     return state
 
@@ -209,6 +210,7 @@ def test_a_burst_of_requests_shares_one_retry(
     clock.now += 10
 
     async def burst() -> None:
+        """Ten concurrent requests trying to re-check readiness at the same moment."""
         async with anyio.create_task_group() as group:
             for _ in range(10):
                 group.start_soon(state.refresh_if_due)

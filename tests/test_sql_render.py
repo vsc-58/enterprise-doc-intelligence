@@ -1,4 +1,4 @@
-"""Which left-out companies an answer names, and how (D53, narrowed by D56).
+"""Which left-out companies an answer names, and how.
 
 A company a ranking or filter left out is named when:
   - its figure is scale-flagged AND a 1,000x scale correction would put it in
@@ -29,6 +29,7 @@ from src.storage.quality import QualityFlag, QualityReason, QualityVerdict
 
 
 def _flag(reason: QualityReason, suspected: float | None = None) -> QualityFlag:
+    """A quality flag: verified for CONSISTENT, disputed for any other reason."""
     verdict = QualityVerdict.VERIFIED if reason is QualityReason.CONSISTENT else QualityVerdict.DISPUTED
     return QualityFlag(field="x", verdict=verdict, reason=reason, suspected_true_value=suspected)
 
@@ -36,6 +37,7 @@ def _flag(reason: QualityReason, suspected: float | None = None) -> QualityFlag:
 def _row(ticker: str, value: float | None, reason: QualityReason = QualityReason.CONSISTENT,
          metric: MetricField = MetricField.TOTAL_ASSETS, name: str | None = None,
          suspected: float | None = None) -> MetricRow:
+    """One company's figure with its flag; suspected is the quality check's inferred true value."""
     return MetricRow(ticker=ticker, company_name=name or ticker, fiscal_year=2022,
                      fiscal_year_end="2022-12-31", metric=metric, value=value,
                      quality=_flag(reason, suspected))
@@ -46,7 +48,7 @@ JPM = _row("JPM", 3.87e12)
 GS = _row("GS", 1.46e12)
 BAC = _row("BAC", 3.05e9, QualityReason.SCALE_AMBIGUOUS, name="Bank of America Corp.")
 
-# Net income, as stored: Step 10's #11 case
+# Net income, as stored: the case found in the manual demo run
 NI = MetricField.NET_INCOME
 AAPL_NI = _row("AAPL", 94.68e9, metric=NI)
 BAC_NI = _row("BAC", 27.53e9, QualityReason.SCALE_AMBIGUOUS, metric=NI)
@@ -100,7 +102,7 @@ def test_scale_flagged_company_no_correction_would_bring_in_is_not_named() -> No
 
 
 def test_unconfirmed_but_not_mis_scaled_figures_are_not_named() -> None:
-    """Step 10's #11: Intel ($1.69bn) and Tesla ($12.56bn) were named under '$50 billion'."""
+    """Intel ($1.69bn) and Tesla ($12.56bn) were once named under 'above $50 billion'."""
     named = flagged_not_shown([AAPL_NI, BAC_NI, INTC_NI, TSLA_NI], [AAPL_NI], _filter(NI), 50e9)
     assert named == [BAC_NI]                                  # BAC x1,000 = $27.5 trillion passes
 
@@ -148,11 +150,11 @@ def test_flagged_line_says_why_it_may_belong() -> None:
     text = render(_filter(), result, None)
     assert ("Not included: Bank of America Corp. (BAC) — its total assets are flagged, "
             "and at a 1,000x different scale it would be in this list.") in text
-    assert "two different scales" in text                    # the D29 note travels with it
+    assert "two different scales" in text                    # the quality note travels with it
 
 
 def test_missing_figure_in_a_lowest_ranking_may_be_lower() -> None:
-    """Step 10's #4: BAC's cash flow is missing because it is negative — probably the answer."""
+    """BAC's cash flow is missing because it is negative, so it is probably the answer."""
     result = MetricResult(rows=[GS_OCF], excluded_null=[BAC_OCF_NULL], excluded_null_count=1)
     text = render(_ranking(Direction.LOWEST), result, None)
     assert ("Not included: Bank of America Corp. (BAC) — its operating cash flow was not "
@@ -186,7 +188,7 @@ def test_empty_result_still_names_left_out_companies() -> None:
 
 
 def test_shown_flag_keeps_the_ordering_caveat_and_left_out_flag_does_not_add_it() -> None:
-    """The D36 caveat speaks of figures 'here'; it stays tied to shown rows."""
+    """The ordering caveat speaks of figures 'here'; it stays tied to shown rows."""
     result = MetricResult(rows=[JPM, GS], flagged_not_shown=[BAC], threshold_value=1e12)
     assert "at least one figure here is flagged" not in render(_filter(), result, None)
 

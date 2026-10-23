@@ -1,6 +1,8 @@
-# tests/test_retrieval_eval.py
-# Retrieval gold validation, ranking metrics, planner-query extraction, and one
-# end-to-end run of the script with the retriever and corpus index stubbed out.
+"""Retrieval evaluation: gold validation, ranking metrics, planner-query extraction.
+
+Also one end-to-end run of the script with the retriever and corpus index
+stubbed out.
+"""
 
 import json
 from pathlib import Path
@@ -196,6 +198,7 @@ def test_runner_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     orders = {"q": [4, 1, 2, 3], "rephrased": [1, 4, 2, 3]}   # chunk 4 is unjudged
 
     def fake_retrieve(question: str, intent: object, company: object, k: int) -> CompanyContext:
+        """Return the chunk order set for this question in `orders`, as the retriever would."""
         blocks = [ContextBlock(number=i, chunk=_chunk(c)) for i, c in enumerate(orders[question], 1)]
         return CompanyContext(company=company, sections_searched=frozenset({"Item 7"}),
                               status=RetrievalStatus.OK, blocks=blocks)

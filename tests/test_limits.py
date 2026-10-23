@@ -39,10 +39,12 @@ class Clocks:
 
 @pytest.fixture
 def clocks() -> Clocks:
+    """Fake clocks, 60 seconds before UTC midnight, so the daily reset can be crossed."""
     return Clocks()
 
 
 def _limiter(clocks: Clocks, per_minute: int | None = None, budget: int | None = None) -> UsageLimiter:
+    """A limiter wired to the fake clocks; None for a limit means off."""
     return UsageLimiter(per_minute=per_minute, daily_budget=budget,
                         monotonic=clocks.monotonic, utc_now=clocks.utc_now)
 
@@ -58,7 +60,7 @@ def test_no_limits_never_blocks(clocks: Clocks) -> None:
 
 
 def test_app_limiter_is_off_with_default_settings() -> None:
-    """Locally nothing changes until Phase 8 sets the two values."""
+    """Locally nothing changes until the hosted demo sets the two values."""
     assert not create_app().state.limiter.enabled
 
 

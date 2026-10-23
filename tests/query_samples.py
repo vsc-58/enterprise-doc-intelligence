@@ -1,8 +1,8 @@
 """Hand-built plans and outcomes for the API tests, from real end-to-end cases.
 
-Each sample is what the planner and executor produced for a question run in
-Phases 5A-5C. Building them by hand keeps the API tests free of any model call,
-database or vector store.
+Each sample is what the planner and executor produced for a question run
+during the evaluation. Building them by hand keeps the API tests free of any
+model call, database or vector store.
 """
 
 from src.query.schemas import (

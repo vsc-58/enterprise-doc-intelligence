@@ -48,7 +48,7 @@ def test_resolution_carries_the_held_year_and_period_end(index: CorpusIndex) -> 
 
 
 def test_target_period_end_is_a_year_ahead_of_its_key(index: CorpusIndex) -> None:
-    """TGT's filing_year 2021 ends 2021-01-30 — the user's 'fiscal 2020' (D1)."""
+    """TGT's filing_year 2021 ends 2021-01-30: the user's 'fiscal 2020'. Years key on period end."""
     entity = resolve("Target", index=index).entity
     assert entity is not None
     assert entity.filing_year == 2021

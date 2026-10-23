@@ -34,6 +34,7 @@ from tests.query_samples import (
 
 
 def _build(plan: QueryPlan, outcomes: list[TaskOutcome]):
+    """Assemble the answer and build the response, with fixed version, id and latency values."""
     answer = assemble(plan, outcomes)
     return build_query_response(
         "q", plan, outcomes, answer,

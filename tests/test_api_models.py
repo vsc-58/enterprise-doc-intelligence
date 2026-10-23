@@ -50,7 +50,7 @@ def test_missing_question_is_rejected() -> None:
 
 
 def test_dropped_filters_are_rejected_not_ignored() -> None:
-    """D54: a company/year filter fails loudly instead of being silently dropped."""
+    """A company/year filter fails loudly (422) instead of being silently dropped."""
     with pytest.raises(ValidationError) as excinfo:
         QueryRequest.model_validate({"question": "What was its revenue?", "company": "AAPL"})
     assert excinfo.value.errors()[0]["type"] == "extra_forbidden"
@@ -107,13 +107,13 @@ def test_error_body_schema_example_validates() -> None:
 # --- Settings the contract depends on -------------------------------------------
 
 
-def test_default_timeouts_satisfy_the_d54_rule() -> None:
+def test_default_timeouts_satisfy_the_timeout_rule() -> None:
     """A hung planner call, with its retry, must finish before the request times out."""
     per_call_worst = settings.OPENAI_TIMEOUT_SECONDS * (settings.OPENAI_MAX_RETRIES + 1)
     assert per_call_worst < settings.QUERY_TIMEOUT_SECONDS
 
 
 def test_cost_protection_is_off_by_default() -> None:
-    """Phase 8 switches these on; locally they must not get in the way."""
+    """The hosted demo switches these on; locally they must not get in the way."""
     assert settings.RATE_LIMIT_PER_MINUTE is None
     assert settings.DAILY_QUERY_BUDGET is None

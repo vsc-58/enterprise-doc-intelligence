@@ -34,7 +34,7 @@ def test_rag_intents_search_known_sections() -> None:
 
 
 def test_fallbacks_are_narrative_known_and_new_sections() -> None:
-    """A fallback must add sections the intent does not already search (D44)."""
+    """A fallback must add sections the intent does not already search."""
     for intent, fallback in SECTION_FALLBACKS.items():
         policy = INTENT_POLICY[intent]
         assert policy.tool is Tool.RAG, intent
@@ -44,12 +44,12 @@ def test_fallbacks_are_narrative_known_and_new_sections() -> None:
 
 
 def test_management_commentary_never_falls_back() -> None:
-    """Risk factors cannot explain what happened; D44's admission test fails."""
+    """Risk factors cannot explain what happened, so MD&A has no fallback to them."""
     assert Intent.MANAGEMENT_COMMENTARY not in SECTION_FALLBACKS
 
 
 def test_no_two_rag_intents_share_a_section_set() -> None:
-    """Two intents over the same union execute identically: merge them (D28, D38)."""
+    """Two intents over the same section union execute identically, so they must be merged."""
     seen: dict[frozenset[str], Intent] = {}
     for intent, policy in INTENT_POLICY.items():
         if policy.tool is not Tool.RAG:
@@ -105,5 +105,5 @@ def test_refusal_plans_carry_no_tasks_and_name_their_reason() -> None:
 
 
 def test_corpus_membership_is_not_a_planner_judgment() -> None:
-    """The planner is corpus-blind (D32), so its reasons exclude membership."""
+    """The planner is corpus-blind, so its reasons exclude corpus membership."""
     assert "non_corpus_company" not in {r.value for r in UnsupportedReason}

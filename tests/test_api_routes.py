@@ -34,6 +34,7 @@ def no_real_warm_up(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _state(index: CorpusIndex | None, failures: dict[str, str] | None = None) -> Readiness:
+    """Build a readiness state by hand: the given index and failed parts, nothing checked."""
     state = Readiness()
     state.failures = dict(failures or {})
     state.index = index
@@ -41,6 +42,7 @@ def _state(index: CorpusIndex | None, failures: dict[str, str] | None = None) ->
 
 
 def _client(state: Readiness) -> TestClient:
+    """A client whose every endpoint sees this readiness state (no database or store)."""
     app = create_app()
     app.dependency_overrides[get_readiness] = lambda: state
     return TestClient(app)
@@ -81,6 +83,11 @@ def test_documents_is_503_without_the_index() -> None:
 
 
 def _record(doc_id: int, **values: object) -> ExtractedRecord:
+    """Build an ExtractedRecord with every figure None unless given in values.
+
+    No session is needed: SQLAlchemy objects exist without one. The export
+    reads these through a patched latest_successful_records().
+    """
     base: dict[str, object] = dict(
         document_id=doc_id, fiscal_year_end="2022-12-31", auditor_name="Auditor LLP",
         total_revenue=None, net_income=None, total_assets=None, total_liabilities=None,
@@ -116,11 +123,13 @@ APPLE = (
 
 @pytest.fixture
 def export_response(monkeypatch: pytest.MonkeyPatch, index: CorpusIndex):
+    """GET /export over two hand-built records: Apple (all verified) and BAC (scale-flagged)."""
     monkeypatch.setattr(export_route, "latest_successful_records", lambda: [APPLE, BAC])
     return _client(_state(index)).get("/export")
 
 
 def _frame(response) -> pd.DataFrame:
+    """Parse the CSV body as a spreadsheet would, byte-order mark included."""
     return pd.read_csv(io.BytesIO(response.content), encoding="utf-8-sig")
 
 
@@ -142,7 +151,7 @@ def test_export_columns_are_exactly_the_contract(export_response) -> None:
     assert len(export_route.EXPORT_COLUMNS) == 6 + 5 * 5 + 4
 
 
-def test_export_carries_the_d29_flags(export_response) -> None:
+def test_export_carries_the_quality_flags(export_response) -> None:
     bac = _frame(export_response).set_index("ticker").loc["BAC"]
     assert bac["company_name"] == "Bank of America Corp."
     assert bac["total_assets"] == 3051375000.0               # the stored value, as served
@@ -222,9 +231,9 @@ def test_health_catches_a_store_that_broke_after_startup(stores, index: CorpusIn
 
 
 def test_health_names_a_failed_figure_guard(stores, index: CorpusIndex) -> None:
-    """figure_guard has no live check; its readiness state is shown (D57).
+    """figure_guard has no live check; its readiness state is shown.
 
-    Before D57 this case returned 503 with every check "ok": the body could
+    An earlier version returned 503 with every check "ok" here: the body could
     not name the part that blocked /query.
     """
     response = _client(_state(index, {FIGURE_GUARD: "FigureGuardError"})).get("/health")

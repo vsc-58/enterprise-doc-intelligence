@@ -34,9 +34,12 @@ def test_planner_enums_get_the_api_descriptions() -> None:
 
 
 def test_planner_enum_docstrings_are_untouched() -> None:
-    """The replacement is in the schema only: the planner still sees its own text."""
-    assert "D25" in (Intent.__doc__ or "")
-    assert "D32" in (UnsupportedReason.__doc__ or "")
+    """The replacement is in the schema only: the planner still sees its own text.
+
+    tests/test_prompt_versions.py pins that text exactly, through the hash.
+    """
+    assert Intent.__doc__ and Intent.__doc__.strip() != OPENAPI_SCHEMA_DESCRIPTIONS["Intent"]
+    assert "corpus-blind" in (UnsupportedReason.__doc__ or "")
 
 
 def test_health_summary_names_every_check() -> None:

@@ -1,6 +1,7 @@
-# tests/test_attribution.py
-# Attribution judge (D43): statistics, claim extraction, and judge_claim with the
-# model stubbed — no network.
+"""Attribution judge: agreement statistics, claim extraction, and judge_claim.
+
+The judge model is stubbed, so nothing here calls the network.
+"""
 
 import json
 from pathlib import Path
@@ -42,6 +43,7 @@ class _FakeLLM:
 
 
 def _stub(monkeypatch: pytest.MonkeyPatch, response: dict) -> None:
+    """Make the judge's model return this response, so no request is sent."""
     monkeypatch.setattr(attribution, "_get_llm", lambda: _FakeLLM(response))
 
 

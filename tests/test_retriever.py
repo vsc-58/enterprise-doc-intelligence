@@ -19,6 +19,7 @@ JPM = CompanyRef(ticker="JPM", company_name="JPMORGAN CHASE & CO", fiscal_year=2
 
 
 def _chunk(ticker: str, section: str, index: int, distance: float) -> RetrievedChunk:
+    """A retrieved chunk whose text has padding spaces, which format_context must strip."""
     return RetrievedChunk(
         text=f"  {ticker} {section} text {index}  ", ticker=ticker,
         company_name=ticker, cik="0000000001", fiscal_year=2021,
@@ -38,6 +39,7 @@ class FakeStore:
         return [0.1, 0.2]
 
     def search(self, vector, k, ticker=None, sections=None) -> RetrievalResult:
+        """Record the search; JPM holds nothing, every other company returns k chunks."""
         self.searches.append((ticker, frozenset(sections or ())))
         if ticker == "JPM":
             return RetrievalResult(status=RetrievalStatus.NO_MATCHING_CHUNKS, detail="none")
@@ -50,6 +52,7 @@ class FakeStore:
 
 @pytest.fixture
 def store(monkeypatch: pytest.MonkeyPatch) -> FakeStore:
+    """Route the retriever's embedding and search calls to a FakeStore."""
     fake = FakeStore()
     monkeypatch.setattr(retriever, "embed_query", fake.embed)
     monkeypatch.setattr(retriever, "query_by_vector", fake.search)
@@ -99,7 +102,7 @@ def test_corpus_wide_embeds_once_and_searches_each_company(store: FakeStore) -> 
     )
     assert store.embed_calls == 1
     # JPM's market-risk sections are absent, so its fallback is tried once with
-    # the same vector (D44); this fake holds nothing for JPM at all.
+    # the same vector; this fake holds nothing for JPM at all.
     assert [t for t, _ in store.searches] == ["AAPL", "JPM", "JPM", "META"]
     assert [c.company.ticker for c in contexts] == ["AAPL", "JPM", "META"]
     assert contexts[1].status is RetrievalStatus.NO_MATCHING_CHUNKS
@@ -124,7 +127,7 @@ def test_format_context_heads_each_block_with_number_and_source(store: FakeStore
     assert text.startswith("[1] Apple Inc., FY2021, Item 1A\nAAPL Item 1A text 0")
     assert "\n\n[2] Apple Inc., FY2021, Item 1A\n" in text
 
-# --- Section fallback (D44) ---------------------------------------------------
+# --- Section fallback (market risk -> Item 1A) -------------------------------
 
 XOM = CompanyRef(ticker="XOM", company_name="EXXON MOBIL CORP", fiscal_year=2022)
 
@@ -145,6 +148,7 @@ class SectionStore:
         return [0.1, 0.2]
 
     def search(self, vector, k, ticker=None, sections=None) -> RetrievalResult:
+        """Record the search; return chunks only for sections the company holds (HELD)."""
         wanted = frozenset(sections or ())
         self.searches.append((ticker, wanted))
         held = sorted(wanted & self.HELD.get(ticker, set()))
@@ -158,6 +162,7 @@ class SectionStore:
 
 @pytest.fixture
 def sections_store(monkeypatch: pytest.MonkeyPatch) -> SectionStore:
+    """Route the retriever's embedding and search calls to a SectionStore."""
     fake = SectionStore()
     monkeypatch.setattr(retriever, "embed_query", fake.embed)
     monkeypatch.setattr(retriever, "query_by_vector", fake.search)
