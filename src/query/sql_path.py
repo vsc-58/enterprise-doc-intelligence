@@ -30,8 +30,9 @@ from src.query.schemas import (
 )
 from src.query.thresholds import ThresholdParseError, parse_threshold  # parse_threshold still used in _build_statement
 from src.storage.metadata_store import Document, ExtractedRecord, get_session, latest_successful_stmt
-from src.storage.quality import QualityVerdict, assess_record
+from src.storage.quality import QualityReason, QualityVerdict, assess_record
 from src.utils.config import settings
+from src.utils.numbers import SCALE_MULTIPLIERS
 from src.utils.logger import get_logger
 from src.utils.text import display_name
 
@@ -127,25 +128,178 @@ def _build_statement(task: Task, entity: ResolvedEntity | None) -> tuple[Select,
     raise SqlPathError("That isn't a question I can answer from the figures table.")
 
 
-def _count_null_rows(task: Task) -> int:
+def _null_rows(task: Task) -> list[MetricRow]:
     """
-    Count companies excluded because the queried metric is null.
+    The companies a ranking or filter leaves out because the figure is null.
 
-    Reported rather than silently dropped: BAC's operating cash flow is null
-    because the true value is negative, so "lowest operating cash flow" would
-    otherwise omit the correct answer without saying so.
+    Named in the answer rather than counted (D56): BAC's operating cash flow is
+    null because the true value is negative, so for "lowest operating cash flow"
+    the excluded company is probably the real answer, and an unnamed count
+    ("1 company was excluded") hid exactly that.
 
     Args:
         task: The task being run.
 
     Returns:
-        The number of excluded rows.
+        One row per excluded company (value None), ordered by ticker.
     """
     with get_session() as session:
-        rows = session.execute(
+        pairs = session.execute(
             latest_successful_stmt().where(_column(task.metric).is_(None))
         ).all()
-    return len(rows)
+    rows = [_to_row(doc, record, task.metric) for doc, record in pairs]
+    return sorted(rows, key=lambda row: row.ticker)
+
+
+# Intents that range over every company. Only these can drop a company from
+# the answer, so only these need the flagged-but-not-shown disclosure.
+_CORPUS_INTENTS = frozenset({Intent.FINANCIAL_RANKING, Intent.FINANCIAL_FILTER})
+
+
+def _to_row(doc: Document, record: ExtractedRecord, metric: MetricField) -> MetricRow:
+    """
+    Project one (Document, ExtractedRecord) pair into a MetricRow.
+
+    Args:
+        doc: The filing.
+        record: Its latest successful extraction.
+        metric: The queried field.
+
+    Returns:
+        The row, with the field's quality flag attached (D29).
+    """
+    return MetricRow(
+        ticker=doc.ticker,
+        company_name=display_name(doc.company_name, doc.ticker),
+        fiscal_year=doc.filing_year,
+        fiscal_year_end=record.fiscal_year_end,
+        metric=metric,
+        value=getattr(record, metric.value),
+        quality=assess_record(record)[metric.value],
+    )
+
+
+# Flags that say a figure may be at the wrong SCALE. Only a scale error moves a
+# figure far enough (1,000x) to cross a threshold or a ranking cut-off it
+# otherwise misses by orders of magnitude. evidence_mismatch is left out: the
+# value is unconfirmed, not mis-scaled — Tesla's flagged net income even matches
+# the answer key — and naming Intel's $1.69 billion as "may belong" in an
+# over-$50-billion list was the over-disclosure Step 10 found (D56).
+_SCALE_REASONS = frozenset({
+    QualityReason.SCALE_AMBIGUOUS,
+    QualityReason.SCALE_DISAGREEMENT,
+    QualityReason.SCALE_NOT_CHECKABLE,
+})
+
+# Neighbouring printed scales (thousands, millions, billions) differ by this.
+SCALE_STEP = SCALE_MULTIPLIERS[2] / SCALE_MULTIPLIERS[1]
+
+
+def plausible_values(row: MetricRow) -> list[float]:
+    """
+    The values a scale-flagged figure could really have.
+
+    Args:
+        row: A scale-flagged row with a value.
+
+    Returns:
+        The suspected true value when the quality check computed one (a clear
+        majority scale disagrees, as for GS's cash flow); otherwise the value
+        one scale step up and one down (an even split, as for BAC).
+    """
+    if row.quality.suspected_true_value is not None:
+        return [row.quality.suspected_true_value]
+    return [row.value * SCALE_STEP, row.value / SCALE_STEP]
+
+
+def _would_appear(value: float, task: Task, shown: list[MetricRow], threshold: float | None) -> bool:
+    """
+    Whether a company with this value would be in the answer.
+
+    Args:
+        value: A plausible value.
+        task: The ranking or filter.
+        shown: The rows the answer serves, in answer order.
+        threshold: The parsed filter threshold; None for rankings.
+
+    Returns:
+        For a filter, whether the value passes the comparison. For a ranking,
+        whether it beats the last row shown — or True when the ranking shows
+        fewer rows than its limit, since any value would then be listed.
+    """
+    if task.intent is Intent.FINANCIAL_FILTER:
+        return threshold is not None and _COMPARISON_SQL[task.comparison](value, threshold)
+    limit = min(task.limit or 1, settings.SQL_RESULT_LIMIT_CAP)
+    values = [row.value for row in shown if row.value is not None]
+    if len(values) < limit:
+        return True
+    if task.direction is Direction.HIGHEST:
+        return value > min(values)
+    return value < max(values)
+
+
+def flagged_not_shown(
+    candidates: list[MetricRow],
+    shown: list[MetricRow],
+    task: Task,
+    threshold: float | None,
+) -> list[MetricRow]:
+    """
+    The flagged companies a ranking or filter left out that may belong in it.
+
+    Named only when the flag is a scale flag AND a plausible true value would
+    put the company in the answer (D53, narrowed by D56). Pure, so the rule is
+    testable without a database. A shown row is skipped: its flag is disclosed
+    beside it. Null values never reach here (the caller selects non-null rows).
+
+    Args:
+        candidates: Every company's non-null row for the queried metric.
+        shown: The rows the answer serves.
+        task: The ranking or filter that was run.
+        threshold: The parsed filter threshold; None for rankings.
+
+    Returns:
+        The companies to name, ordered by ticker so the text is stable.
+    """
+    shown_tickers = {row.ticker for row in shown}
+    named = [
+        row for row in candidates
+        if row.ticker not in shown_tickers
+        and row.value is not None
+        and row.quality.reason in _SCALE_REASONS
+        and any(_would_appear(v, task, shown, threshold) for v in plausible_values(row))
+    ]
+    return sorted(named, key=lambda row: row.ticker)
+
+
+def _flagged_outside_result(
+    task: Task, shown: list[MetricRow], threshold: float | None
+) -> list[MetricRow]:
+    """
+    Find flagged companies a ranking or filter dropped.
+
+    D36 caveats the ordering when a flagged row is in the result, but a figure
+    1,000x too small can fail a threshold it should pass, and then no flagged
+    row is shown to trigger anything. BAC's total assets (stored $3.05 billion,
+    ambiguous scale) drop out of "total assets above $1 trillion" exactly this
+    way. Costs one extra read of one row per company; no model call.
+
+    Args:
+        task: The task that was run.
+        shown: The rows the answer serves.
+        threshold: The parsed filter threshold; None for rankings.
+
+    Returns:
+        Flagged rows not shown that may belong; empty for single-company intents.
+    """
+    if task.intent not in _CORPUS_INTENTS:
+        return []
+    with get_session() as session:
+        pairs = session.execute(
+            latest_successful_stmt().where(_column(task.metric).is_not(None))
+        ).all()
+    candidates = [_to_row(doc, record, task.metric) for doc, record in pairs]
+    return flagged_not_shown(candidates, shown, task, threshold)
 
 
 def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResult:
@@ -171,24 +325,10 @@ def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResul
     with get_session() as session:
         pairs = session.execute(stmt).all()
 
-    rows = [
-        MetricRow(
-            ticker=doc.ticker,
-            company_name=display_name(doc.company_name, doc.ticker),
-            fiscal_year=doc.filing_year,
-            fiscal_year_end=record.fiscal_year_end,
-            metric=task.metric,
-            value=getattr(record, task.metric.value),
-            quality=assess_record(record)[task.metric.value],
-        )
-        for doc, record in pairs
-    ]
+    rows = [_to_row(doc, record, task.metric) for doc, record in pairs]
 
-    excluded = (
-        _count_null_rows(task)
-        if task.intent in {Intent.FINANCIAL_RANKING, Intent.FINANCIAL_FILTER}
-        else 0
-    )
+    excluded = _null_rows(task) if task.intent in _CORPUS_INTENTS else []
+    flagged_dropped = _flagged_outside_result(task, rows, threshold)
     mixed_years = len({row.fiscal_year for row in rows}) > 1
 
     logger.info(
@@ -196,12 +336,15 @@ def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResul
         intent=task.intent.value,
         metric=task.metric.value,
         rows=len(rows),
-        excluded_null=excluded,
+        excluded_null=[row.ticker for row in excluded],
+        flagged_not_shown=[row.ticker for row in flagged_dropped],
         mixed_years=mixed_years,
     )
     return MetricResult(
         rows=rows,
-        excluded_null_count=excluded,
+        flagged_not_shown=flagged_dropped,
+        excluded_null=excluded,
+        excluded_null_count=len(excluded),
         mixed_years=mixed_years,
         threshold_value=threshold,
         sql_preview=str(stmt.compile(compile_kwargs={"literal_binds": False})),
@@ -235,6 +378,62 @@ def _period(row: MetricRow) -> str:
     return f"fiscal year {row.fiscal_year}"
 
 
+def _not_shown_lines(task: Task, result: MetricResult) -> list[str]:
+    """
+    One disclosure line per flagged company a ranking or filter left out.
+
+    Worded as "may belong", never "belongs": for an ambiguous scale (BAC) there
+    is no trusted value to say which side of the threshold it falls on.
+
+    Args:
+        task: The task that was run.
+        result: Its result.
+
+    Returns:
+        The lines, possibly empty.
+    """
+    label = METRIC_LABELS[task.metric]
+    verb = "are" if task.metric in _PLURAL_METRICS else "is"
+    lines: list[str] = []
+    for row in result.flagged_not_shown:
+        note = row.quality.note()
+        line = (
+            f"Not included: {row.company_name} ({row.ticker}) — its {label} {verb} "
+            "flagged, and at a 1,000x different scale it would be in this list."
+        )
+        lines.append(f"{line} {note}" if note else line)
+    return lines
+
+
+def _null_lines(task: Task, result: MetricResult) -> list[str]:
+    """
+    One line per company left out because its figure was not extracted (D56).
+
+    Says what the gap means for THIS question: a missing figure could be the
+    lowest, the highest, or pass the threshold — and for BAC's operating cash
+    flow (null because the true value is negative) it probably is the lowest.
+
+    Args:
+        task: The ranking or filter that was run.
+        result: Its result.
+
+    Returns:
+        The lines, possibly empty.
+    """
+    label = METRIC_LABELS[task.metric]
+    verb = "were" if task.metric in _PLURAL_METRICS else "was"
+    if task.intent is Intent.FINANCIAL_RANKING:
+        side = "higher" if task.direction is Direction.HIGHEST else "lower"
+        consequence = f"so it may be {side} than any figure shown"
+    else:
+        consequence = "so whether it meets this threshold is unknown"
+    return [
+        f"Not included: {row.company_name} ({row.ticker}) — its {label} {verb} "
+        f"not extracted from the filing, {consequence}."
+        for row in result.excluded_null
+    ]
+
+
 def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> str:
     """
     Render the answer text for a completed financial task.
@@ -245,6 +444,11 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
     Multi-row answers print each row's fiscal year and, when the years differ,
     append one sentence saying so: this corpus holds one filing per company, so a
     ranking that hid the mixture would be misleading (D33).
+
+    Rankings and filters also name, even when the result is empty, every
+    company they left out that may belong: scale-flagged figures a 1,000x
+    correction would bring in (D53, D56), and figures that were not extracted,
+    with what the gap means for the question (D56).
 
     Args:
         task: The task that was run.
@@ -262,9 +466,8 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
                 f"I hold one {entity.company_name} filing, for fiscal year "
                 f"{entity.filing_year}, and it does not report {label}."
             )
-        return f"No company in the corpus matches that {label} criterion."
-
-
+        empty = [f"No company in the corpus matches that {label} criterion."]
+        return "\n".join(empty + _not_shown_lines(task, result) + _null_lines(task, result))
 
     lines: list[str] = []
     if task.intent is Intent.FINANCIAL_METRIC:
@@ -297,7 +500,9 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
             if note:
                 lines.append(f"{row.ticker} — {note}")
 
-    if task.intent in {Intent.FINANCIAL_RANKING, Intent.FINANCIAL_FILTER} and any(
+    lines.extend(_not_shown_lines(task, result))
+
+    if task.intent in _CORPUS_INTENTS and any(
         row.quality.verdict is not QualityVerdict.VERIFIED for row in result.rows
     ):
         lines.append(
@@ -305,12 +510,7 @@ def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> s
             "be wrong — a mis-scaled value sorts into the wrong position."
         )
 
-    if result.excluded_null_count:
-        lines.append(
-            f"{result.excluded_null_count} "
-            f"{'company was' if result.excluded_null_count == 1 else 'companies were'} "
-            f"excluded because {label} was not extracted from the filing."
-        )
+    lines.extend(_null_lines(task, result))
 
     if result.mixed_years:
         years = sorted({row.fiscal_year for row in result.rows})

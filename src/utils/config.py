@@ -208,7 +208,39 @@ class Settings(BaseSettings):
     # is 0.005%); narrow enough that a different figure rarely falls inside it,
     # since matching is scoped to one company's five values.
     FIGURE_GUARD_REL_TOLERANCE: float = 0.005
-    
+
+    # --- Phase 6: API (docs/api_contract.md, D54) ------------------------------
+    # Longest accepted question, in characters, after whitespace is stripped.
+    # The longest of the 109 eval questions is 83; 500 leaves room for real
+    # phrasing while bounding what one request can send to the planner.
+    QUERY_MAX_CHARS: int = 500
+
+    # Timeouts (D54). The rule the defaults satisfy:
+    #   OPENAI_TIMEOUT_SECONDS * (OPENAI_MAX_RETRIES + 1) < QUERY_TIMEOUT_SECONDS
+    #   10 * 2 = 20 < 30
+    # The planner call runs in a worker thread that a request timeout cannot
+    # stop, so the per-call limit is what bounds it. Async chain calls are
+    # cancelled by the request timeout itself. Offline scripts share these
+    # clients: run embed_documents with OPENAI_TIMEOUT_SECONDS=60 if a
+    # 100-chunk batch ever needs longer.
+    QUERY_TIMEOUT_SECONDS: float = 30.0
+    OPENAI_TIMEOUT_SECONDS: float = 10.0
+    OPENAI_MAX_RETRIES: int = 1
+
+    # While the API is not ready, a request may re-try loading the data at most
+    # this often (src/api/readiness.py). Also sent as Retry-After on 503s.
+    READINESS_RETRY_SECONDS: float = 5.0
+
+    # Browser origins allowed to call the API from another site. Empty: Swagger
+    # at /docs is same-origin and needs none; curl and tests ignore CORS. Set
+    # as JSON in .env, e.g. CORS_ALLOW_ORIGINS=["http://localhost:3000"].
+    CORS_ALLOW_ORIGINS: list[str] = []
+
+    # Phase 8 cost protection, OFF when None. In-memory counters: correct only
+    # because the API runs one worker (Chroma's local store is single-process).
+    RATE_LIMIT_PER_MINUTE: int | None = None    # per client IP, /query only -> 429
+    DAILY_QUERY_BUDGET: int | None = None       # /query calls per UTC day -> 429
+
 # Singleton instance — import this everywhere
 # from src.utils.config import settings
 settings = Settings()

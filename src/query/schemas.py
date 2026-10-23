@@ -361,11 +361,20 @@ class MetricResult(BaseModel):
         non-filter intents. Carried rather than reparsed so the number that
         selected the rows and the number quoted back to the user are the same
         value, computed once.
+        flagged_not_shown: Companies left out of a ranking or filter whose
+            figure is scale-flagged and which a 1,000x scale correction would
+            put in the answer (D53, narrowed by D56). The renderer names each.
+            Always empty for single-company lookups.
+        excluded_null: Companies left out because the queried figure was not
+            extracted, named in the answer with what that means for the
+            question (D56). excluded_null_count is its length.
     """
 
     model_config = ConfigDict(frozen=True)
 
     rows: list[MetricRow] = Field(default_factory=list)
+    flagged_not_shown: list[MetricRow] = Field(default_factory=list)
+    excluded_null: list[MetricRow] = Field(default_factory=list)
     excluded_null_count: int = 0
     mixed_years: bool = False
     sql_preview: str | None = None

@@ -1,0 +1,98 @@
+# src/api/errors.py
+# Module: API error types
+# Purpose: The exceptions the API raises on purpose, each tied to one status code
+#          and one ErrorCode, plus the fixed user-facing sentence for every code.
+# Depends on: fastapi (status constants), src.api.models
+#
+# Raising a typed error and letting one handler in main.py build the response
+# keeps every error body identical in shape (contract §7). The message a user
+# sees is chosen here by code, never taken from the exception: exception text
+# can carry paths, SQL or library internals, and goes to the logs only.
+
+from fastapi import status
+
+from src.api.models import ErrorCode
+
+ERROR_MESSAGES: dict[ErrorCode, str] = {
+    ErrorCode.NOT_READY: (
+        "The service is not ready: its data stores are unavailable. Try again shortly."
+    ),
+    ErrorCode.LLM_UNAVAILABLE: (
+        "The language model service is unavailable. Try again shortly."
+    ),
+    ErrorCode.SERVICE_DEGRADED: (
+        "No part of the question could be answered because of an internal fault. "
+        "Try again shortly."
+    ),
+    ErrorCode.TIMEOUT: "The question took too long to answer. Try a narrower question.",
+    ErrorCode.RATE_LIMITED: (
+        "Too many questions in a short time. Please wait a moment and try again."
+    ),
+    ErrorCode.DAILY_BUDGET_EXHAUSTED: (
+        "This demo's daily question budget is used up. It resets at 00:00 UTC."
+    ),
+    ErrorCode.INTERNAL_ERROR: "Something went wrong on our side.",
+}
+
+
+class ApiError(Exception):
+    """
+    Base class for errors the API turns into the error envelope.
+
+    Subclasses fix the status code and error code. The exception's own message
+    is a detail for the logs and is never sent to the client.
+
+    Attributes:
+        code: The ErrorCode in the response body.
+        status_code: The HTTP status of the response.
+        retry_after_s: Seconds the client should wait, sent as Retry-After.
+            None means the handler's default (the readiness interval for 503s,
+            none otherwise).
+    """
+
+    code: ErrorCode = ErrorCode.INTERNAL_ERROR
+    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    def __init__(self, detail: str = "", retry_after_s: int | None = None) -> None:
+        """
+        Args:
+            detail: What went wrong, for the logs only.
+            retry_after_s: Seconds until a retry can succeed, when known.
+        """
+        super().__init__(detail)
+        self.retry_after_s = retry_after_s
+
+
+class NotReadyError(ApiError):
+    """A data store or the corpus index is unavailable (startup or mid-request)."""
+
+    code = ErrorCode.NOT_READY
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
+class ServiceDegradedError(ApiError):
+    """Every task in the plan failed: nothing was answered (contract §7)."""
+
+    code = ErrorCode.SERVICE_DEGRADED
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
+class QueryTimeoutError(ApiError):
+    """The request passed QUERY_TIMEOUT_SECONDS."""
+
+    code = ErrorCode.TIMEOUT
+    status_code = status.HTTP_504_GATEWAY_TIMEOUT
+
+
+class RateLimitedError(ApiError):
+    """One client passed RATE_LIMIT_PER_MINUTE (src/api/limits.py; off by default)."""
+
+    code = ErrorCode.RATE_LIMITED
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+
+
+class DailyBudgetError(ApiError):
+    """All clients together passed DAILY_QUERY_BUDGET today (off by default)."""
+
+    code = ErrorCode.DAILY_BUDGET_EXHAUSTED
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
