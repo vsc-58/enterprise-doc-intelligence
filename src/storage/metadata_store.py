@@ -465,27 +465,6 @@ def create_document(
         return doc.id
 
 
-def get_pending_extraction_ids() -> list[int]:
-    """
-    Return the ids of documents that have not yet been successfully extracted.
-
-    Selection is on Document.is_extracted rather than on the presence of an
-    extracted_records row, because under one-row-per-attempt a document can have
-    several rows and still need extracting — is_extracted is set only by a
-    SUCCESS write, so it is the single unambiguous signal.
-
-    Returns:
-        Document ids ordered by id, for a stable, resumable run order.
-    """
-    with get_session() as session:
-        stmt = (
-            select(Document.id)
-            .where(Document.is_extracted.is_(False))
-            .order_by(Document.id)
-        )
-        return list(session.execute(stmt).scalars().all())
-
-
 def create_extracted_record(
     *,
     document_id: int,

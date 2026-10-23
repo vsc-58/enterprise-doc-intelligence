@@ -332,7 +332,7 @@ def _write_markdown(path: Path, r: dict[str, Any]) -> None:
         f"disagreements {', '.join(v['test']['disagreements']) or 'none'}.",
         f"Calibration (not gating): kappa {v['calibration']['kappa']}, disagreements "
         f"{', '.join(v['calibration']['disagreements']) or 'none'}.",
-        f"Seeds missed: " + "; ".join(f"{t}: {', '.join(x['missed']) or 'none'}" for t, x in v["seeds"].items())
+        "Seeds missed: " + "; ".join(f"{t}: {', '.join(x['missed']) or 'none'}" for t, x in v["seeds"].items())
         + (f". Excluded as accidentally supported: {', '.join(v['seed_exclusions'])}." if v["seed_exclusions"] else "."),
         "",
         "### Judge vs reference disagreements on test claims (developer to adjudicate)", "",

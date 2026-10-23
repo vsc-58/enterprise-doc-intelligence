@@ -9,15 +9,12 @@
 # LLM in that path ever sees a stored figure (D27).
 
 import hashlib
+import json
 
 from langchain_openai import ChatOpenAI
 
 from src.query.prompts import PLANNER_PROMPT, PLANNER_SYSTEM
-from src.query.schemas import (
-    PlanType,
-    QueryPlan,
-    UnsupportedReason,
-)
+from src.query.schemas import PlanType, QueryPlan
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
@@ -25,8 +22,7 @@ logger = get_logger(__name__)
 
 _llm: ChatOpenAI | None = None
 
-import json
-...
+
 def planner_version() -> str:
     """
     Version identifier for the planner prompt, schema and model.

@@ -24,16 +24,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from src.ingestion.acquire import normalize_cik, select_10k_for_fiscal_year
 from src.utils.config import settings
 from src.utils.logger import get_logger
-
-if TYPE_CHECKING:
-    from edgar import Filing
 
 logger = get_logger(__name__)
 

@@ -25,7 +25,7 @@ from src.eval.query_eval import (
     summarise,
     wilson_interval,
 )
-from src.query.schemas import Intent, MetricField, PlanType, QueryPlan, Task, UnsupportedReason
+from src.query.schemas import Intent, MetricField, PlanType, QueryPlan, Task
 
 
 def _q(alternatives: list[dict], qid: str = "X1") -> EvalQuestion:

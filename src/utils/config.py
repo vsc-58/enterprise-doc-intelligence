@@ -3,6 +3,7 @@
 # Purpose: Single source of truth for all settings loaded from environment variables
 # Depends on: pydantic-settings, python-dotenv, .env file in project root
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,8 +25,12 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    # Required — no defaults, will raise ValidationError at startup if missing
-    OPENAI_API_KEY: str
+    # Required — no defaults, will raise ValidationError at startup if missing.
+    # SecretStr so the key prints as '**********' if settings ever reach a log,
+    # an error message or a debugger. The OpenAI clients accept a SecretStr
+    # directly; code that needs the raw string must call .get_secret_value()
+    # (str() returns the stars, and OpenAI would reject them with a 401).
+    OPENAI_API_KEY: SecretStr
     EDGAR_IDENTITY: str
 
     # Models
