@@ -1,5 +1,4 @@
-"""
-scripts/diagnose_sections_content.py — throwaway.
+"""Check whether financial statements are in the raw text where edgartools' Item 8 collapsed.
 
 Question: for the filings where edgartools' Item 8 collapsed, is the financial
 statement content present in the saved raw text at all?
@@ -8,10 +7,11 @@ If YES  -> regex/fallback are viable; the bug is boundary attribution.
 If NO   -> those documents are unextractable; both regex and fallback are dead,
            and the eval set must exclude them.
 
-Run: python -m scripts.diagnose_sections_content
+Usage:
+    python -m scripts.diagnostic.diagnose_section_content
 
-# DIAGNOSTIC — throwaway investigation script, not project code.
-# Uses print() deliberately for readable tabular output; project code uses logger.
+Diagnostic script: print() is used deliberately for readable output;
+project code logs through structlog.
 """
 
 import re

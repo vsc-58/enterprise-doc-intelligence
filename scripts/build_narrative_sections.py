@@ -1,6 +1,4 @@
-"""
-scripts/build_narrative_sections.py
-Persist narrative section slices to disk, once, so chunking is a local operation.
+"""Save the narrative section slices (Items 1A, 7, 1, 7A) to disk, so chunking is local.
 
 Separates the network step from the chunking step. get_narrative_sections()
 resolves filings over the SEC endpoints (via edgartools, cached); re-chunking at
@@ -9,9 +7,6 @@ document to data/processed/ (gitignored, regenerable).
 
 Run before scripts/embed_documents.py. Re-run only when the slicing logic or the
 corpus changes.
-
-Dependencies: sqlalchemy, src.ingestion.acquire, src.ingestion.narrative_sections,
-src.storage.metadata_store, src.utils.config, src.utils.logger.
 """
 
 from __future__ import annotations
@@ -36,7 +31,7 @@ def artifact_path(cik: str, year: int) -> Path:
 
     Args:
         cik: Zero-padded 10-digit CIK.
-        year: Filing year (period-end convention, per Phase 1 D1).
+        year: Filing year: the calendar year in which the fiscal period ends.
 
     Returns:
         Path under settings.PROCESSED_DATA_PATH.

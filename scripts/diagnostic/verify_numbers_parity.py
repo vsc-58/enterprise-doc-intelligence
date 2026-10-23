@@ -1,7 +1,6 @@
-"""
-scripts/verify_numbers_parity.py — DIAGNOSTIC (print() allowed).
+"""Prove that moving the number parser to src/utils/numbers.py changed no verdict.
 
-Regression gate for the D-numbers refactor: proves that moving the numeric
+Diagnostic (print() allowed). Regression gate: proves that moving the numeric
 token parser and scale multipliers out of src/eval/grounding.py and into
 src/utils/numbers.py changed no verdict.
 
@@ -11,10 +10,8 @@ in grounding.py untouched, and would need the raw filing text (gitignored)
 to re-run — it is smoke-imported here, not re-scored.
 
 Usage:
-    python -m scripts.verify_numbers_parity --baseline   # BEFORE the refactor
-    python -m scripts.verify_numbers_parity              # AFTER; exits 1 on drift
-
-Dependencies: src.eval.grounding, src.utils.config, src.utils.logger.
+    python -m scripts.diagnostic.verify_numbers_parity --baseline   # BEFORE the refactor
+    python -m scripts.diagnostic.verify_numbers_parity              # AFTER; exits 1 on drift
 """
 
 from __future__ import annotations
@@ -34,8 +31,7 @@ BASELINE_PATH = Path("data/eval/grounding_parity_baseline.json")
 
 
 def collect_verdicts() -> dict[str, dict[str, bool | None]]:
-    """
-    Recompute evidence-consistency verdicts over every cached raw output.
+    """Recompute evidence-consistency verdicts over every cached raw output.
 
     Only S3 and S4 carry evidence maps; the other strategies are skipped
     rather than recorded as empty, so a missing strategy is visible as a
@@ -69,8 +65,7 @@ def collect_verdicts() -> dict[str, dict[str, bool | None]]:
 
 
 def summarise(verdicts: dict[str, dict[str, bool | None]]) -> dict[str, int]:
-    """
-    Count verdicts by outcome across every document and field.
+    """Count verdicts by outcome across every document and field.
 
     Args:
         verdicts: the map returned by collect_verdicts.
@@ -86,8 +81,7 @@ def summarise(verdicts: dict[str, dict[str, bool | None]]) -> dict[str, int]:
 
 
 def write_baseline(verdicts: dict[str, dict[str, bool | None]]) -> None:
-    """
-    Persist the pre-refactor verdicts.
+    """Persist the pre-refactor verdicts.
 
     Args:
         verdicts: the map returned by collect_verdicts.
@@ -102,8 +96,7 @@ def write_baseline(verdicts: dict[str, dict[str, bool | None]]) -> None:
 
 
 def compare(verdicts: dict[str, dict[str, bool | None]]) -> int:
-    """
-    Compare current verdicts against the stored baseline.
+    """Compare current verdicts against the stored baseline.
 
     Args:
         verdicts: the map returned by collect_verdicts.

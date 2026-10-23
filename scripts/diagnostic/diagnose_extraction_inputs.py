@@ -1,15 +1,16 @@
-"""
-scripts/diagnose_phase2.py — throwaway diagnostic, not project code.
+"""Check extraction inputs before extraction was built: context fit, sections, answer key.
 
-Answers three questions before Phase 2 code is written:
+Answers three questions that had to be settled before the extraction code was
+written:
   1. Do full filings fit in the model context, and what do sections cost?
   2. Does edgartools section detection work on this pinned version, for all 20?
   3. Which documents have complete 5-field ground truth?
 
-Run: python -m scripts.diagnose_phase2
+Usage:
+    python -m scripts.diagnostic.diagnose_extraction_inputs
 
-# DIAGNOSTIC — throwaway investigation script, not project code.
-# Uses print() deliberately for readable tabular output; project code uses logger.
+Diagnostic script: print() is used deliberately for readable output;
+project code logs through structlog.
 """
 
 import json
@@ -39,7 +40,7 @@ def n_tokens(text: str | None) -> int:
 
 
 def load_ground_truth() -> dict:
-    """Load the Phase 1 answer key."""
+    """Load the XBRL answer key written at acquisition."""
     path = Path(settings.EVAL_DATA_PATH) / "ground_truth.json"
     with path.open(encoding="utf-8") as fh:
         return json.load(fh)

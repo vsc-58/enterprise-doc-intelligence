@@ -1,7 +1,6 @@
-"""
-scripts/diagnostic/probe_judge.py — DIAGNOSTIC (print() allowed).
+"""Check the attribution judge model works before building the judge on it.
 
-Probe the attribution judge model before building on it (D43): does
+Diagnostic (print() allowed). Does
 structured output work with the configured model, reasoning setting and
 method, and does it give the obvious verdict on two hand-made cases?
 
@@ -12,8 +11,6 @@ Two judge calls per method tried. No store access.
 
 Usage:
     python -m scripts.diagnostic.probe_judge
-
-Dependencies: src.eval.attribution, src.storage.vector_store, src.utils.config.
 """
 
 from __future__ import annotations

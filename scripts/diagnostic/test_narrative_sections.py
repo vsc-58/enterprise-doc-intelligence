@@ -1,11 +1,12 @@
-"""
-scripts/test_narrative_sections.py — DIAGNOSTIC (print() allowed).
+"""Run the narrative section slicer across the corpus and print what it accepts.
 
-Exercises get_narrative_sections() across the corpus before any chunking.
-Read-only: no writes to db/, data/eval/ or Chroma. No API calls.
+Diagnostic (print() allowed), not a pytest test. Exercises
+get_narrative_sections() across the corpus before any chunking. Read-only: no
+writes to db/, data/eval/ or Chroma. No API calls; edgartools reads the SEC.
 
-Dependencies: src.ingestion.narrative_sections, src.ingestion.acquire,
-src.storage.metadata_store, src.utils.logger.
+Usage:
+    python -m scripts.diagnostic.test_narrative_sections        # all documents
+    python -m scripts.diagnostic.test_narrative_sections 3      # first 3 tickers only
 """
 
 from __future__ import annotations

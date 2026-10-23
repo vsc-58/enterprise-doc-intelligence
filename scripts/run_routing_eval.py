@@ -1,8 +1,7 @@
-"""
-scripts/run_routing_eval.py
-Phase 5C step 3: routing accuracy of the query planner over the frozen eval set.
+"""Routing evaluation: accuracy of the query planner over the frozen eval set.
 
-One planner call per question per run, settings.QUERY_EVAL_RUNS runs (D35).
+One planner call per question per run, settings.QUERY_EVAL_RUNS runs, because
+temperature 0 is not deterministic and one run would be a point estimate.
 Each plan is reduced to (plan type, unsupported reason, and per task: intent,
 resolved company, metric, year, direction) and scored strictly against the
 first label and leniently against any listed alternative. Every miss is
@@ -26,9 +25,6 @@ Run:  python -m scripts.run_routing_eval
       python -m scripts.run_routing_eval --runs 1 --ids R01,N10    (smoke test)
 
 Cost: about $0.15 for the full set at three runs (~330 planner calls).
-
-Dependencies: src.eval.query_eval, src.query.planner, src.query.resolve,
-src.utils.config, src.utils.logger.
 """
 
 import argparse
@@ -61,8 +57,7 @@ _RETRIES = 1
 
 
 def _plan_once(question: EvalQuestion, index: CorpusIndex) -> ObservedPlan | None:
-    """
-    Plan one question, retrying once on a transport failure.
+    """Plan one question, retrying once on a transport failure.
 
     Batch rule: a failure is logged with the question id and returned as None,
     never raised, so one bad call cannot stop the run.
@@ -89,8 +84,7 @@ def _plan_once(question: EvalQuestion, index: CorpusIndex) -> ObservedPlan | Non
 
 
 def _run(questions: list[EvalQuestion], index: CorpusIndex) -> list[ObservedPlan | None]:
-    """
-    Plan every question once, concurrently, preserving input order.
+    """Plan every question once, concurrently, preserving input order.
 
     Args:
         questions: Questions to plan.
@@ -109,8 +103,7 @@ def _group_rows(
     scores: dict[str, list[QuestionScore]],
     signatures: dict[str, list[str]],
 ) -> tuple[dict[str, dict], list[str]]:
-    """
-    Summarise named groups and render them as markdown table rows.
+    """Summarise named groups and render them as markdown table rows.
 
     Args:
         label: Column header for the group name.
@@ -144,8 +137,7 @@ def _group_rows(
 
 
 def results_path(version: str, smoke: bool) -> Path:
-    """
-    Where one version's results are written.
+    """Where one version's results are written.
 
     Args:
         version: planner_version.
@@ -160,8 +152,7 @@ def results_path(version: str, smoke: bool) -> Path:
 
 
 def main(runs: int, ids: set[str] | None) -> int:
-    """
-    Run the routing eval and write results.
+    """Run the routing eval and write results.
 
     Args:
         runs: Number of runs.
@@ -252,7 +243,7 @@ def main(runs: int, ids: set[str] | None) -> int:
         "subset": sorted(ids) if ids else None,
         "interval_note": (
             "Wilson 95% intervals use n = number of questions; runs measure model "
-            "variability on the same questions and do not narrow the interval (D35)."
+            "variability on the same questions and do not narrow the interval."
         ),
         "by_split": split_json,
         "by_stratum_held": held_json,
@@ -290,7 +281,7 @@ def main(runs: int, ids: set[str] | None) -> int:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--runs", type=int, default=settings.QUERY_EVAL_RUNS)
     parser.add_argument("--ids", type=str, default=None,
                         help="Comma-separated question ids, for a smoke test.")

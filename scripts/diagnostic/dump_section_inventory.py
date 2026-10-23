@@ -1,8 +1,7 @@
-"""
-scripts/diagnostic/dump_section_inventory.py — DIAGNOSTIC (print() allowed, per
-the scripts/diagnostic convention).
+"""List which narrative sections retrieval can reach for every document.
 
-Phase 5C step 1. Answers one question before any eval label is written: for
+Diagnostic (print() allowed). Run before any eval label was written, to answer
+one question: for
 every document, which narrative sections can retrieval actually reach, and so
 which (company, intent) pairs should answer and which should refuse with
 SECTION_ABSENT?
@@ -29,10 +28,6 @@ Usage:
 
 Exit code 1 if any document has no chunks or the store disagrees with its
 artifacts.
-
-Dependencies: sqlalchemy, src.ingestion.chunker, src.query.intents,
-src.query.schemas, src.storage.metadata_store, src.storage.vector_store,
-src.utils.config, src.utils.logger.
 """
 
 from __future__ import annotations

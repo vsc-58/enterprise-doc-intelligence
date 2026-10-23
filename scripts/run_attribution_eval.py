@@ -1,27 +1,27 @@
-"""
-scripts/run_attribution_eval.py
-Phase 5C step 7, part 2: validate the attribution judge, then score attribution (D43).
+"""Validate the attribution judge, then score how many answer sentences their citations support.
+
+Second of two attribution steps (after export_attribution_set).
 
 1. VALIDATE. The judge rules on every validation item settings.QUERY_EVAL_RUNS
    times: 20 calibration claims, 40 test claims and 30 seeded mismatches.
-   Criteria, committed before any judge output was seen (D43, amended by D52
-   before the first judge run):
+   Criteria, committed before any judge output was seen (amended once, still
+   before the first judge run, for the statistical reason below):
      seeded catch rate >= JUDGE_MIN_SEED_CATCH overall and
        >= JUDGE_MIN_SEED_CATCH_PER_TYPE per type;
      Cohen's kappa vs the reference labels over the test claims PLUS the seeds
        (reference NOT_SUPPORTED) >= JUDGE_MIN_KAPPA. The 40 real test claims
        alone are almost all supported, and kappa is unstable at that
-       prevalence: one false alarm would drop it below 0.70 (D52);
+       prevalence: one false alarm would drop it below 0.70;
      label flips across runs <= JUDGE_MAX_FLIP_RATE.
    Calibration results are shown but do not gate: that split exists to revise
    the prompt, and the test split is report-only.
 2. SCORE. The judge rules on every claim of one execution run (end_to_end,
    run 1 by default: what users received). The supported rate is the HEADLINE
    only if the judge passed; otherwise it is withheld, and the 40 reference
-   labels are reported as a spot-check (D43 fallback).
+   labels are reported as a spot-check instead.
 
 Reference labels for the test split were written by Claude (a different model
-family from the judge), not by a human (D52). Every judge-reference
+family from the judge), not by a human. Every judge-reference
 disagreement is listed with its text so the developer can adjudicate it.
 
 Majority over runs is the per-item label; a tie counts as NOT_SUPPORTED.
@@ -32,11 +32,12 @@ Writes settings.EVAL_DATA_PATH / ATTRIBUTION_RESULTS_FILE plus a markdown summar
 
 Run:  python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
 
+Arguments: --execution (execution results file whose end_to_end claims are scored),
+--runs (judge runs per item, default settings.QUERY_EVAL_RUNS), --run-number
+(which execution run to score, default 1).
+
 Cost: ~1,250 judge calls at three runs (90 validation items + 324 claims), well
 under $1 on gpt-6-luna.
-
-Dependencies: src.eval.attribution, src.eval.query_eval, src.query.resolve,
-src.storage.vector_store, src.utils.config, src.utils.logger, src.utils.text.
 """
 
 import argparse
@@ -85,8 +86,7 @@ def _judge_all(
     names: dict[str, str],
     runs: int,
 ) -> dict[str, list[JudgeResult]]:
-    """
-    Judge every item `runs` times, concurrently.
+    """Judge every item `runs` times, concurrently.
 
     Args:
         items: What to judge.
@@ -150,8 +150,7 @@ def _agreement(ids: list[str], human: dict[str, JudgeLabel],
 
 
 def main(execution_path: Path, runs: int, run_number: int) -> int:
-    """
-    Validate the judge and score one execution run.
+    """Validate the judge and score one execution run.
 
     Returns:
         Process exit code: 0 on completion (pass or fail), 1 if setup failed.
@@ -314,7 +313,7 @@ def _write_markdown(path: Path, r: dict[str, Any]) -> None:
     kappa = c["kappa_test_plus_seeds"]["value"]
     kappa_text = "–" if kappa is None else f"{kappa:.2f}"
     lines = [
-        "# Attribution eval (D43)", "",
+        "# Attribution eval", "",
         f"judge `{r['judge_model']}` · reasoning `{r['reasoning_effort']}` · method "
         f"`{r['structured_method']}` · judge_version `{r['judge_version'][:12]}` · {r['runs']} runs · "
         f"scored: {r['execution_file']} end_to_end run {r['execution_run']}", "",
@@ -369,7 +368,7 @@ def _write_markdown(path: Path, r: dict[str, Any]) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--execution", type=Path, required=True,
                         help="Execution results JSON whose end_to_end claims are scored.")
     parser.add_argument("--runs", type=int, default=settings.QUERY_EVAL_RUNS)

@@ -1,17 +1,13 @@
-"""
-scripts/probe_sections.py — DIAGNOSTIC (print() allowed, per Phase 2 convention)
+"""Measure edgartools item-boundary health across the corpus before chunking decisions.
 
-Measures edgartools item-boundary health across the full corpus before any
-Phase 4 chunking decision is made.
+Diagnostic (print() allowed). Its numbers set the section slicer's guards: the
+token floor and the overlap check.
 
 Per document, per item: char count, token count, head/tail boundary text,
 containment in the saved raw text, and pairwise overlap between items.
 
 Read-only. No API calls, no writes to db/ or data/eval/. Output JSON lands in
 data/processed/ (gitignored).
-
-Dependencies: src.storage.metadata_store, src.ingestion.acquire,
-src.utils.config, src.utils.logger, tiktoken, edgartools
 """
 
 from __future__ import annotations
@@ -71,7 +67,7 @@ def normalize_for_containment(text: str) -> str:
     """Collapse all whitespace so containment checks survive re-flowing.
 
     edgartools' item view line-breaks table cells differently from the saved
-    filing text (Phase 3 D14: same slice, ~58% higher token count). A raw
+    filing text (same slice, ~58% higher token count). A raw
     substring test would therefore report false negatives.
 
     Args:
@@ -124,10 +120,10 @@ def measure_overlap(
 ) -> list[dict[str, Any]]:
     """Detect text shared between item slices.
 
-    Over-capture (Phase 3 D8/D14) means one item's slice can swallow another's.
-    Chunking both would embed the same passage twice under two section labels.
-    Probes whether a sample drawn from the middle of one slice appears inside
-    another.
+    Over-capture (edgartools' item boundaries can overshoot) means one item's
+    slice can swallow another's. Chunking both would embed the same passage
+    twice under two section labels. Probes whether a sample drawn from the
+    middle of one slice appears inside another.
 
     Args:
         items: Per-item probe results, keyed by item label.

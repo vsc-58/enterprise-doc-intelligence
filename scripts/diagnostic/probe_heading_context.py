@@ -1,7 +1,7 @@
-"""
-scripts/diagnostic/probe_heading_context.py — DIAGNOSTIC (print() allowed).
+"""Test why Walmart's liquidity chunks rank low: lost subsection headings or vocabulary.
 
-Phase 5C retrieval follow-up: why do Walmart's liquidity and cash-requirement
+Diagnostic (print() allowed), a follow-up to the retrieval evaluation: why do
+Walmart's liquidity and cash-requirement
 chunks rank low for R28 and N29 (dev)? Two hypotheses, tested by changing one
 side at a time against the same chunks and the same embedding model:
 
@@ -29,9 +29,6 @@ queries. Nothing is written to the store.
 
 Usage:
     python -m scripts.diagnostic.probe_heading_context
-
-Dependencies: numpy, src.eval.retrieval_eval, src.storage.vector_store,
-src.utils.config.
 """
 
 from __future__ import annotations

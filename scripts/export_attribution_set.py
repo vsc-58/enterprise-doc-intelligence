@@ -1,6 +1,7 @@
-"""
-scripts/export_attribution_set.py
-Phase 5C step 7, part 1: materialise the attribution validation set (D43).
+"""Build the attribution judge's validation set: real claims plus planted errors.
+
+First of two attribution steps (then run_attribution_eval). The judge's score
+is used only if the judge passes this set, under criteria fixed in advance.
 
 Reads data/eval/attribution_set.json (claims chosen and invented-detail seeds
 written before any judge output existed) and:
@@ -22,9 +23,6 @@ written before any judge output existed) and:
 Embedding calls only (one per citation-swap seed, 20). No LLM.
 
 Run:  python -m scripts.export_attribution_set
-
-Dependencies: src.eval.attribution, src.query.resolve, src.storage.vector_store,
-src.utils.config, src.utils.logger, src.utils.text.
 """
 
 import json
@@ -58,8 +56,7 @@ def _key(chunk: RetrievedChunk) -> str:
 
 
 def resolve_seed(seed: dict[str, Any]) -> list[str]:
-    """
-    Choose the swapped-in citation for one citation-swap seed.
+    """Choose the swapped-in citation for one citation-swap seed.
 
     Args:
         seed: A seed entry with type, company, claim and the base claim's sources.
@@ -100,8 +97,7 @@ def _block_text(keys: list[str], chunks: dict[tuple[str, str, int], RetrievedChu
 
 
 def main() -> int:
-    """
-    Resolve seeds and write the seed file, the blind sheet and the review file.
+    """Resolve seeds and write the seed file, the blind sheet and the review file.
 
     Returns:
         Process exit code: 0 on success, 1 on any failure.

@@ -1,4 +1,10 @@
-"""scripts/read_probe_overlaps.py — DIAGNOSTIC. Reads section_probe.json."""
+"""Print the overlaps and collapsed items found by probe_sections (reads section_probe.json).
+
+Diagnostic (print() allowed). Run probe_sections first.
+
+Usage:
+    python -m scripts.diagnostic.read_probe_overlaps
+"""
 
 import json
 from pathlib import Path

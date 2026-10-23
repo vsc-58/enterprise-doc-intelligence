@@ -1,9 +1,9 @@
-"""
-scripts/diagnostic/verify_export.py — DIAGNOSTIC (print() allowed).
+"""Check GET /export against the database, read independently with plain SQL.
 
-Checks GET /export against the database, read INDEPENDENTLY: plain SQL through
-Python's built-in sqlite3, not the ORM or latest_successful_records() the export
-itself uses. Comparing the export with its own code path would prove nothing.
+Diagnostic (print() allowed). Checks GET /export against the database, read
+INDEPENDENTLY: plain SQL through Python's built-in sqlite3, not the ORM or
+latest_successful_records() the export itself uses. Comparing the export with
+its own code path would prove nothing.
 
 What it checks:
   - the file: UTF-8 byte-order mark, 35 columns, one row per document;
@@ -20,8 +20,6 @@ Usage (API running in another window):
     python -m scripts.diagnostic.verify_export --url http://localhost:8000
 
 Exit code 0 when everything matches, 1 otherwise.
-
-Dependencies: httpx, pandas, sqlite3 (stdlib), src.utils.config.
 """
 
 import argparse
@@ -39,7 +37,7 @@ METRICS = ["total_revenue", "net_income", "total_assets", "total_liabilities", "
 EXPECTED_COLUMNS = 35
 UTF8_BOM = b"\xef\xbb\xbf"
 
-# The same rule as the export (D31): per document, the latest successful
+# The same rule as the export's canonical read: per document, the latest successful
 # extraction by time, ties broken by id. Written out by hand on purpose.
 LATEST_SQL = f"""
 SELECT d.ticker, r.fiscal_year_end,
@@ -69,7 +67,12 @@ def same(a: object, b: object) -> bool:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    """Fetch the CSV, compare every value with SQLite, and print what differs.
+
+    Returns:
+        0 when everything matches, 1 otherwise (the process exit code).
+    """
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--url", default="http://localhost:8000")
     base_url = parser.parse_args().url.rstrip("/")
     problems: list[str] = []

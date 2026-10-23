@@ -1,20 +1,19 @@
-"""
-scripts/smoke_extract.py — throwaway diagnostic, not project code.
+"""Run one extraction and print it beside the answer key, to catch unit and column errors.
 
 Runs ONE extraction (one strategy, one document) and prints the extracted values
 side by side with the XBRL ground truth, so the four things the scorer cannot
-tell you are visible before spending on the full bake-off:
+tell you are visible before spending on the full strategy comparison:
 
   1. units      — is revenue 394328000000 (correct) or 394328 (scaled, wrong)?
   2. column     — does net_income match the current year or the prior year?
   3. cover      — did fiscal_year_end / company_name come back at all?
   4. usage      — does include_raw actually return token counts on this version?
 
-Run: python -m scripts.smoke_extract S1 AAPL 2021
-     python -m scripts.smoke_extract S1 NFLX 2023      (the fallback document)
+Run: python -m scripts.diagnostic.smoke_extract S1 AAPL 2021
+     python -m scripts.diagnostic.smoke_extract S1 NFLX 2023      (the fallback document)
 
-# DIAGNOSTIC — throwaway investigation script, not project code.
-# Uses print() deliberately for readable tabular output; project code uses logger.
+Diagnostic script: print() is used deliberately for readable output;
+project code logs through structlog.
 """
 
 import json
@@ -41,8 +40,7 @@ STRING_FIELDS = ["company_name", "fiscal_year_end"]
 
 
 def _resolve(ticker: str, year: int) -> str:
-    """
-    Look up the canonical CIK for a ticker/year from the Document row.
+    """Look up the canonical CIK for a ticker/year from the Document row.
 
     Args:
         ticker: the company ticker.
@@ -66,8 +64,7 @@ def _resolve(ticker: str, year: int) -> str:
 
 
 def _load_truth(cik: str, year: int) -> dict:
-    """
-    Load this document's ground-truth record.
+    """Load this document's ground-truth record.
 
     Args:
         cik: canonical 10-digit CIK.
@@ -82,8 +79,7 @@ def _load_truth(cik: str, year: int) -> dict:
 
 
 def _ratio(extracted: float | None, actual: float | None) -> str:
-    """
-    Return extracted/truth as a readable ratio — the fastest unit-error tell.
+    """Return extracted/truth as a readable ratio — the fastest unit-error tell.
 
     ~1.0 means correct. ~0.000001 means the model returned a scaled ("in
     millions") figure. ~1000000 means it over-multiplied.
@@ -96,7 +92,8 @@ def _ratio(extracted: float | None, actual: float | None) -> str:
 def main() -> None:
     """Run one extraction and print extracted vs ground truth side by side."""
     if len(sys.argv) != 4:
-        logger.error("usage", expected="python -m scripts.smoke_extract <STRATEGY> <TICKER> <YEAR>")
+        logger.error("usage",
+                     expected="python -m scripts.diagnostic.smoke_extract STRATEGY TICKER YEAR")
         sys.exit(1)
 
     strategy_id, ticker, year = sys.argv[1], sys.argv[2], int(sys.argv[3])

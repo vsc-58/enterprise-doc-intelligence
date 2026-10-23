@@ -1,8 +1,7 @@
-"""
-scripts/diagnostic/probe_chain.py — DIAGNOSTIC (print() allowed).
+"""Exercise the narrative chain against the real store and API, one case per path.
 
-Exercises the narrative chain against the real store and API before it is wired
-into the executor (step 6). Five single-company cases, one per path the chain can
+Diagnostic (print() allowed). Written to test the chain before it was wired
+into the executor. Five single-company cases, one per path the chain can
 take, plus the corpus-wide headline question.
 
 What to look for:
@@ -11,8 +10,10 @@ What to look for:
     means masking missed a format).
   - Intel MD&A: section_absent with no LLM call.
   - Apple net income as a narrative task: figure_requested.
-  - Apple stock price: not_addressed (the Phase 4 junk retrieval at 0.4955).
-  - META overview: answered from Item 1A via the alias table (D40).
+  - Apple stock price: not_addressed (retrieval returns unrelated chunks,
+    nearest at distance 0.4955).
+  - META overview: answered from Item 1A via the alias table (META's business
+    description is stored inside its Item 1A slice).
   - Corpus-wide: one finding per company; JPM and XOM not_searchable for the
     market-risk question; the negative control should be mostly not_found.
 
