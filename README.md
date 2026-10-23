@@ -1,743 +1,334 @@
-AI pipeline for structured extraction and RAG querying of SEC 10-K filings
+# Enterprise Document Intelligence System
 
-## Phase 1 — Acquisition & XBRL Ground Truth
+An AI pipeline that turns SEC 10-K filings into structured, queryable and
+evaluated data. It extracts financial figures from filing text with an LLM,
+indexes the narrative sections for retrieval, and answers questions through a
+planner that sends each part of a question either to an exact SQL lookup or to
+cited retrieval-augmented generation (RAG). Every stage is measured against
+ground truth or frozen labels.
 
-Phase 1 acquires SEC 10-K filings, saves their clean text for downstream extraction, and captures a verified financial answer key from each filing's XBRL data. The corpus is 20 filings across 20 companies spanning fiscal years 2021–2023, tracked in SQLite.
-
-`edgartools` fetches each 10-K and its clean text (`data/raw/{cik}_{year}.txt`); the pipeline records each document in a SQLite tracking table and, separately, reads five verified financial figures — total revenue, net income, total assets, total liabilities, operating cash flow — from the filing's XBRL into `data/eval/ground_truth.json`.
-
-These XBRL figures serve one purpose: they are the answer key that scores the LLM extraction pipeline in Phase 2. They never become the system's output — that would reduce the project to a wrapper over a library that already did the work. The system's structured fields come from an LLM reading unstructured text; XBRL only measures how well it does.
-
-Two correctness decisions shaped this phase:
-
-**Strict concept reads, not convenience accessors.** edgartools' `get_revenue()`-style accessors fuzzy-match XBRL concepts and substitute a resembling value when the exact one is untagged — returning, for Amazon, "total liabilities and stockholders' equity" (equal to total assets) in place of an untagged total-liabilities concept, as a populated field that no null check would catch. Ground truth instead reads each field by its exact XBRL concept, taking only the consolidated row, and records null when a company genuinely didn't tag a field. An answer key must never hold a confidently-wrong value; an honest null is excluded from scoring.
-
-**Fiscal-year selection by period-of-report.** A 10-K is selected by the calendar year in which its fiscal period ends, read from `period_of_report` — not edgartools' `year` filter, which keys on filing year and returns the wrong year's filing for any December-fiscal-year company.
-
-Result: 20 filings acquired, 0 failures. The answer key's only null values are genuine — bank revenue (deliberately excluded as non-comparable to an industrial's total revenue) and companies that don't tag a standalone total-liabilities line. Full reasoning for every decision is in `docs/decisions.md`.
+Status: runs locally as a FastAPI service over a 20-filing corpus. Docker
+packaging and a hosted demo are not built yet.
 
 ---
 
-## Phase 2 — Extraction Schema, Prompt Strategies & Evaluation
+## The problem
 
-Phase 2 builds the LLM extraction pipeline and measures it. Five prompting strategies were run over ten filings, scored per field against the Phase 1 XBRL answer key, and the winner selected with documented evidence. Full results in `docs/prompt_strategy_results.md`.
+Annual reports hold the numbers and explanations that analysts, auditors and
+data teams need, but as long, unstructured documents. A 10-K is tens of
+thousands of tokens of text (Apple's FY2021 filing is 47k, Pfizer's FY2023 is
+136k). The figures sit in tables flattened into text, under scale headers
+("in millions") that may be pages away. Getting them into a structured store
+usually means manual work, and a language model asked directly will often
+return a figure that looks right and is wrong — the wrong year, the wrong line,
+or off by 1,000x.
 
-**Result: naive prompting scores 0.50 on numeric fields; three explicit rules take it to 1.00. The winning strategy (evidence-based) matches that accuracy and additionally returns a verified source line for every figure, at 1.3% higher cost.**
+This project builds the extraction-and-enrichment layer that sits before a
+structured data pipeline, and treats measurement as part of the product:
 
-### Section slicing — a feasibility constraint, not an optimisation
+- **Extract** five financial fields per filing with an LLM, each with the
+  source line it was read from, and check every citation in code.
+- **Answer questions** with exact figures from SQL and cited explanations from
+  the filing text, refusing with a specific reason when the corpus cannot answer.
+- **Keep stored figures away from any LLM** in the question-answering path, so
+  a model cannot restate a figure wrongly.
+- **Evaluate each stage separately** — extraction, routing, execution,
+  retrieval and attribution — so a wrong answer can be traced to its cause.
 
-Extraction prompts receive Item 8 (the financial statements) plus a cover-page block, sliced in Python before any API call. This is not a cost optimisation: token-counting the corpus showed PFE's FY2023 filing at 136,215 tokens against GPT-4o-mini's 128,000-token window. Full-document extraction is impossible for that filing, and an instruction inside the prompt cannot reduce what was already paid to put into the prompt.
+## Results
 
-edgartools exposes item-level access (`tenk["Item 8"]`), but running it across the corpus showed it silently failing on 5 of 20 filings — Item 8 collapsing to a 92-token heading for JPM, 54 for NFLX, while GS over-captured at 119,591 tokens, larger than its entire filing. The slicer therefore accepts a slice only if it passes a size plausibility gate (edgartools' own 26,136-character floor; a 60,000-token ceiling), and otherwise falls back to the full filing text. Every section carries a provenance tag, so the effect of input quality is measurable at scoring time rather than guessed.
+All numbers come from committed result files; methods and caveats are in
+[docs/query_eval_results.md](docs/query_eval_results.md) and
+[docs/prompt_strategy_results.md](docs/prompt_strategy_results.md).
 
-### The five strategies
-
-| ID | Name | What varies |
+| Stage | Result | Evidence |
 |---|---|---|
-| S0 | Naive | Task only — no unit, column, or null-handling rules |
-| S1 | Rule-based | Adds three explicit rules |
-| S2 | Rules + few-shot | S1 plus two worked examples |
-| S3 | Rules + evidence | S1 plus quote-the-source-line-then-normalise |
-| S4 | Rules + orientation | S1 plus structural guidance |
-
-The three rules: report figures in **actual dollar units** (the filing prints `$394,328` under an "in millions" header; XBRL truth is in raw dollars); take the **current fiscal year, first data column**; return **null rather than guessing**.
-
-Input text is held identical across all arms — the prompt is the only variable.
-
-### Results
-
-| Field | S0 | S1 | S2 | S3 | S4 |
-|---|---|---|---|---|---|
-| total_revenue | 0.50 | **1.00** | **1.00** | **1.00** | **1.00** |
-| net_income | 0.50 | **1.00** | 0.90 | **1.00** | **1.00** |
-| total_assets | 0.50 | **1.00** | **1.00** | **1.00** | **1.00** |
-| total_liabilities (n=7) | 0.43 | **1.00** | **1.00** | **1.00** | **1.00** |
-| operating_cash_flow | 0.50 | **1.00** | **1.00** | **1.00** | **1.00** |
-| company_name | 0.80 | 0.80 | 0.80 | 0.80 | 0.80 |
-| fiscal_year_end | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| Mean relative error | 5.14e-01 | 3.33e-08 | 2.00e-02 | 3.33e-08 | 3.33e-08 |
-| Grounding rate | – | – | – | **1.00** | – |
-| Cost (10 docs) | $0.0546 | $0.0550 | $0.0552 | $0.0557 | $0.0552 |
-
-Precision equals recall on every cell — the model never asserted a wrong value where it could have returned null. Fields with null ground truth are scored `n_a` and excluded from the denominator.
-
-Three findings:
-
-- **The rules are the entire intervention.** Naive extraction returns roughly half the figures at the wrong scale — the unit trap firing. Three sentences of instruction close it, for $0.0004 across ten documents. Everything layered above the rules is flat.
-- **Few-shot examples degraded extraction.** S2 is the only arm that got a value wrong, with a mean relative error 600,000× S1's.
-- **Missing instruction and degraded input compound.** On the one fallback document (NFLX, full 52,744-token filing), naive scored 0/5 while every ruled arm scored 5/5. The ruled arms show no fallback penalty at all.
-
-`company_name` caps at 0.80 across every arm including the naive one — invariance across arms means it isn't measuring extraction. The failures are "MICROSOFT CORPORATION" against XBRL's "MICROSOFT CORP". A synonym table would push it to 1.00; it wasn't added, because fuzzy string matching is what corrupted the ground truth in Phase 1.
-
-### The harness caught two bugs in itself
-
-**The answer key was wrong.** The first complete run showed `total_revenue` at 0.90 — identically across every strategy, failing on the same document. Uniformity was the tell: a prompt problem varies by prompt, a ground-truth problem does not. Walmart's income statement prints net sales 605,881 + membership and other income 5,408 = total revenues 611,289; the answer key had captured the component, because the Phase 1 concept-priority list preferred `RevenueFromContractWithCustomerExcludingAssessedTax` over `us-gaap:Revenues` and Walmart tags both. The Phase 1 rule was "true synonyms only" — which holds for filers tagging one concept, and fails silently for a filer tagging both, where the two are subset and superset. Fixed in the code and the key regenerated with a verified diff, never hand-edited: an answer key adjusted because the model disagreed is no longer independent. Three documents corrected.
-
-**The grounding check was miscalibrated.** It first read 0.96. Both failures were on values that scored correct — the model had written `Total assets $85,501 $82,896` where the source text holds `total assets$85,501 $82,896`. The text extractor runs labels into their values, so a faithful quote could never contain that space; the model had normalised the mangled spacing back to readable form. The check was flagging legibility as fabrication. Loosened to ignore whitespace and currency symbols while still catching invented labels or absent digits, it reads 1.00.
-
-### Why the evidence strategy wins
-
-S1, S3 and S4 are indistinguishable on accuracy, so the tie breaks on operational value. S3 returns a verbatim source line per figure, all of which were verified present in the source. That enables an automatic grounding check at write time — a citation absent from the source means the value was fabricated, and the record is flagged rather than trusted. It makes human review economical (one quoted line instead of a 100-page filing), and it carries cell-level lineage from an unstructured source into the structured store. Ten filings cannot establish that S1 will keep scoring 1.00 on the next hundred; S3 makes each individual answer checkable regardless.
-
-Total cost of the five-arm bake-off: approximately $0.28.
-
-### Evaluation artifacts
-
-| Path | Contents |
-|---|---|
-| `data/eval/ground_truth.json` | XBRL answer key per document |
-| `data/eval/results.json` | Per-field precision/recall/F1 with denominators, provenance split, per-document scores |
-| `data/eval/raw_outputs/{strategy}/` | Every model response, cached by content hash — the evidence behind the table |
-| `docs/prompt_strategy_results.md` | Full write-up: method, results, limitations |
-
-Cached outputs are keyed by a hash of strategy, model, prompt template and input text, so a changed prompt or re-sliced input invalidates the cache automatically. Scoring re-runs read from disk at zero API cost — which is how the ground-truth fix and the grounding recalibration were re-scored without paying for a single additional call.
-
-## Phase 3 — Full Extraction Run
-
-**Status:** Complete. 20/20 documents extracted, 0 failures. Numeric F1 1.00 in-sample, **0.90 held-out**. $0.10 billed ($0.05 replayed from cache).
-
-Ran the Phase 2 winner (S3, rules + evidence) across the full corpus, wrote the results to SQLite with per-field citation lineage, and then scored the half of the corpus that was never used to select the strategy.
-
-### What was built
-
-| File | What it does |
-|---|---|
-| `src/eval/grounding.py` | **New.** Both citation checks, importable by the evaluator and the pipeline without a circular import |
-| `src/eval/eval_set.py` | **New.** The Phase 2 selection set as one constant; defines the in-sample / held-out split |
-| `src/storage/metadata_store.py` | `ExtractedRecord`, `ExtractionStatus`, `create_extracted_record()`, `latest_successful_records()` |
-| `src/extraction/extractor.py` | `run_extraction_pipeline()` — grounding at write time, per-item error handling |
-| `src/ingestion/sections.py` | Item 8 token ceiling replaced by an assembled-input budget check |
-| `scripts/run_extraction.py` | **New.** Extracts every document where `is_extracted` is False |
-| `scripts/run_heldout_eval.py` | **New.** Out-of-sample scoring, written to a separate results file |
-
-### The headline result: 1.00 in-sample, 0.90 held-out
-
-The evaluation set S3 was chosen on is ten documents. The other ten have XBRL ground truth and were never used for selection — so scoring them is a free out-of-sample measurement. That is the advantage of an automatic answer key: the eval-set size was a cost choice, not a labelling constraint, so the unused half is a real held-out set rather than a set nobody could afford to label.
-
-| Field | In-sample | Held-out | n (held-out) |
-|---|---|---|---|
-| total_revenue | 1.00 | 0.875 | 8 |
-| net_income | 1.00 | 1.00 | 9 |
-| total_assets | 1.00 | 0.90 | 10 |
-| total_liabilities | 1.00 | 0.889 | 9 |
-| operating_cash_flow | 1.00 | 0.842 | 10 |
-| fiscal_year_end | 1.00 | 1.00 | 10 |
-| company_name | 0.80 | 0.50 | 10 *(see below — not an extraction result)* |
-
-Four wrong values and one missing, across 46 scored numeric fields.
-
-**I committed in writing, before seeing these numbers, that the prompt would not be revised in response to them.** Changing it now would turn the held-out set into a second dev set and leave no out-of-sample claim at all; recovering one would need freshly acquired documents. Deciding beforehand is what makes it a commitment rather than a rationalisation after the fact.
-
-### Failure analysis
-
-#### Three of the four wrong values are the unit-scale trap — on banks
-
-This project names unit scale as its top silent failure: XBRL ground truth is in raw dollars, the filing text prints scaled values, and every extraction prompt instructs the model to return actual dollars. On the ten documents I selected the strategy on, that rule never failed. On the held-out ten it failed three times, both documents being banks.
-
-| Document | Field | Extracted | Truth | Off by |
-|---|---|---|---|---|
-| BAC 2022 | total_assets | 3,051,375,000 | 3,051,375,000,000 | ×1,000 |
-| BAC 2022 | total_liabilities | 2,778,178,000 | 2,778,178,000,000 | ×1,000 |
-| GS 2021 | operating_cash_flow | 921,000 | 921,000,000 | ×1,000 |
-
-Digits identical every time — the model read the figure correctly and scaled it wrong. The cause is the header:
-
-- BAC: `Dollars in millions, except per share information; shares in thousands` — two scales in one header, and the model took the thousands.
-- GS: `$ in millions` — terse and unpunctuated, unlike the `(In millions, except share amounts)` form the eval-10 all used.
-
-Every eval-10 header was a conventional single-scale phrasing, so the actual-dollar-units rule had only ever been tested against the easy case. **That is the argument for a held-out set in one example.**
-
-A prompt revision for multi-scale headers is a legitimate follow-up — as a new experiment against a new held-out set, documented as unvalidated until that set exists.
-
-#### The fourth is a concept disagreement, not a misreading
-
-XOM returned 398,675M ("Sales and other operating revenue") where the key holds 413,680M ("Total revenues and other income"). The printed income statement confirms the key: 413,680 is the total. The model took the line that most literally says *revenue*. Recorded as wrong; the key was not changed.
-
-#### The one missing value is the right behaviour
-
-BAC's operating cash flow is negative (−6,327M). The model returned null rather than a wrong figure. A `missing` costs recall only; a `wrong` costs precision *and* recall. In financial extraction an admitted gap beats a confident error, and the metric design says so explicitly.
-
-#### company_name 0.50 is string normalisation, not extraction
-
-All five mismatches are EDGAR registrant names versus what the filing cover actually says:
-
-| Extracted (cover page) | Ground truth (EDGAR) |
-|---|---|
-| Bank of America Corporation | BANK OF AMERICA CORP /DE/ |
-| The Goldman Sachs Group, Inc. | GOLDMAN SACHS GROUP INC |
-| QUALCOMM Incorporated | QUALCOMM INC/DE |
-| Exxon Mobil Corporation | EXXON MOBIL CORP |
-| salesforce.com, inc. | Salesforce, Inc. |
-
-The `/DE/` suffix is an EDGAR state-of-incorporation marker that appears in no filing. Phase 2 reached the same conclusion at 0.80; the held-out half is bank- and energy-heavy, where legal names diverge hardest from EDGAR's abbreviated form.
-
-**Salesforce is the sharpest case: the model is right and the answer key is stale.** The FY2021 filing was made under `salesforce.com, inc.`; the company renamed in 2022, and EDGAR's registrant name is current, not as-filed. Recorded, not hand-edited — an answer key adjusted because it disagreed with the model is no longer independent.
-
-### Citation lineage: 8 defects in 100 fields, on values that were all correct
-
-S3 won the Phase 2 bake-off on operational grounds, not score — S1 and S4 tied it at 1.00. The tiebreaker was that S3 returns a verbatim source line per figure, which makes lineage checkable at write time. Phase 3 is where that paid.
-
-Two independent checks, both stored per field:
-
-- **`evidence_present`** — is the cited line real? Catches fabricated citations.
-- **`evidence_consistent`** — does the cited line contain the value? Catches misattribution.
-
-Across the 20-document corpus they found eight defects in 100 fields, in three patterns. **Every reported value was correct.** None of these is visible in a precision/recall table.
-
-**Derived value cited to the adjacent row (4 — AMZN, INTC, TGT, WMT).** These filers have no standalone total-liabilities line in XBRL, which is why their ground truth is null. The model computes assets minus equity — verifiable on Target: 51,248 − 30,940 = 20,308 — and cites "Total liabilities and stockholders' equity," a row containing neither figure. Phase 1 refused to derive this value for the answer key because it would compare two computations rather than check extraction against a filed fact. The model derives it anyway. These fields score `n_a`, so no accuracy metric could ever have shown it.
-
-**Concept straddle (2 — INTC, TSLA).** INTC returned net income 1,689 (`us-gaap:NetIncomeLoss`) and quoted the line printing 1,675 (`ProfitLoss`). TSLA returned 12,556, quoted 12,587. Both scored *correct*: the model picks the right concept and cites its neighbour.
-
-**Row completed from another statement line (2 — JPM, PFE).** JPM cited `Total liabilities 3,547,515 3,373,411 3,743,567`. The first two figures are correct FY2023/FY2022 liabilities; the source row ends after them with a footnote marker. Searching the filing, 3,743,567 occurs three times, every occurrence in a *total assets* context — it is FY2021 total assets. The model completed a three-year table row with a figure from a different line. PFE cited the operating-activities section *header* (`Net cash provided by/(used in) operating activities:`) with the totals appended from further down the statement.
-
-Reading JPM's value alone, the extraction is flawless — 3,547,515 matches ground truth exactly. Only the citation reveals it.
-
-#### What the instruments cannot see
-
-`evidence_consistent` tries multiple scale multipliers when matching a value against its line, because the filing prints millions and the model reports dollars. It therefore matched BAC's 3,051,375,000 against the printed 3,051,375 and **passed a figure that was wrong by a factor of 1,000.** It is structurally blind to unit errors.
-
-| Check | Catches | Blind to |
-|---|---|---|
-| `evidence_present` | synthesised or fabricated quotes | wrong values inside real lines |
-| `evidence_consistent` | miscitation | unit scale |
-| XBRL ground truth | value errors including scale | only 5 fields, only where XBRL tags exist |
-
-Three instruments, three disjoint blind spots. Knowing which is which is the point.
-
-### Two design changes forced by what the data showed
-
-**The Item 8 token ceiling was removed.** Building sections across the full corpus fired the 60,000-token ceiling for the first time — three times (PFE, GS, BAC), and PFE's fallback exceeded the model's context window entirely, so the document could not be extracted at all.
-
-Boundary inspection showed **all three slices were genuine Item 8**: correct starts (auditor's report or statement index) and tails inside the notes, with no Item 9A, signatures, or Part III. The evidence that had set the ceiling turned out to be a measurement artifact — Phase 2 recorded GS's Item 8 as "larger than its whole filing" (119,591 tokens vs 102,626), but the two come from different edgartools text paths and the item view line-breaks every table cell, tokenising ~58% higher. In characters the slice is 491,175 against a filing of 587,294: a proper subset, as it must be.
-
-Three fires, zero true positives, on evidence comparing two things that were never comparable. The ceiling was replaced by the constraint that actually matters — does the assembled input fit the context window. The character floor is kept: it has four confirmed true positives where the Item 8 anchor lands on the table-of-contents entry.
-
-Corpus provenance after the change: 15 `edgartools_item8`, 4 `fallback_fulltext`, 1 `fallback_fulltext_oversize`.
-
-**`business_description` and `primary_risk_factors` are no longer written to the store.** With cover + Item 8 as the input, 15 of 20 documents contain no Item 1 or Item 1A at all — yet the fields came back populated on 5 of 9 clean-Item-8 documents. What the model found was Item 8 note content. For Apple, `primary_risk_factors` returned "Concentrations in the Available Sources of Supply of Materials and Product," "Legal proceedings and claims that have arisen in the ordinary course of business," and "Uncertain tax positions" — note headings from Note 1, the contingencies note, and the tax note. Real text, correctly located, **wrong field**. Apple's actual Item 1A top risks are supply-chain disruption, competition, and dependence on third-party manufacturing.
-
-Neither field is scored and neither is grounding-checked, so this would have gone into the export CSV unmarked. Both fields remain in the schema — removing them would change the tool definition sent to the model and silently invalidate every cached response — and are dropped at the write. Item 1 / Item 1A slicing belongs in Phase 4, where the same text is already being chunked.
-
-### Storage design
-
-`extracted_records` holds **one row per attempt**, not per document, so a failure and its eventual fix both survive for diagnosis. `latest_successful_records()` is the single canonical read — the alternative is three consumers each implementing "latest" slightly differently.
-
-Three statuses: `success`, `extraction_failed` (the call completed and was billed but the output failed validation — the row is written so it is diagnosable), `technical_failed` (the call never completed). Only `success` sets `Document.is_extracted`, so both failure kinds are picked up by a re-run. This mirrors the Phase 2 cache rule: a timeout is not a result, a validation failure is.
-
-Evidence is stored twice on purpose. `evidence_json` is the verbatim audit record and survives a change to the field set; the flattened `*_source_line` columns are the readable, filterable, exportable projection — a JSON blob is opaque in DB Browser and unreadable in the CSV a reviewer opens.
-
-`prompt_version` is derived from the prompt template's hash rather than hand-maintained, so it cannot drift from the prompt it names, and it joins straight to the cached raw output that produced the record.
-
-### Run
-
-```bash
-python -m scripts.build_sections          # all 20, or --eval-only / --held-out
-python -m scripts.run_extraction --dry-run
-python -m scripts.run_extraction
-python -m scripts.run_heldout_eval
-```
-
-### Cost
-
-| | |
-|---|---|
-| Billed this phase | $0.1045 (688,281 tokens) |
-| Replayed from cache | $0.0523 — the eval-10, whose prompt, model and sliced input were unchanged |
-| Project total to date | under $0.40 |
-
-### Limitations
-
-- n=10 per split. Enough to separate 1.00 from 0.90; not enough to attach a confidence interval to either.
-- The three unit failures are two documents. The pattern is clear but the sample is not.
-- Pure-play bank revenue is excluded from the answer key (no comparable "total revenue" concept), so held-out denominators are smaller than in-sample.
-- `evidence_consistent` cannot detect unit errors, by construction.
-- `evidence_present` proves a line exists, not that it supports the value attached to it.
-- A ground-truth value that is wrong in the same way the model is wrong would score correct and stay invisible. The harness catches disagreement, not shared error.
-
-## Phase 4 — Chunking, Embeddings & Vector Store
-
-Built the retrieval half of the system: the narrative sections of all 20 filings
-are sliced, chunked, embedded and indexed in ChromaDB, ready for the RAG path in
-Phase 5. 1,958 chunks, 820,742 tokens embedded, $0.016 spent.
-
-This phase is independent of Phases 2–3. Extraction reads cover + Item 8;
-retrieval reads Item 1A, 7, 1 and 7A. The two consume different views of the
-same filings on purpose — they answer different questions.
-
-### What was built
-
-| File | Purpose |
-|---|---|
-| `src/ingestion/narrative_sections.py` | Slices Item 1A / 7 / 1 / 7A with a token floor and overlap rejection |
-| `src/ingestion/chunker.py` | Token-aware recursive-character chunking, deterministic ids |
-| `src/storage/vector_store.py` | ChromaDB wrapper: cosine, batched inserts, metadata-filtered delete |
-| `scripts/probe_sections.py` | Diagnostic — measures every item boundary across the corpus |
-| `scripts/build_narrative_sections.py` | Writes section artifacts to `data/processed/` |
-| `scripts/inspect_chunks.py` | Diagnostic — chunk size distribution and boundary quality |
-| `scripts/embed_documents.py` | Chunks and embeds pending documents; flips `is_embedded` |
-| `scripts/test_similarity_search.py` | Diagnostic — six tagged retrieval queries |
-
-### Running it
-
-```bash
-python -m scripts.build_narrative_sections    # slice, once (hits SEC via edgartools)
-python -m scripts.diagnostic.inspect_chunks              # verify chunk sizes, no spend
-python -m scripts.embed_documents --dry-run   # cost estimate before spending
-python -m scripts.embed_documents             # embed
-python -m scripts.diagnostic.test_similarity_search      # validate retrieval
-```
-
-`--reset` drops the collection and clears every `is_embedded` flag together;
-required after any chunk-parameter or embedding-model change, since Chroma fixes
-the distance function and collection metadata at creation.
-
-### The corpus, and why it is what it is
-
-Sliced sections, in acceptance priority: **Item 1A** (risk factors), **Item 7**
-(MD&A), **Item 1** (business), **Item 7A** (market risk).
-
-| Section | Chunks | Share |
-|---|---|---|
-| Item 1A | 831 | 42% |
-| Item 7 | 724 | 37% |
-| Item 1 | 346 | 18% |
-| Item 7A | 57 | 3% |
-
-**Item 8 is deliberately excluded.** The financial statements belong to the
-structured store. A narrative question mis-routed to the SQL path hits a clean
-bounded-capability refusal; a financial question mis-routed to RAG would retrieve
-a balance sheet and have the LLM *synthesise* a figure — correctly formatted,
-correctly cited, and outside every guarantee the parameterized SQL path exists to
-provide. The design boundary: **the vector store holds narrative sections only;
-financial figures come from the structured store or not at all.**
-
-That boundary is stated honestly rather than claimed as airtight. The Phase 4
-retrieval test showed MD&A summary tables carry revenue figures anyway — "What
-was Apple's total revenue in 2022?" retrieved an Item 7 chunk containing
-`Total net sales$365,817`. Excluding Item 8 narrows the hole; it does not close
-it. Phase 5's RAG prompt therefore refuses specific-figure questions explicitly,
-even when a figure sits in the retrieved context.
-
-### Section boundaries: measured, not assumed
-
-Phase 3 found edgartools' item detection silently failing on 4 of 20 filings for
-Item 8 — collapsed to a heading, paired with an adjacent item over-captured by
-87k–298k characters. The plan for this phase assumed Item 1A would fail the same
-way and specified a full-text fallback so no document could vanish.
-
-A zero-cost probe across all 20 documents killed that assumption:
-**Item 1A is present and uncollapsed on 20/20**, including the four whose Item 8
-collapsed. The front-of-document boundary is more reliable than the back. The
-fallback was removed — it would only have duplicated good slices into the same
-collection.
-
-Two guards replaced it, both set from the probe's numbers:
-
-- **200-token floor.** Observed collapses are 45–157 tokens; the smallest real
-  section is 596. The threshold sits in a genuine gap, not at a value tuned until
-  the alarm stopped.
-- **Bidirectional overlap rejection.** Over-capture runs both ways — META's
-  Item 1 sits inside its Item 1A, while QCOM's Item 1 *contains* its Item 1A. A
-  one-directional test catches one and misses the other. Fires on 3 of 20.
-
-**Accepted gaps, logged not papered over:** INTC, JPM and XOM have no usable
-Item 7, so the system refuses MD&A questions about those three rather than
-answering from the wrong section. Six documents lack Item 7A — but those are
-legitimate cross-references, not truncations: BAC, GS, JPM, PFE, XOM and JNJ
-incorporate market-risk disclosure into Item 7.
-
-### Chunking
-
-`RecursiveCharacterTextSplitter` via `from_tiktoken_encoder` (the default
-constructor counts *characters*, so a 500 target would silently mean ~125
-tokens). 500-token target, 50 overlap, `cl100k_base` — the encoding
-`text-embedding-3-small` uses, not the `o200k_base` used elsewhere for
-gpt-4o-mini budgeting.
-
-Chunks never span a section boundary: each section is split independently, so
-every chunk's `source_section` is exact rather than inferred.
-
-Measured distribution: median 445 tokens against a 500 target, max 498, zero
-over 520, two under 50 across 1,958 chunks. The splitter prefers paragraph
-breaks over filling the budget, which is correct — Item 1A risk headings are
-paragraph-separated, so a heading stays attached to the text it introduces.
-Overlap cost 4% (820,742 embedded vs 788,163 sliced).
-
-Chunk ids hash document, section, position **and** content. Re-chunking replaces
-by metadata filter rather than by id overwrite: a content-only hash collides on
-boilerplate repeated across filings, and a position-only hash orphans the tail
-whenever a re-chunk produces fewer chunks. A derived `chunk_params_hash` (size,
-overlap, separators, embedding model, encoding) is stored in the collection
-metadata and checked on every open — derived rather than hand-maintained,
-because a manually bumped version is the kind that silently does not get bumped.
-
-### Vector store
-
-ChromaDB, persistent, **cosine set explicitly** via
-`collection_metadata={"hnsw:space": "cosine"}`. Chroma defaults to L2 and the
-distance function cannot be changed after creation — a collection built without
-this stays L2 permanently.
-
-Cosine was originally chosen partly to keep a distance-threshold out-of-scope
-guard available. **That benefit was measured and withdrawn:**
-
-| Query | Best distance |
-|---|---|
-| Amazon business segments (in scope) | 0.3168 |
-| Apple supply chain (in scope) | 0.3413 |
-| **Apple total revenue 2022 (wrong store)** | **0.3446** |
-| Interest rate risk (in scope, headline demo) | 0.4046 |
-| Apple stock price (absent from corpus) | 0.4955 |
-
-The wrong-store question scores third-closest of six. Any threshold rejecting it
-also rejects the headline demo query. Refusal therefore rests entirely on the
-prompt instruction. Cosine is kept — on OpenAI's unit-length vectors all metrics
-rank identically, and a bounded score stays more interpretable for logging.
-
-### Retrieval validation
-
-Six tagged queries, top-3 each. Five of six expectations met; the one miss was a
-**bad expected-source tag, not a bad retrieval** — "which companies flagged
-interest rate risk?" was tagged Item 1A and correctly returned Item 7A, which is
-literally titled *Quantitative and Qualitative Disclosures About Market Risk*.
-
-That is a finding, not a footnote: Phase 5's retrieval hit-rate metric depends on
-expected-source tags, and a tag intuited rather than derived from document
-structure measures the tagger instead of the retriever. Every tag in Phase 5 is
-verified against where the content actually lives, and QCOM and META are tagged
-at company granularity because their Item 1 content carries an Item 1A label.
-
-Also observed: Item 7A is 3% of the corpus and won the top two slots on a query
-aimed at it. Corpus share does not disadvantage small sections.
-
-### Known limitations
-
-- **Section-level citations on large sections.** A chunk from the middle of BAC's
-  Item 1A — 40 printed pages — cites as "Bank of America, FY2022, Item 1A". The
-  chunk text is available to the reader, but finer provenance would need heading
-  propagation into chunk metadata, which is the boundary-detection problem one
-  level down.
-- **XOM contributes 6,233 tokens** against a corpus median near 34,000. Its
-  filing is misattributed into Item 16 (298,411 chars over-captured) — the same
-  both-ends boundary bug Phase 3 flagged. Answers about XOM are thin. Recovering
-  content from Item 16 is a new heuristic with untested failure modes and was not
-  built.
-- **Corpus is bank-weighted.** GS and BAC are 26% of it; BAC alone is 11.5%.
-  Generic risk and MD&A queries skew toward financial-sector chunks.
-- **edgartools legacy-parser deprecation.** `tenk["Item 7"]` is the legacy
-  lookup; the library warns it is removed in v6.0. Affects `sections.py` too.
-  `requirements.txt` is pip-frozen, so the pin holds — an unpinned rebuild breaks
-  both slicers silently.
-- **`store._collection` private-attribute use** in `vector_store.py` for metadata
-  read, filtered delete and count. `langchain-chroma` exposes none of the three
-  publicly.
-
-## Phase 5 — Query Path: Planner, Exact SQL, Cited RAG, and Its Evaluation
-
-Phase 5 turns the stored extractions (Phase 3) and the vector store (Phase 4)
-into a question-answering system, then measures it stage by stage. It ran in
-three parts: **5A** built the planner and the exact-figure path, **5B** the
-cited narrative path, and **5C** the evaluation. Decisions D25–D52 in
-`docs/decisions.md`; full evaluation in `docs/query_eval_results.md`.
-
-### Architecture
-
-```
-question → planner (LLM)        → validated plan: 1–3 tasks, each with an intent
-         → resolver (Python)    → company mention → ticker + fiscal year held
-         → executor (Python)    → intent → tool; tasks run concurrently
-             ├─ SQL path        → parameterized read-only SELECT; sentence built in Python
-             └─ RAG path        → section-filtered retrieval → figure guard
-                                  → answer chain (LLM) → citations checked in code
-         → synthesizer (Python) → one answer, numbered sources, fixed refusal text
-```
-
-One invariant holds across the whole path: **no LLM ever receives a stored
-financial figure** — not from SQL, and not from retrieved text, where the five
-stored metrics are masked before the model sees them. A structure enforces it,
-not a prompt instruction.
+| Extraction | Five prompt strategies scored against XBRL ground truth; the winner scores 1.00 on the ten filings it was chosen on and **0.90 on the ten held-out filings** | [results.json](data/eval/results.json), [held_out_results.json](data/eval/held_out_results.json) |
+| Routing (planner) | **82.5%** of held-out questions planned correctly before any prompt tuning (clean out-of-sample), 88.9% after | [v1](data/eval/routing_results_0ed3e740.md), [final](data/eval/routing_results_d4bc8e36.md) |
+| Execution given the right plan | **100%** (adjudicated; 91.7% raw on held-out, the gap being three label errors) — remaining end-to-end errors are routing | [oracle run](data/eval/execution_results_d4bc8e36_b1d8ee5c_oracle.md) |
+| Retrieval | A relevant chunk in the top 5 for every question; capped recall@5 79% held-out, 59% dev | [retrieval_results.md](data/eval/retrieval_results.md) |
+| Attribution | **93.2%** of 322 answer sentences supported by their cited text, scored by an LLM judge that caught 30 of 30 planted errors (Cohen's kappa 0.97) | [attribution_results.md](data/eval/attribution_results.md) |
+
+The judge's reference labels were written by a second model (Claude), with every
+disagreement adjudicated by the developer — not by human labellers.
 
 ---
 
-### 5A — Planner, resolution, exact figures
+## Architecture
 
-**Why the planned router was replaced.** The architecture specified a binary
-router (SQL *or* RAG). "What was Intel's net income, and why did its margins
-fall?" needs both, and a binary router must silently drop one half. A planner
-that emits up to three typed tasks has no such hole (D25).
+Two parts: an offline pipeline that builds the corpus, and an online query path
+served by the API.
 
-- **Planner** — one `with_structured_output` call returns a Pydantic `QueryPlan`:
-  single, hybrid, clarification, unsupported or out-of-scope. It is
-  *corpus-blind*: it copies company mentions verbatim and never knows which
-  companies are held, so "What was Nvidia's revenue?" produces a correct plan and
-  a clean downstream refusal (D32).
-- **Resolver** — Python only. Turns "amzn", "J&J" or "that bank" into a held
-  ticker, a non-corpus refusal, or an ambiguity refusal.
-- **SQL path** — the LLM extracts parameters; Python validates them and runs a
-  parameterized, read-only query with column allowlists and a hard limit. The
-  answer sentence is rendered in Python, so the figure never passes through an
-  LLM (D27). Unsupported shapes (averages, ratios) are refused before any query
-  runs; valid queries with no data say so — two different messages.
-- **Data-quality flag** — a scale-coherence check computed from stored evidence
-  only, never from the answer key. It found three known 1,000× extraction errors.
-  Bank of America's statements use two scales in one header, which produced a 2–2
-  tie; instead of a tie-break rule fitted to one case, every tied field is marked
-  `disputed / scale_ambiguous` and disclosed in the answer (D29).
+```mermaid
+flowchart TB
+    subgraph offline["Offline pipeline (scripts)"]
+        A["SEC EDGAR via edgartools"] --> B["Filing text"]
+        A --> GT["XBRL ground truth<br/>(evaluation only)"]
+        B --> C["Cover + Item 8 slice"]
+        C --> D["LLM extraction<br/>gpt-4o-mini, figures + quoted source lines"]
+        D --> E[("SQLite<br/>extracted_records<br/>+ quality flags")]
+        B --> F["Items 1, 1A, 7, 7A"]
+        F --> G["Chunk + embed<br/>text-embedding-3-small"]
+        G --> H[("ChromaDB<br/>1,958 chunks")]
+        GT -. scores .-> D
+    end
 
-### 5B — Cited narrative answers and honest refusals
+    subgraph online["Query path (FastAPI)"]
+        Q["Question"] --> P["Planner (LLM)<br/>1–3 typed tasks"]
+        P --> R["Resolver (Python)<br/>company + year held?"]
+        R --> X["Executor (Python)"]
+        X --> S["SQL path<br/>parameterised SELECT,<br/>answer rendered in Python"]
+        X --> T["RAG path<br/>section-filtered retrieval<br/>→ figure guard → answer LLM<br/>→ citations checked in code"]
+        S --> Y["Assembler (Python)<br/>answer + numbered sources"]
+        T --> Y
+    end
 
-- **Section-filtered retrieval** — each narrative intent maps to the 10-K items
-  that can answer it (business → Item 1, risk → Item 1A, MD&A → Item 7, market
-  risk → Item 7A). Intents whose section sets were identical executed identically,
-  so they were merged: 12 intents became 9 (D38).
-- **Answer chain** — returns structured claims, each citing numbered blocks.
-  Citations are checked in code, and an uncited claim is dropped. The chain's
-  refusals are typed (section absent, not addressed, figure requested, …) and
-  their sentences are written in Python, never by the model (D41).
-- **Figure guard** — stored metrics in retrieved text are masked before the LLM
-  sees them; anything that slips through is redacted afterwards. Across nine
-  evaluation runs, redaction never fired.
-- **Corpus-wide questions** ("which companies flag interest-rate risk?") retrieve
-  per company, not from a shared top-k: a shared top-50 reached 16 companies,
-  with two banks taking 28 of the slots; per-company retrieval reached all 18
-  that hold the section (D39).
-- **Lesson that shaped the design:** the prompt is not the guarantee. Three
-  times a rule stated in the prompt was broken in a run — figures, citations,
-  inline passage references — and each rule that matters now has a check in code.
-
-### 5C — Evaluating every stage separately
-
-The point is traceability: when an answer is wrong, the evaluation names the
-stage that caused it.
-
-**Eval set.** 109 questions frozen by SHA-256 before any scoring — the original
-50 relabelled, 50 written by a separate LLM in real-user phrasing (typos,
-tickers, vague wording) and 9 hard cases. 42 are held out and report-only: no
-prompt was revised in response to a held-out result. Every LLM measurement is a
-mean of 3 runs (temperature 0 is not deterministic, D35).
-
-| Stage | What it measures | Held-out | Dev |
-|---|---|---|---|
-| Routing, before any tuning | Clean out-of-sample planner accuracy | **82.5%** [68–91] | 79.6% |
-| Routing, final prompt (v3) | After two dev-driven revisions | 88.9% | 90.0% |
-| End to end | Every task's outcome correct | 89.7% | 93.5% |
-| Oracle (gold plan) | Downstream system with routing assumed perfect | 100% | 100% |
-| Retrieval | Relevant chunk in the 5 the chain reads (18 questions) | 100% | 100% |
-| Retrieval | Capped recall@5 | 79% | 59% |
-| Attribution | Answer sentences supported by their citations (322) | 91.1% | 94.5% |
-
-Adjudicated figures; raw scores are reported beside them in the results doc, and
-frozen labels were never edited (D48).
-
-**Reading it:** given the right plan the system is exact, so the remaining
-end-to-end errors are almost all routing. Retrieval always puts a relevant chunk
-in front of the model but often not all of them. About 7% of answer sentences
-claim more than their source says.
-
-**How the two hard stages were measured**
-
-- **Retrieval** is scored against chunk-level relevance labels, not "right
-  section", which is ~100% by construction under filtered search. Candidates were
-  pooled from the retriever and from keyword search written before reading any
-  results, labelled against a rule fixed in advance, reviewed, and frozen by hash.
-  It is scored on the planner's reworded query — what production actually
-  embeds; the rewording changed one ranking in 18 (D49).
-- **Attribution** is scored by an LLM judge from a different model family, which
-  had to pass criteria committed before it ran: it caught **30 of 30** planted
-  errors (invented details, wrong chunk, wrong company) and agreed with reference
-  labels at Cohen's kappa **0.97** (D43, D52). Had it failed, its score would
-  have been withheld.
-
-**What the evaluation found**
-
-- **A chunking defect, diagnosed with a controlled test.** Walmart's liquidity
-  text ranked 9th–18th because chunks deep inside a subsection lose its heading.
-  Re-embedding every chunk with its heading lifted recall@5 from 20% to 80%;
-  rewording the question only reached 60% (D51). Logged as the next fix.
-- **What unsupported sentences look like:** mostly added inference ("which
-  reflects its focus on…") and over-narrowed detail; one in 22 had no support at
-  all.
-- **Remaining routing errors are named, not chased:** questions about an
-  unnamed company ("that bank") planned as a 20-company survey; R&D and dividend
-  questions refused.
-- **Four label errors and two harness bugs** were found by auditing every miss,
-  including an oracle that fed hybrid questions whole to the narrative chain
-  (fixed, D50).
-
-### Known limitations
-
-- Small n: 18 retrieval questions, 40 attribution test claims; intervals are wide.
-- Attribution reference labels are a second model's, with every disagreement
-  adjudicated by the developer — not blind human labels.
-- Corpus gaps: Intel, JPMorgan and Exxon MD&A and Tesla's Item 7A were not
-  captured, so those questions are correctly refused.
-- One fiscal year per company: cross-year and trend questions are out of scope.
-
-### Run
-
-```bash
-python -m scripts.diagnostic.test_query          # end-to-end smoke cases
-python -m scripts.run_routing_eval               # planner accuracy, 3 runs
-python -m scripts.run_execution_eval             # oracle + end to end, 3 runs
-python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
-python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
-pytest tests                                     # 186 tests at the end of Phase 5; see Phase 6
+    E --> S
+    H --> T
 ```
 
-## Phase 6 — FastAPI Layer
+Key properties:
 
-Phase 6 puts the Phase 5 query path behind a REST API, adds a CSV export, a
-health check and a one-page demo. **No prompt changed:** the API runs planner
-`d4bc8e36` and chain `b1d8ee5c`, the versions measured in Phase 5C, so the
-evaluation numbers above describe exactly what the API serves. Decisions
-D53–D57; the full contract is `docs/api_contract.md`.
+- **No LLM receives a stored figure.** SQL answers are rendered in Python, and
+  stored figures in retrieved text are masked before the answer model sees it,
+  then redacted if one still appears. This is enforced by structure, not by a
+  prompt instruction.
+- **XBRL is the answer key only.** It scores the extraction and never reaches
+  the database, the answers or the export.
+- **Refusals are typed.** "Year not held", "company not in the corpus",
+  "section not captured", "figure requested from text" — each with a sentence
+  written in Python.
+- **Every served figure carries a data-quality flag** (verified, unverified or
+  disputed), computed from stored evidence only, and shown in answers, API
+  responses and the CSV export.
 
-### Run it locally
+Why each of these choices was made, and what it costs:
+[docs/design_notes.md](docs/design_notes.md).
 
-```bash
-cp .env.example .env                  # then set OPENAI_API_KEY and EDGAR_IDENTITY
-uvicorn src.api.main:app --reload     # http://localhost:8000
+## Tech stack
+
+| Area | Choice |
+|---|---|
+| Language | Python 3.11 |
+| API | FastAPI + uvicorn |
+| LLM orchestration | LangChain 1.x (`with_structured_output`, LCEL) |
+| Models | OpenAI gpt-4o-mini (extraction, planner, answers); text-embedding-3-small; gpt-6-luna as the evaluation judge only |
+| Acquisition | edgartools (filing text and XBRL) |
+| Vector store | ChromaDB (local, persistent, cosine) |
+| Metadata store | SQLite + SQLAlchemy 2.x |
+| Validation and config | Pydantic v2, pydantic-settings |
+| Logging | structlog |
+| Tests | pytest |
+
+Exact versions are pinned in `requirements.txt`.
+
+## Repository layout
+
+```
+src/
+  ingestion/   acquisition, section slicing, chunking
+  extraction/  extraction prompts, schemas, pipeline
+  storage/     SQLite models, Chroma wrapper, data-quality flag
+  query/       planner, resolver, executor, SQL path, answer assembly
+  rag/         retriever, figure guard, answer chain
+  eval/        ground truth, scorers, evaluation harnesses, attribution judge
+  api/         FastAPI app, routes, response models, usage limits, demo page
+  utils/       settings, logging, number and name helpers
+scripts/       pipeline and evaluation entry points
+  diagnostic/  probes and smoke tests used during development
+tests/         unit tests (no network, no API key, no database)
+docs/          design notes, API contract, evaluation write-ups
+data/eval/     committed evaluation evidence: answer key, eval sets, labels, results
 ```
 
-- `http://localhost:8000/` — demo page; `/docs` — Swagger with example requests.
-- The API needs the built corpus in `db/` (SQLite + Chroma). `data/` and `db/`
-  are gitignored, so a fresh clone has no corpus: the server still starts, and
-  `/health` returns 503 naming the missing part. To build it: the Phase 1, 3
-  and 4 scripts above (`acquire_filings`, `build_sections`, `run_extraction`,
-  `build_narrative_sections`, `embed_documents`).
-- Run with **one worker**. Chroma's local store is single-process, and the
-  rate-limit counters live in memory.
-- Tests: `pytest` — 380 tests, no network, no database. The settings still
-  require `OPENAI_API_KEY` and `EDGAR_IDENTITY` to exist; any value works.
+`data/raw/`, `data/processed/` and `db/` are gitignored: a fresh clone has the
+code and the evaluation evidence, but not the built corpus.
 
-### Endpoints
+---
+
+## Setup
+
+Requires Python 3.11 and an OpenAI API key. Building the corpus also needs
+network access to SEC EDGAR.
+
+```bash
+git clone https://github.com/vsc-58/enterprise-doc-intelligence.git
+cd enterprise-doc-intelligence
+python -m venv .venv
+source .venv/bin/activate          # Windows Git Bash: source .venv/Scripts/activate
+pip install -r requirements.txt
+cp .env.example .env               # then set OPENAI_API_KEY and EDGAR_IDENTITY
+```
+
+`EDGAR_IDENTITY` is the name and email SEC asks automated clients to send
+(for example `Jane Doe jane@example.com`). Every other setting has a default in
+`src/utils/config.py` and can be overridden in `.env`.
+
+## Build the corpus
+
+Run from the repository root, in this order. Acquisition, extraction and
+embedding skip work already done; the two slicing steps rebuild their files.
+
+```bash
+python -m scripts.acquire_filings            # 20 10-K filings + XBRL answer key (SEC)
+python -m scripts.build_sections             # cover + Item 8 slices for extraction
+python -m scripts.run_extraction --dry-run   # what would be extracted, no spend
+python -m scripts.run_extraction             # LLM extraction into SQLite
+python -m scripts.build_narrative_sections   # Items 1, 1A, 7, 7A (SEC)
+python -m scripts.embed_documents --dry-run  # chunk count and cost, no spend
+python -m scripts.embed_documents            # embed into ChromaDB
+```
+
+Measured cost of a full build: about $0.16 for extraction and $0.02 for
+embeddings. `python -m scripts.acquire_filings 2` acquires only the first two
+filings, for a quick check.
+
+## Run the API
+
+```bash
+uvicorn src.api.main:app --reload            # http://localhost:8000
+```
+
+- `http://localhost:8000/` — a demo page: ask a question, see the answer with
+  each figure's quality mark and numbered sources.
+- `http://localhost:8000/docs` — Swagger UI with example requests.
+- Run **one worker**: the Chroma store is single-process and the usage counters
+  are in memory.
+- Without a built corpus the server still starts; `/health` returns 503 naming
+  the missing part.
 
 | Endpoint | What it does |
 |---|---|
-| `POST /query` | Answers one question: `{"question": "..."}`. Returns the answer text, plan type, each task's status and typed refusal reason, every figure with its quality flag, numbered sources, and the planner and chain versions |
-| `GET /documents` | The 20 filings held: ticker, name, fiscal year. The one year per company the system can answer for |
-| `GET /export` | `extracted_records` as CSV: 35 columns, each figure next to its quality flag, reason, note and the line the extraction cited |
-| `GET /health` | Readiness, with no LLM call: `database`, `vector_store`, `index`, `figure_guard`. 200 when ready, 503 when not, same body, and a 503 always names the part that is down |
-| `GET /` | Demo page for non-developers (not part of the API schema) |
-| `GET /docs` | Swagger UI |
+| `POST /query` | `{"question": "..."}` → answer text, plan type, per-task status and refusal reason, each figure with its quality flag, numbered sources, planner and chain versions |
+| `GET /documents` | The 20 filings held, with ticker, name and fiscal year |
+| `GET /export` | `extracted_records` as CSV: each figure beside its quality flag, reason, note and cited line |
+| `GET /health` | Readiness of the database, vector store, corpus index and figure guard; 503 names the part that is down |
 
-The API is **read-only**. There is no `/ingest` or `/extract` (the original
-plan had both): those jobs call SEC and paid OpenAI, run for minutes, and write
-to the Chroma store that `/query` reads — and that store allows one process
-(D54). They stay as scripts. `/query` also takes no company or year filter:
-the resolver alone decides which companies and years are held (D32), and a
-filter could silently drop half of a two-company question.
+Status codes: a refusal is a correct answer about the corpus, so it is a 200
+with a typed `refusal_reason`. 422 is malformed input, 429 a usage limit (off by
+default), 503 not ready or OpenAI unavailable, 504 a timeout after 30 s. The
+full contract is [docs/api_contract.md](docs/api_contract.md).
 
-### Status codes: refused is not failed
+Example (`POST /query`):
 
-| Code | When |
+```json
+{"question": "What was Apple's total revenue in fiscal 2021?"}
+```
+
+returns, among other fields:
+
+```json
+{
+  "answer": "Apple Inc.'s total revenue for fiscal year 2021 (period ending 2021-09-25) was $365.82 billion.",
+  "plan_type": "single",
+  "tasks": [{"intent": "financial_metric", "tool": "sql", "status": "success",
+             "figures": [{"ticker": "AAPL", "value": 365817000000.0,
+                          "quality": {"verdict": "verified", "reason": "consistent", "note": null}}]}]
+}
+```
+
+Asking for a year the corpus does not hold returns a 200 refusal: "I hold one
+Apple Inc. filing, for fiscal year 2021. I don't have 2022."
+
+## Tests
+
+```bash
+pytest -q
+```
+
+399 tests, all without network, database or a real API key: LLM calls are
+stubbed. The settings class still requires `OPENAI_API_KEY` and `EDGAR_IDENTITY`
+to be present, so set them (any value works) in `.env` or the environment.
+`tests/test_prompt_versions.py` checks that the prompt versions in the code are
+the ones the committed evaluation results were measured on.
+
+## Reproduce the evaluation
+
+These call OpenAI and need the built corpus. The committed results in
+`data/eval/` are what the numbers above come from.
+
+```bash
+python -m scripts.run_eval                   # extraction: five strategies, ten filings
+python -m scripts.run_heldout_eval           # extraction: the ten held-out filings
+python -m scripts.run_routing_eval           # planner accuracy, 3 runs
+python -m scripts.run_execution_eval         # oracle and end-to-end execution, 3 runs
+python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
+python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
+```
+
+Extraction responses are cached by a hash of strategy, model, prompt and input
+text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
+
+## What to look at
+
+| File | Why |
 |---|---|
-| 200 | Every answer — including refusals (year not held, company not in the corpus, section not captured) and partial answers where one part of a two-part question failed |
-| 422 | Malformed input: empty or too-long question (500 characters), unknown fields, not JSON |
-| 429 | Usage limit reached: `rate_limited` or `daily_budget_exhausted`, with `Retry-After`. Off unless configured |
-| 503 | `not_ready` (a data store is missing), `llm_unavailable` (OpenAI down on the planner call), `service_degraded` (every task failed) |
-| 504 | No answer within 30 s |
-| 500 | Anything unexpected |
+| [docs/design_notes.md](docs/design_notes.md) | Every major decision, its reason and its cost |
+| [docs/query_eval_results.md](docs/query_eval_results.md) | Query-path evaluation: routing, execution, retrieval, attribution, label audits |
+| [docs/prompt_strategy_results.md](docs/prompt_strategy_results.md) | Extraction experiment: five strategies, held-out check, two bugs the harness found in itself |
+| [docs/api_contract.md](docs/api_contract.md) | API behaviour, status codes, timeouts, usage limits |
+| [data/eval/query_eval_set.json](data/eval/query_eval_set.json) | The 109 frozen evaluation questions with labels |
+| [data/eval/ground_truth.json](data/eval/ground_truth.json) | XBRL answer key per filing |
+| [src/rag/figure_guard.py](src/rag/figure_guard.py) | How stored figures are kept away from the answer model |
+| [src/storage/quality.py](src/storage/quality.py) | The data-quality flag |
+| [src/api/static/demo.html](src/api/static/demo.html) | The demo page served at `/` |
 
-A refusal is a correct answer about the corpus, so it is a 200 with a typed
-`refusal_reason` per task. Only a failure can produce a 5xx. Every non-422
-error has the same body — `{error, message, request_id}` — where `message` is a
-fixed sentence: exception text, paths and SQL go to the logs only. Every
-response carries `X-Request-ID`, which appears in every log line of that
-request.
+---
 
-Three ordering details, each found by running the server rather than assumed:
+## Evaluation approach
 
-- **422 wins over 503.** FastAPI runs dependencies before it validates the
-  body, so an empty question first got "not ready, try again in 5 s" — wrong
-  advice for a request that can never succeed. `/query` now checks readiness
-  inside the handler, after validation.
-- **Readiness never creates a store.** Opening a missing SQLite file or Chroma
-  folder creates an empty one, which then looks present. Both are checked on
-  disk first. While not ready, the server re-checks at most every 5 s, so it
-  recovers without a restart.
-- **Only requests that will spend money are counted** against the usage
-  limits: a 422 or a not-ready 503 uses nobody's allowance.
-- **A 503 from `/health` names the part that is down.** At first the body had
-  three checks while readiness tracked four parts, so a failed figure guard
-  gave 503 with every check "ok". Each check now reads both the readiness state
-  and its live test, and a test keeps one field per readiness part (D57).
+- **Ground truth from XBRL, not hand labels.** The extraction answer key is read
+  from each filing's XBRL by exact concept; missing concepts stay null rather
+  than being guessed or derived.
+- **Held-out data is report-only.** Prompts were revised on development data
+  only; the held-out extraction filings and 42 held-out questions were never
+  used to change a prompt. The routing figure before any tuning (82.5%) is
+  reported as the clean out-of-sample number.
+- **Frozen labels.** The question set and retrieval gold are frozen by SHA-256
+  and the harnesses refuse edited files. Label errors found later are reported
+  as an adjudicated score beside the raw one, never edited.
+- **Repeated runs.** LLM measurements run three times (temperature 0 is not
+  deterministic); intervals use n = questions.
+- **Stage by stage.** Routing is scored on the planner alone; execution runs
+  once with the gold plan and once end to end, so routing errors are separated
+  from downstream errors.
+- **Validated judge.** The attribution judge had to pass criteria fixed before
+  it ran: catch planted errors, agree with reference labels (kappa, not raw
+  agreement, because 39 of 40 real claims were supported), and stay stable
+  across runs.
 
-### Timeouts and async
+## Security and data handling
 
-The planner is a blocking call, so it runs in a thread (`asyncio.to_thread`);
-the executor is already async. Both run inside one 30-second request timeout.
-A request timeout cannot stop a thread, so the OpenAI clients get their own
-limit: 10 s per call, 1 retry. The rule is per-call × (retries + 1) < request
-timeout — 10 × 2 = 20 < 30 — so a stuck planner call ends before the request
-does instead of running, and costing money, after the user got a 504. The
-server logs a warning at startup if the settings break this rule.
+- **Secrets** come from `.env` (gitignored) and the API key is held as a
+  `SecretStr`, so it is not printed in logs or reprs. No key is in the code or
+  the history.
+- **SQL** is built with SQLAlchemy `select()` from validated parameters: column
+  allowlist, bound values, a row cap. The model never writes SQL.
+- **Errors** return a fixed message and a request id; exception text, paths and
+  SQL go to the logs only.
+- **The demo page** inserts server text as text, never as HTML.
+- **Usage limits** (per-client rate limit, daily budget) protect the OpenAI
+  credit on a public deployment. They are off by default.
+  `X-Forwarded-For` is never parsed in code, since any client can send it.
+- **Data:** all filings are public SEC documents. No personal data is stored.
 
-### Usage limits (off by default)
+## Limitations
 
-The public demo spends the project's OpenAI credit on every question (about
-$0.001 for a lookup, $0.004 for a 20-company survey). Two limits protect it
-(D55): a per-client 60-second sliding window and a daily budget for all
-clients, reset at 00:00 UTC. Requests, not tokens, are counted, because a
-request's cost has a ceiling (at most 3 tasks, 500 characters): N requests
-cost at most about N × $0.004. The client is the address the server sees;
-`X-Forwarded-For` is never parsed in code, because any client can send it.
-
-### What the answers disclose
-
-Two changes to SQL answers came from reading real output (D53, D56):
-
-- **A list names the flagged company it may have missed.** "Which companies
-  had total assets above $1 trillion?" — Bank of America's stored figure is
-  $3.05 billion, flagged `scale_ambiguous`, so the filter dropped it silently.
-  The answer now names a left-out company only when its figure is
-  scale-flagged **and** a ×1,000 or ÷1,000 reading would put it in the list.
-  The first version named every flagged company and listed Intel ($1.69
-  billion net income) under "above $50 billion" — a warning that cannot be
-  true teaches the reader to skip the one that matters.
-- **A missing figure is named, with what it means.** "Which company had the
-  lowest operating cash flow?" used to end with "1 company was excluded". That
-  company is Bank of America, whose cash flow was not extracted because it is
-  negative — so it is probably the real answer. The answer now says so: "may be
-  lower than any figure shown".
-
-The export carries the same flags as the answers: one function computes them,
-so the CSV, the API and the answer text cannot disagree. A test checks that
-the export module imports nothing from the evaluation code or edgartools: the
-XBRL answer key never reaches it.
-
-### Demo page
-
-`GET /` serves one static HTML page: a question box, the example questions as
-buttons, the answer with each figure marked verified, disputed or not checked,
-the companies left out, and numbered sources. It calls the public endpoints
-like any other client — no second way into the pipeline — and inserts server
-text only as text, never as HTML. It exists because answers read as raw JSON
-in Swagger, and `/` returned `{"detail": "Not Found"}` — the first thing a
-visitor would see.
-
-### Verified on the real corpus
-
-| Check | Result |
-|---|---|
-| `/health` | 20 documents, 1,958 chunks |
-| Extracted figures with quality `verified` | 88 of 100 |
-| `verify_export` (CSV vs the database, read independently with plain SQL) | PASS: 220 values match — 20 rows × (5 figures + 5 cited lines + fiscal year end) |
-| Manual run of 12 demo questions | 10 as predicted |
-| Narrative answer latency | 5–7 s, of which about 2.5 s is the answer LLM call |
-| Unit tests | 380, no network |
-
-### Known limitations
-
-- **One question planned differently than in Phase 5C.** "Which companies
-  flagged interest rate risk?" was planned as `risk_factors` instead of the
-  labelled `market_risk`, although all three 5C runs matched the label: either
-  run-to-run variation (D35) or a model update behind the `gpt-4o-mini` name.
-  It is kept out of the demo examples.
-- **Latency close to a limit.** One Walmart narrative answer took 10.4 s; the
-  per-call limit is 10 s. To watch on the hosted Space.
-- **Counters reset on restart** and are correct only with one worker.
-- **CSV injection** is not handled: a cell starting with `=` could be read as a
-  formula. Every value comes from the filings and the pipeline, not from users.
-- **No authentication.** The API is a public read-only demo; the usage limits
-  and the OpenAI account's spend limit are the protection.
+- **Small corpus:** 20 companies, one fiscal year each (FY2021–2023), so
+  cross-year and trend questions are refused as unsupported.
+- **Corpus gaps:** the MD&A (Item 7) of Intel, JPMorgan and Exxon and Tesla's
+  Item 7A were not captured, so those questions are refused (market-risk
+  questions for JPMorgan and Exxon fall back to Item 1A, and say so).
+- **Known extraction errors stay visible, not fixed:** Bank of America's four
+  figures and Goldman Sachs' operating cash flow are flagged as disputed in
+  every answer and in the export.
+- **Routing misses remain:** questions about an unnamed company ("that bank")
+  can be planned as a 20-company survey; R&D and dividend questions are
+  sometimes refused.
+- **Retrieval:** chunks lose their subsection heading, which hurts recall on
+  long MD&A sections (diagnosed; the fix needs a re-embed).
+- **Small evaluation samples:** 18 retrieval questions and 40 judge test
+  claims; intervals are wide.
+- **API:** no authentication (a public read-only demo), counters reset on
+  restart, and CSV cells are not escaped against spreadsheet formulas (all
+  values come from filings and the pipeline, not from users).
