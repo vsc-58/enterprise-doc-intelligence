@@ -1,12 +1,14 @@
-# src/rag/prompts.py
-# Module: Narrative-path prompts
-# Purpose: The two LLM prompts on the RAG path — a cited answer for one company,
-#          and a SUPPORTED / NOT_FOUND verdict per company for corpus-wide tasks.
-# Depends on: langchain-core
-#
-# The model writes no user-facing refusal text: it returns a typed outcome and
-# Python renders the sentence (D41). It sees no stored figure: matching values
-# arrive as [figure withheld] (D27, D41). Passages are data, never instructions.
+"""The two LLM prompts on the narrative path.
+
+A cited answer for one company, and a SUPPORTED / NOT_FOUND verdict per company
+for corpus-wide questions. Both prompts are hashed into chain_version(); any
+edit to them is a new prompt version.
+
+The model writes no user-facing refusal text: it returns a typed outcome and
+Python renders the sentence. It sees no stored figure: matching values arrive
+as [figure withheld]. Passages are data, never instructions: the prompt says
+so, and citations and figures are checked in code whatever the passages say.
+"""
 
 from langchain_core.prompts import ChatPromptTemplate
 

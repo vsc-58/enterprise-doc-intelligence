@@ -1,18 +1,17 @@
-# src/query/prompts.py
-# Module: Query-planner prompt
-# Purpose: The planner's system instruction and the template it is bound to.
-# Depends on: langchain_core, src.query.schemas
-#
-# Kept apart from planner.py for the same reason extraction/prompts.py is kept
-# apart from extractor.py: the prompt is the variable under study in Phase 5C,
-# and a prompt revision should be a diff in one file rather than a diff in the
-# module that calls the model.
-#
-# CORPUS-BLIND (D32): this prompt names no company, no fiscal year and no corpus
-# size. Listing them would be a second definition of the corpus that drifts the
-# moment it grows. Everything about membership is settled downstream in
-# resolve.py, and a plan for a company that is not held is a CORRECT plan with a
-# downstream refusal.
+"""The query planner's system prompt and the template it is bound to.
+
+Kept apart from planner.py for the same reason extraction/prompts.py is kept
+apart from extractor.py: the prompt is the variable under study in the routing
+evaluation, and a prompt revision should be a diff in one file rather than a
+diff in the module that calls the model. PLANNER_SYSTEM is hashed into
+planner_version(); any edit to it is a new prompt version.
+
+Corpus-blind: this prompt names no company, no fiscal year and no corpus size.
+Listing them would be a second definition of the corpus that drifts the moment
+it grows. Everything about membership is settled downstream in resolve.py, and
+a plan for a company that is not held is a CORRECT plan with a downstream
+refusal.
+"""
 
 from langchain_core.prompts import ChatPromptTemplate
 

@@ -1,6 +1,4 @@
-"""
-src/storage/vector_store.py
-ChromaDB wrapper for the narrative RAG corpus.
+"""ChromaDB wrapper for the narrative RAG corpus.
 
 Persists chunk text, embeddings and metadata at settings.CHROMA_DB_PATH and
 serves filtered similarity search to the RAG path. The only consumer of
@@ -12,8 +10,10 @@ created without it stays L2 forever and must be deleted and rebuilt. For the
 unit-length vectors OpenAI returns, all three metrics rank identically; cosine is
 kept for its bounded, interpretable score in logs. It does NOT make a
 distance-threshold out-of-scope guard viable: measured on the built store, a
-wrong-store question scored third-closest of six (D23). Refusal rests on the
-chain's prompt and on section filtering, never on a score cutoff.
+question that belongs to the figures table ("Apple's total revenue") scored
+closer than the headline in-scope question about interest-rate risk, so any
+cutoff that rejected it would also reject the demo. Refusal rests on the
+chain's typed outcomes and on section filtering, never on a score cutoff.
 
 Every score this module returns is a DISTANCE — lower is closer, 0 is identical.
 langchain-chroma's `similarity_search_by_vector_with_relevance_scores` returns
@@ -34,15 +34,12 @@ The chunk-parameter hash is written to collection metadata at creation and
 compared on every open. A store built at different chunk parameters or with a
 different embedding model is not comparable to the current ones, and detecting
 that is not left to anyone remembering to bump a version — the same reasoning as
-Phase 3's derived prompt_version.
+the derived prompt and planner versions.
 
 Re-chunking is handled by delete-then-insert per document, not by id collision:
 a content+position hash would orphan the tail whenever a re-chunk produced fewer
 chunks for a document, leaving stale chunks that no longer exist in the source
 and that nothing would ever overwrite.
-
-Dependencies: langchain-chroma, langchain-openai, chromadb, pydantic,
-src.ingestion.chunker, src.utils.config, src.utils.logger.
 """
 
 from __future__ import annotations
@@ -77,8 +74,7 @@ class VectorStoreError(RuntimeError):
 
 
 class RetrievalStatus(str, Enum):
-    """
-    How one retrieval ended.
+    """How one retrieval ended.
 
     OK: at least one chunk matched the filter and was returned.
     NO_MATCHING_CHUNKS: the store is healthy but holds nothing under this
@@ -86,7 +82,7 @@ class RetrievalStatus(str, Enum):
     FAILED: the store, the embedding call, or the stored metadata is broken. An
         empty collection is FAILED, not NO_MATCHING_CHUNKS: every filter would
         miss, and calling that "no Item 7" would hide a deployment fault behind
-        a plausible refusal (D22's silent-empty-store case).
+        a plausible refusal (for example a store reset without re-embedding).
     """
 
     OK = "ok"
@@ -95,17 +91,17 @@ class RetrievalStatus(str, Enum):
 
 
 class RetrievedChunk(BaseModel):
-    """
-    One chunk as returned by a search.
+    """One chunk as returned by a search.
 
     Attributes:
         text: Chunk text.
-        ticker: source_ticker — the filtering key (D30).
+        ticker: source_ticker, the filtering key.
         company_name: source_company, the EDGAR registrant name. A storage key;
-            display it through src.utils.text.display_name (D37).
+            display it through src.utils.text.display_name.
         cik: Zero-padded CIK.
         fiscal_year: source_year, the period-end filing_year key.
-        section: Item label, exact by construction (D21).
+        section: Item label. Exact by construction: each section is chunked
+            separately, so a chunk never spans two items.
         chunk_index: Position within its section.
         distance: Cosine distance to the query. Lower is closer.
     """
@@ -123,8 +119,7 @@ class RetrievedChunk(BaseModel):
 
 
 class RetrievalResult(BaseModel):
-    """
-    The outcome of one search.
+    """The outcome of one search.
 
     Attributes:
         status: See RetrievalStatus.
@@ -144,11 +139,12 @@ def _embeddings() -> OpenAIEmbeddings:
     """Construct the embedding client once per process.
 
     api_key is passed explicitly: pydantic-settings loads .env into the Settings
-    object, NOT into os.environ, where the OpenAI SDK looks for it. Phase 2
-    bug 5 — the same failure will occur here otherwise, and passing it from
+    object, NOT into os.environ, where the OpenAI SDK looks for it; extraction
+    failed this way once before the key was passed explicitly. Passing it from
     settings is also what the no-hardcode rule requires.
 
-    timeout and max_retries are the API's per-call limits (D54); the question
+    timeout and max_retries are the API's per-call limits: one call with its
+    retries must finish inside the request timeout, because the question
     embedding runs in a worker thread a request timeout cannot stop. The same
     client embeds 100-chunk batches in scripts.embed_documents: if a batch ever
     needs longer, run that script with OPENAI_TIMEOUT_SECONDS=60.
@@ -311,8 +307,8 @@ def add_chunks(chunks: list[dict[str, Any]], replace: bool = True) -> int:
     insert another's.
 
     Batched at settings.EMBED_BATCH_SIZE with a pause between batches: batching
-    bounds the blast radius of a failed call, and the pause keeps a ~1,750-chunk
-    run inside rate limits. A failed batch raises rather than continuing —
+    bounds the blast radius of a failed call, and the pause keeps a full-corpus
+    run (1,958 chunks) inside rate limits. A failed batch raises rather than continuing —
     unlike the per-document batch loop in the calling script, a partial insert
     within one document would flip is_embedded on incomplete data.
 
@@ -470,9 +466,10 @@ def build_filter(
     """Build a Chroma `where` clause from a ticker and a set of sections.
 
     Filters on source_ticker, never source_company, which holds registrant names
-    such as "BANK OF AMERICA CORP /DE/" (D30). Sections are matched with $in: an
-    intent's sections are a union with no priority order (D38). Sorted so the
-    same policy always produces the same clause in logs.
+    such as "BANK OF AMERICA CORP /DE/" that no model-written name would match.
+    Sections are matched with $in: an intent's sections are a union with no
+    priority order, ranked by distance alone. Sorted so the same policy always
+    produces the same clause in logs.
 
     Args:
         ticker: Restrict to one company, or None for all.

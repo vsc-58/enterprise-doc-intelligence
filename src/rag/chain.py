@@ -1,22 +1,22 @@
-# src/rag/chain.py
-# Module: Narrative chain
-# Purpose: Turn retrieved context into a structured, cited NarrativeResult —
-#          claims for one company, or one verdict per company for corpus-wide
-#          questions. Refusal text and citation validation live here, in Python.
-# Depends on: asyncio, langchain-openai, pydantic v2, src.query.intents,
-#             src.query.schemas,
-#             src.rag.figure_guard, src.rag.prompts, src.rag.retriever,
-#             src.storage.vector_store, src.utils.config, src.utils.logger,
-#             src.utils.text
-#
-# Three guarantees, each enforced by code rather than by the prompt (D41):
-#   1. Every claim cites at least one block that was actually retrieved. Cited
-#      numbers are mapped back through CompanyContext.block(); a number that does
-#      not exist is counted and dropped, and a claim left with none is dropped.
-#   2. No stored metric reaches the model or the user: values are masked in the
-#      context, and any that still appear in a claim are redacted.
-#   3. The model never writes refusal text. It returns a typed outcome; Python
-#      renders one fixed sentence per NarrativeRefusal.
+"""Narrative chain: turn retrieved passages into a structured, cited NarrativeResult.
+
+Produces cited claims for one company, or one verdict per company for a
+corpus-wide question. Refusal text and citation validation live here, in
+Python.
+
+Three guarantees, each enforced by code rather than by the prompt:
+  1. Every claim cites at least one block that was actually retrieved. Cited
+     numbers are mapped back through CompanyContext.block(); a number that does
+     not exist is counted and dropped, and a claim left with none is dropped.
+  2. No stored metric reaches the model or the user: values are masked in the
+     context, and any that still appear in a claim are redacted.
+  3. The model never writes refusal text. It returns a typed outcome; Python
+     renders one fixed sentence per NarrativeRefusal.
+
+The prompt states these rules too, but a prompt rule is a request: rules stated
+only in the prompt were broken in test runs (a figure, a citation, inline
+passage references), which is why each rule that matters has a check in code.
+"""
 
 import asyncio
 import hashlib
@@ -87,8 +87,9 @@ _INLINE_REF = re.compile(
 
 
 # --- Structured outputs ------------------------------------------------------
-# Docstrings and field descriptions are sent to the model (D34): keep them short
-# and written for the model.
+# Docstrings and field descriptions are sent to the model and hashed into
+# chain_version(): keep them short and written for the model. Any edit to them
+# is a new prompt version.
 
 
 class AnswerOutcome(str, Enum):
@@ -138,11 +139,10 @@ class DraftVerdict(BaseModel):
 
 
 def chain_version() -> str:
-    """
-    Version identifier for both narrative prompts, their schemas and the model.
+    """Version identifier for both narrative prompts, their schemas and the model.
 
     Schemas are hashed with the prompts because with_structured_output sends
-    them to the model as part of the call (D34).
+    them to the model as part of the call, docstrings included.
 
     Returns:
         32-character hex digest.
@@ -160,13 +160,13 @@ def chain_version() -> str:
 
 
 def _get_llm() -> ChatOpenAI:
-    """
-    Return the process-wide chat model, constructing it once.
+    """Return the process-wide chat model, constructing it once.
 
     api_key passed explicitly: pydantic-settings does not populate os.environ
-    (Phase 2 bug 5).
+    (extraction failed this way once).
 
-    timeout and max_retries bound each answer and verdict call (D54). A verdict
+    timeout and max_retries bound each answer and verdict call, so one call
+    with its retry fits inside the API's request timeout. A verdict
     call that times out marks that one company failed and the survey goes on.
     Neither is part of chain_version().
 
@@ -186,8 +186,7 @@ def _get_llm() -> ChatOpenAI:
 
 
 def section_phrase(sections: frozenset[str]) -> str:
-    """
-    Name a set of sections for a sentence.
+    """Name a set of sections for a sentence.
 
     Args:
         sections: Stored section labels.
@@ -204,8 +203,7 @@ def refusal_message(
     subject: str,
     sections: frozenset[str] = frozenset(),
 ) -> str:
-    """
-    The fixed sentence shown for a narrative refusal.
+    """The fixed sentence shown for a narrative refusal.
 
     One sentence per reason, so the user always sees why, and the refusal metric
     compares enums rather than wording.
@@ -247,8 +245,7 @@ def fallback_note(
     sections_searched: frozenset[str],
     answered: bool,
 ) -> str:
-    """
-    The fixed disclosure shown whenever a fallback section was searched (D44).
+    """The fixed disclosure shown whenever a fallback section was searched.
 
     Precedes the answer, or the refusal when the fallback text did not address
     the question, so the reader always knows the text came from somewhere other
@@ -280,8 +277,7 @@ def fallback_note(
 
 
 def clean_claim(text: str) -> str:
-    """
-    Strip passage references the model wrote into a sentence.
+    """Strip passage references the model wrote into a sentence.
 
     Args:
         text: A model-written claim.
@@ -296,8 +292,7 @@ def clean_claim(text: str) -> str:
 
 
 def _cite(numbers: Sequence[int], context: CompanyContext) -> tuple[list[SourceRef], int]:
-    """
-    Map cited block numbers to sources, counting numbers that do not exist.
+    """Map cited block numbers to sources, counting numbers that do not exist.
 
     Duplicates are collapsed, order of first citation kept.
 
@@ -324,8 +319,7 @@ def _cite(numbers: Sequence[int], context: CompanyContext) -> tuple[list[SourceR
 
 
 async def _targets(ticker: str) -> frozenset[float]:
-    """
-    One company's stored values for the figure guard.
+    """One company's stored values for the figure guard.
 
     Args:
         ticker: Company.
@@ -341,8 +335,7 @@ async def _targets(ticker: str) -> frozenset[float]:
 
 
 def _masked_context(context: CompanyContext, targets: frozenset[float]) -> tuple[str, int]:
-    """
-    Render a context for the model with stored figures withheld.
+    """Render a context for the model with stored figures withheld.
 
     Args:
         context: An OK context.
@@ -359,8 +352,7 @@ async def _invoke(
     schema: type[BaseModel],
     variables: dict[str, str],
 ) -> BaseModel:
-    """
-    Run one structured-output call.
+    """Run one structured-output call.
 
     Args:
         prompt: The ChatPromptTemplate.
@@ -389,8 +381,7 @@ async def answer_for_company(
     intent: Intent,
     company: CompanyRef,
 ) -> NarrativeResult:
-    """
-    Answer a narrative question about one company, with validated citations.
+    """Answer a narrative question about one company, with validated citations.
 
     Never raises: retrieval, guard-data and LLM faults return FAILED so the
     executor can report this task and keep the rest of the plan.
@@ -507,8 +498,7 @@ class _Verdict(BaseModel):
 
 def _finding(context: CompanyContext, status: FindingStatus,
              claim: CitedClaim | None = None) -> CompanyFinding:
-    """
-    Build a CompanyFinding for a context.
+    """Build a CompanyFinding for a context.
 
     Args:
         context: The company's retrieval.
@@ -535,8 +525,7 @@ async def _judge(
     targets: frozenset[float],
     semaphore: asyncio.Semaphore,
 ) -> _Verdict:
-    """
-    Run and validate one company's verdict.
+    """Run and validate one company's verdict.
 
     A SUPPORTED verdict with no valid citation is downgraded to NOT_FOUND: an
     uncited "yes" is not evidence.
@@ -596,8 +585,10 @@ async def survey_companies(
     intent: Intent,
     companies: Sequence[CompanyRef],
 ) -> NarrativeResult:
-    """
-    Answer a corpus-wide narrative question with one verdict per company (D39).
+    """Answer a corpus-wide narrative question with one verdict per company.
+
+    One verdict per company, rather than one answer over a shared top-k, so a
+    few large filers cannot crowd the rest out and every company gets a status.
 
     Retrieval runs once in a worker thread; verdict calls run concurrently under
     a semaphore of settings.RAG_VERDICT_CONCURRENCY. Every company appears in the

@@ -1,13 +1,13 @@
-# src/query/executor.py
-# Module: Plan execution
-# Purpose: Validate a plan, resolve its entities, run its tasks concurrently, and
-#          return one typed outcome per task.
-# Depends on: asyncio, src.query.*, src.rag.chain, src.rag.retriever,
-#             src.utils.logger, src.utils.text
-#
-# No LLM call is made here directly: the planner has already run, the SQL tool is
-# called with validated parameters, and the narrative tool's model calls live in
-# src.rag.chain. Nothing in this module decides what a question means.
+"""Plan execution: run a validated plan's tasks and return one outcome per task.
+
+Validates the plan, resolves each task's company, maps each intent to its tool
+through the policy table, runs the tasks concurrently, and returns one typed
+TaskOutcome per task.
+
+No LLM call is made here directly: the planner has already run, the SQL tool is
+called with validated parameters, and the narrative tool's model calls live in
+src.rag.chain. Nothing in this module decides what a question means.
+"""
 
 import asyncio
 
@@ -47,13 +47,13 @@ CORPUS_SUBJECT = "the companies in this corpus"
 
 
 def is_corpus_wide(task: Task) -> bool:
-    """
-    Whether a task ranges over the whole corpus rather than one company.
+    """Whether a task ranges over the whole corpus rather than one company.
 
     SQL rankings and filters always do. A narrative task does when it names no
     company: "Which companies flagged interest rate risk?" carries its scope in
-    the missing mention, so this is an executor rule rather than a planner field
-    that would add prompt surface to say the same thing (D39, D34).
+    the missing mention, so this is an executor rule rather than a planner
+    field: a field would add prompt surface, and change the planner version,
+    only to say the same thing.
 
     Args:
         task: The task.
@@ -67,8 +67,7 @@ def is_corpus_wide(task: Task) -> bool:
 
 
 def _resolve_for(task: Task, index: CorpusIndex | None):
-    """
-    Resolve a task's company, if it needs one.
+    """Resolve a task's company, if it needs one.
 
     Args:
         task: The task.
@@ -88,8 +87,7 @@ def _resolve_for(task: Task, index: CorpusIndex | None):
 
 
 def _run_sql_task(task: Task, entity: ResolvedEntity | None) -> TaskOutcome:
-    """
-    Run one financial task and render its answer.
+    """Run one financial task and render its answer.
 
     Args:
         task: A SQL-tool task.
@@ -127,13 +125,12 @@ def _run_sql_task(task: Task, entity: ResolvedEntity | None) -> TaskOutcome:
 
 
 def _narrative_outcome(task: Task, result: NarrativeResult, subject: str) -> TaskOutcome:
-    """
-    Wrap a NarrativeResult as a TaskOutcome, rendering any refusal sentence.
+    """Wrap a NarrativeResult as a TaskOutcome, rendering any refusal sentence.
 
     A narrative FAILED is a fault and maps to FAILED; every other refusal is a
     correct statement about the corpus and maps to REFUSED.
 
-    When a single-company answer came from fallback sections (D44), the fixed
+    When a single-company answer came from fallback sections, the fixed
     disclosure becomes the outcome's message: shown before the answer on
     success, and before the refusal sentence when the fallback text did not
     address the question. Not added to FAILED or FIGURE_REQUESTED, where the
@@ -180,8 +177,7 @@ async def _run_rag_task(
     entity: ResolvedEntity | None,
     index: CorpusIndex | None,
 ) -> TaskOutcome:
-    """
-    Run one narrative task: one company's cited answer, or a corpus-wide survey.
+    """Run one narrative task: one company's cited answer, or a corpus-wide survey.
 
     The chain never raises on retrieval or model faults; the guard here covers
     anything outside it — loading the corpus index for a survey — so one task
@@ -228,16 +224,16 @@ async def _run_rag_task(
 
 
 def scoped_to_company(task: Task) -> Task:
-    """
-    Turn a ranking or filter that names a company into that company's lookup.
+    """Turn a ranking or filter that names a company into that company's lookup.
 
     A ranking or filter ranges over every company and ignores company_mention
     (is_corpus_wide), so a planner that expresses "which of Apple, Microsoft or
     Meta had the highest revenue?" as three rankings would get the corpus-wide
     winner three times — a correct figure for a company nobody asked about,
     looking fully verified. The contradiction is visible in the task itself, so
-    it is fixed here rather than left to the prompt (D27): the named company's
-    figure for the same metric and year is what such a task can honestly serve.
+    it is fixed here in code rather than left to the prompt, where a rule would
+    leave this wrong answer one paraphrase away. The named company's figure for
+    the same metric and year is what such a task can honestly serve.
 
     Args:
         task: Any planned task.
@@ -263,11 +259,10 @@ def scoped_to_company(task: Task) -> Task:
 
 
 async def _execute_task(task: Task, index: CorpusIndex | None) -> TaskOutcome:
-    """
-    Execute one task: enforce its tool, resolve its entity, dispatch it.
+    """Execute one task: enforce its tool, resolve its entity, dispatch it.
 
     The tool comes from the policy table, never from the plan — the planner emits
-    intents and the application maps them, so a plan cannot route itself (D25).
+    intents and the application maps them, so a plan cannot route itself.
 
     Blocking work runs in a worker thread, so a plan's tasks genuinely overlap and
     an async API handler is never stalled by a synchronous database or vector-store
@@ -305,8 +300,7 @@ async def _execute_task(task: Task, index: CorpusIndex | None) -> TaskOutcome:
 
 
 async def execute_plan(plan: QueryPlan, index: CorpusIndex | None = None) -> list[TaskOutcome]:
-    """
-    Execute every task in a plan concurrently.
+    """Execute every task in a plan concurrently.
 
     Args:
         plan: A validated plan.

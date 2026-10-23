@@ -1,13 +1,12 @@
-# src/query/thresholds.py
-# Module: Threshold text to dollars
-# Purpose: Convert the literal threshold phrase a planner copied into a number.
-# Depends on: src.utils.logger
-#
-# In Python, never in the model. Scale words are exactly where extraction's worst
-# silent failure came from — a figure correct in digits and wrong by three orders
-# of magnitude (D29) — and a filter threshold has the same failure mode with none
-# of the evidence columns that caught it there. A parse that is not certain fails
-# loudly rather than guessing.
+"""Convert the literal threshold phrase the planner copied ("$50 billion") into dollars.
+
+In Python, never in the model. Scale words are exactly where extraction's worst
+silent failure came from: a figure correct in digits and wrong by three orders
+of magnitude (Bank of America's balance sheet read at thousands instead of
+millions). A filter threshold has the same failure mode with none of the
+evidence columns that caught it there, so a parse that is not certain fails
+loudly rather than guessing.
+"""
 
 import re
 
@@ -32,8 +31,7 @@ class ThresholdParseError(ValueError):
 
 
 def parse_threshold(text: str) -> float:
-    """
-    Convert a threshold phrase into a value in actual dollars.
+    """Convert a threshold phrase into a value in actual dollars.
 
     Accepts "$50 billion", "50bn", "1.5 trillion", "100 million dollars",
     "50,000,000,000". A bare number is taken as dollars, matching the units the

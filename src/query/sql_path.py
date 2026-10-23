@@ -1,18 +1,20 @@
-# src/query/sql_path.py
-# Module: Structured figure lookup
-# Purpose: Run one financial task as a parameterized read-only SELECT and render
-#          its answer text deterministically.
-# Depends on: sqlalchemy, src.query.*, src.storage.*, src.utils.*
-#
-# THE NUMERIC INVARIANT (D27): the figure is read from the database and rendered
-# into a sentence here, in Python. It is never placed in an LLM prompt and never
-# passes through a model on its way to the user. Everything downstream — the
-# executor, the assembler, the API — carries this text unchanged.
-#
-# All filtering, ordering and limiting is bound SQL built on the canonical read
-# (D31). The column allowlist is the MetricField enum: a column name that is not
-# a member cannot reach the query builder, so the allowlist is enforced by the
-# type rather than by a check (D25).
+"""The SQL tool: one financial task as a parameterized, read-only SELECT.
+
+Runs a figure lookup, ranking or filter over the figures table and renders the
+answer sentence deterministically.
+
+The numeric invariant: the figure is read from the database and rendered into a
+sentence here, in Python. It is never placed in an LLM prompt and never passes
+through a model on its way to the user. Everything downstream (the executor,
+the synthesizer, the API) carries this text unchanged. A prompt rule saying
+"do not change the numbers" would be a request; keeping numbers out of every
+prompt is a guarantee.
+
+All filtering, ordering and limiting is bound SQL built on the canonical read,
+latest_successful_stmt(). The column allowlist is the MetricField enum: a
+column name that is not a member cannot reach the query builder, so the
+allowlist is enforced by the type rather than by a check.
+"""
 
 from sqlalchemy import Select, and_
 
@@ -28,7 +30,7 @@ from src.query.schemas import (
     Task,
     Tool,
 )
-from src.query.thresholds import ThresholdParseError, parse_threshold  # parse_threshold still used in _build_statement
+from src.query.thresholds import ThresholdParseError, parse_threshold
 from src.storage.metadata_store import Document, ExtractedRecord, get_session, latest_successful_stmt
 from src.storage.quality import QualityReason, QualityVerdict, assess_record
 from src.utils.config import settings
@@ -61,10 +63,21 @@ METRIC_LABELS = {
 # Metrics that read as plural, for verb agreement in rendered answers.
 _PLURAL_METRICS = frozenset({MetricField.TOTAL_ASSETS, MetricField.TOTAL_LIABILITIES})
 
+
 class SqlPathError(Exception):
-    """Raised when a task cannot be run as written. Carries the user-facing text."""
+    """Raised when a task cannot be run as written.
+
+    Attributes:
+        message: The sentence shown to the user, e.g. asking them to restate an
+            unreadable threshold.
+    """
 
     def __init__(self, message: str) -> None:
+        """Store the user-facing sentence.
+
+        Args:
+            message: Text shown to the user as the task's refusal.
+        """
         super().__init__(message)
         self.message = message
 
@@ -75,8 +88,7 @@ def _column(metric: MetricField):
 
 
 def _build_statement(task: Task, entity: ResolvedEntity | None) -> tuple[Select, float | None]:
-    """
-    Build the bound statement for one financial task.
+    """Build the bound statement for one financial task.
 
     Args:
         task: The task, already validated by its schema.
@@ -89,9 +101,9 @@ def _build_statement(task: Task, entity: ResolvedEntity | None) -> tuple[Select,
         same value quoted back to the user.
 
     Raises:
-        SqlPathError: if the task cannot be expressed — case (a), raised before
-            anything runs, so a bounded-capability message is never confused with
-            an empty result (case b).
+        SqlPathError: if the task cannot be expressed as a query. Raised before
+            anything runs, so "I can't answer that kind of question" is never
+            confused with "I have no data for that" (an empty result).
     """
     stmt = latest_successful_stmt()
     column = _column(task.metric)
@@ -129,10 +141,9 @@ def _build_statement(task: Task, entity: ResolvedEntity | None) -> tuple[Select,
 
 
 def _null_rows(task: Task) -> list[MetricRow]:
-    """
-    The companies a ranking or filter leaves out because the figure is null.
+    """The companies a ranking or filter leaves out because the figure is null.
 
-    Named in the answer rather than counted (D56): BAC's operating cash flow is
+    Named in the answer rather than counted: BAC's operating cash flow is
     null because the true value is negative, so for "lowest operating cash flow"
     the excluded company is probably the real answer, and an unnamed count
     ("1 company was excluded") hid exactly that.
@@ -157,8 +168,7 @@ _CORPUS_INTENTS = frozenset({Intent.FINANCIAL_RANKING, Intent.FINANCIAL_FILTER})
 
 
 def _to_row(doc: Document, record: ExtractedRecord, metric: MetricField) -> MetricRow:
-    """
-    Project one (Document, ExtractedRecord) pair into a MetricRow.
+    """Project one (Document, ExtractedRecord) pair into a MetricRow.
 
     Args:
         doc: The filing.
@@ -166,7 +176,8 @@ def _to_row(doc: Document, record: ExtractedRecord, metric: MetricField) -> Metr
         metric: The queried field.
 
     Returns:
-        The row, with the field's quality flag attached (D29).
+        The row, with the field's quality flag attached. The flag is computed
+        from the stored evidence only, never from the evaluation answer key.
     """
     return MetricRow(
         ticker=doc.ticker,
@@ -184,7 +195,7 @@ def _to_row(doc: Document, record: ExtractedRecord, metric: MetricField) -> Metr
 # otherwise misses by orders of magnitude. evidence_mismatch is left out: the
 # value is unconfirmed, not mis-scaled — Tesla's flagged net income even matches
 # the answer key — and naming Intel's $1.69 billion as "may belong" in an
-# over-$50-billion list was the over-disclosure Step 10 found (D56).
+# over-$50-billion list was the over-disclosure a live run of the demo found.
 _SCALE_REASONS = frozenset({
     QualityReason.SCALE_AMBIGUOUS,
     QualityReason.SCALE_DISAGREEMENT,
@@ -196,8 +207,7 @@ SCALE_STEP = SCALE_MULTIPLIERS[2] / SCALE_MULTIPLIERS[1]
 
 
 def plausible_values(row: MetricRow) -> list[float]:
-    """
-    The values a scale-flagged figure could really have.
+    """The values a scale-flagged figure could really have.
 
     Args:
         row: A scale-flagged row with a value.
@@ -213,8 +223,7 @@ def plausible_values(row: MetricRow) -> list[float]:
 
 
 def _would_appear(value: float, task: Task, shown: list[MetricRow], threshold: float | None) -> bool:
-    """
-    Whether a company with this value would be in the answer.
+    """Whether a company with this value would be in the answer.
 
     Args:
         value: A plausible value.
@@ -244,11 +253,11 @@ def flagged_not_shown(
     task: Task,
     threshold: float | None,
 ) -> list[MetricRow]:
-    """
-    The flagged companies a ranking or filter left out that may belong in it.
+    """The flagged companies a ranking or filter left out that may belong in it.
 
     Named only when the flag is a scale flag AND a plausible true value would
-    put the company in the answer (D53, narrowed by D56). Pure, so the rule is
+    put the company in the answer. A warning that cannot be true teaches the
+    reader to skip the one that matters. Pure, so the rule is
     testable without a database. A shown row is skipped: its flag is disclosed
     beside it. Null values never reach here (the caller selects non-null rows).
 
@@ -275,12 +284,11 @@ def flagged_not_shown(
 def _flagged_outside_result(
     task: Task, shown: list[MetricRow], threshold: float | None
 ) -> list[MetricRow]:
-    """
-    Find flagged companies a ranking or filter dropped.
+    """Find flagged companies a ranking or filter dropped.
 
-    D36 caveats the ordering when a flagged row is in the result, but a figure
-    1,000x too small can fail a threshold it should pass, and then no flagged
-    row is shown to trigger anything. BAC's total assets (stored $3.05 billion,
+    render() caveats the ordering when a flagged row is in the result, but a
+    figure 1,000x too small can fail a threshold it should pass, and then no
+    flagged row is shown to trigger anything. BAC's total assets (stored $3.05 billion,
     ambiguous scale) drop out of "total assets above $1 trillion" exactly this
     way. Costs one extra read of one row per company; no model call.
 
@@ -303,8 +311,7 @@ def _flagged_outside_result(
 
 
 def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResult:
-    """
-    Execute one financial task.
+    """Execute one financial task.
 
     Args:
         task: A task whose intent maps to the SQL tool.
@@ -312,11 +319,12 @@ def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResul
 
     Returns:
         A MetricResult, possibly with no rows. An empty result is a valid
-        outcome (case b) and is distinguished from an unrunnable task (case a),
-        which raises before any query is issued.
+        outcome ("no data for that") and is kept apart from an unrunnable task
+        ("can't answer that kind of question"), which raises before any query
+        is issued.
 
     Raises:
-        SqlPathError: case (a) — the task cannot be expressed as a query.
+        SqlPathError: if the task cannot be expressed as a query.
     """
     if policy_for(task.intent).tool is not Tool.SQL:
         raise SqlPathError("That question doesn't belong to the figures table.")
@@ -352,8 +360,7 @@ def run_financial_task(task: Task, entity: ResolvedEntity | None) -> MetricResul
 
 
 def format_value(value: float | None) -> str:
-    """
-    Render a dollar figure at a readable scale.
+    """Render a dollar figure at a readable scale.
 
     Args:
         value: The figure in actual dollars.
@@ -379,8 +386,7 @@ def _period(row: MetricRow) -> str:
 
 
 def _not_shown_lines(task: Task, result: MetricResult) -> list[str]:
-    """
-    One disclosure line per flagged company a ranking or filter left out.
+    """One disclosure line per flagged company a ranking or filter left out.
 
     Worded as "may belong", never "belongs": for an ambiguous scale (BAC) there
     is no trusted value to say which side of the threshold it falls on.
@@ -406,8 +412,7 @@ def _not_shown_lines(task: Task, result: MetricResult) -> list[str]:
 
 
 def _null_lines(task: Task, result: MetricResult) -> list[str]:
-    """
-    One line per company left out because its figure was not extracted (D56).
+    """One line per company left out because its figure was not extracted.
 
     Says what the gap means for THIS question: a missing figure could be the
     lowest, the highest, or pass the threshold — and for BAC's operating cash
@@ -435,20 +440,19 @@ def _null_lines(task: Task, result: MetricResult) -> list[str]:
 
 
 def render(task: Task, result: MetricResult, entity: ResolvedEntity | None) -> str:
-    """
-    Render the answer text for a completed financial task.
+    """Render the answer text for a completed financial task.
 
     Deterministic string building. This function is the reason no stored figure
-    ever reaches an LLM (D27), so it must stay free of model calls.
+    ever reaches an LLM, so it must stay free of model calls.
 
     Multi-row answers print each row's fiscal year and, when the years differ,
     append one sentence saying so: this corpus holds one filing per company, so a
-    ranking that hid the mixture would be misleading (D33).
+    ranking that hid the mixture would be misleading.
 
     Rankings and filters also name, even when the result is empty, every
     company they left out that may belong: scale-flagged figures a 1,000x
-    correction would bring in (D53, D56), and figures that were not extracted,
-    with what the gap means for the question (D56).
+    correction would bring in, and figures that were not extracted, with what
+    the gap means for the question.
 
     Args:
         task: The task that was run.
