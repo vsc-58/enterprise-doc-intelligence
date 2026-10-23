@@ -1,13 +1,15 @@
-# Query-Path Evaluation — Phase 5C Results
+# Query-Path Evaluation Results
 
-Status: complete (2026-10-15). Routing, execution, retrieval (section 7) and
-attribution support (section 8). Decisions D43–D52.
+Status: complete (2026-10-15). Covers routing, execution, retrieval (section 7)
+and attribution support (section 8).
 
-All numbers are means over **3 runs** (temperature 0 is not deterministic, D35).
+All numbers are means over **3 runs**: temperature 0 is not deterministic, and
+the same question can get a different plan from one run to the next.
 95% intervals are Wilson intervals with **n = questions**: repeated runs measure
 the model's variability on the same questions and do not narrow the interval.
-**Held-out is report-only** (D17 reasoning): no prompt was revised in response to
-a held-out result, and every revision is tied to a named dev miss.
+**Held-out is report-only**: no prompt was revised in response to a held-out
+result, and every revision is tied to a named dev miss. Revising on held-out
+results would turn them into a second dev set and leave no out-of-sample claim.
 
 ---
 
@@ -24,7 +26,7 @@ a held-out result, and every revision is tied to a named dev miss.
 | Invalid citations, 9 runs | 1 in total, detected by the citation check | |
 | Retrieval: relevant chunk in the top 5 (strict, n = 18 specific questions) | 100% [68–100] | 100% [72–100] |
 | Retrieval: capped recall@5 / precision@5 (strict) | 79% / 50% | 59% / 46% |
-| **Attribution: claims supported by their cited chunks** (validated judge, 322 claims) | **91.1%** [85–95] | **94.5%** [90–97] |
+| **Attribution: claims supported by their cited chunks** (validated judge, 322 claims; 93.2% overall) | **91.1%** [85–95] | **94.5%** [90–97] |
 
 Reading it: the downstream system is exact when given the right plan; the
 remaining end-to-end errors are almost all routing. Retrieval always puts a
@@ -44,13 +46,14 @@ against any other hash.
 
 | Source | Dev | Held | Notes |
 |---|---|---|---|
-| Original 5A/5B set, relabelled to 9 intents (D38/D40) | 33 | 17 | 5 held questions used verbatim in 5A/5B probes moved to dev |
+| Earlier development questions, relabelled to the 9 intents | 33 | 17 | 5 held questions that had appeared verbatim in earlier probes moved to dev |
 | Written by a separate LLM, user phrasing (typos, tickers, vague) | 25 | 25 | Stratified split, fixed seed |
 | Hard cases written with system knowledge | 9 | 0 | Dev only |
 
 Each row carries a strict label, accepted alternatives (lenient scoring), the
 expected outcome per task (derived from `data/eval/section_inventory.json`, not
-intuition — D24), and a narrative-set flag (23 questions) for retrieval and
+intuition: a label set by intuition measures the labeller, not the system), and
+a narrative-set flag (23 questions) for retrieval and
 attribution. Contamination controls: questions seen in earlier probes moved to
 dev; the prompt example that was eval question R11 removed; every prompt
 revision scanned against held-out questions for shared 3-word phrases.
@@ -72,7 +75,7 @@ company is flagged as a resolver gap rather than charged to the planner.
 - *end to end* — the planner's plan: what a user receives.
 
 Every task is reduced to an outcome the code emits (resolver failure,
-NarrativeRefusal, D29 quality verdict, D44 fallback) and compared with the
+NarrativeRefusal, data-quality verdict, section fallback) and compared with the
 label. A question is correct only if every task matches (and, end to end, it
 routed correctly). The gap between modes is the cost of routing errors.
 
@@ -90,11 +93,11 @@ routed correctly). The gap between modes is the cost of routing errors.
 
 Few questions change plan between runs: the misses are systematic, not noise.
 
-### 4.2 v1 miss patterns (D46)
+### 4.2 v1 miss patterns
 
 | | Pattern | Dev evidence | User impact |
 |---|---|---|---|
-| P1 | "Which companies…" narrative planned unsupported / out of scope | N32, N33, H01 | Wrong refusal; the D39 survey mostly unreachable |
+| P1 | "Which companies…" narrative planned unsupported / out of scope | N32, N33, H01 | Wrong refusal; the corpus-wide survey mostly unreachable |
 | P2 | Figures stated in text (R&D, dividends) → field_not_queryable | N41 | Wrong refusal |
 | P3 | "compare X and Y" → aggregation | N15 | Wrong refusal |
 | P4 | Ranking within named companies → one ranking per company | N10 | **Wrong answer**: the corpus-wide winner, three times |
@@ -103,7 +106,9 @@ Few questions change plan between runs: the misses are systematic, not noise.
 
 P4 was also fixed structurally (`executor.scoped_to_company`): a ranking or
 filter that names a company runs as that company's lookup. It is the only
-pattern detectable from the plan's shape alone (D46).
+pattern detectable from the plan's shape alone, so it is the only one enforced in
+code; P6 ("net sales" → net_income) is a well-formed plan that only the prompt
+and the eval can catch.
 
 ### 4.3 Paired comparison — fixed vs broken
 
@@ -115,8 +120,10 @@ pattern detectable from the plan's shape alone (D46).
 
 v2's regressions were caused by its own wording ("never financial_ranking",
 "not a clarification"): prohibitions generalise beyond their target. v3
-restated both as positive discriminators (D47). A stopping rule declared before
-the v3 run made it final.
+restated both as positive discriminators (a filter needs a threshold; a question
+about companies in general differs from one about a specific, unnamed company). A
+stopping rule declared before the v3 run made it final: each further iteration on
+dev, with held-out misses visible, would erode the held-out claim further.
 
 ### 4.4 What can be claimed
 
@@ -132,7 +139,7 @@ the v3 run made it final.
 | Question | v3 behaviour | User impact |
 |---|---|---|
 | N49, N50 ("that bank", "its strategy") | Planned as a 20-company survey | **Wrong answer** + ~20 calls; plan is indistinguishable from a legitimate survey |
-| N41, N43 (R&D, dividends) | field_not_queryable | Wrong refusal; three prompt attempts failed — D45 needs a schema signal or a stronger planner |
+| N41, N43 (R&D, dividends) | field_not_queryable | Wrong refusal; three prompt attempts failed — the rule that narrative answers may quote figures other than the five stored ones needs a schema signal or a stronger planner |
 | N01 ("last year") | Year 2022 in some runs | Recoverable refusal |
 | N32, N35 | Survey split into 2–3 tasks | Duplicate surveys, double cost |
 | H01 (bitcoin) | company_overview survey | Searches Item 1; Tesla's holding (Item 7) missed |
@@ -143,8 +150,8 @@ the v3 run made it final.
 
 ### 5.1 Oracle vs end to end on identical questions
 
-The oracle was rerun after D50 gave each narrative task of a multi-task label its
-own question, so hybrids are now included.
+The oracle was rerun after each narrative task of a multi-task label was given
+its own question (6.2), so hybrids are now included.
 
 | Questions | Split | Oracle raw (per run) | Oracle adjudicated | End to end (per run, adjudicated) |
 |---|---|---|---|---|
@@ -163,18 +170,18 @@ is a routing miss already listed in 4.5: N01, N32, N35, N41, N43, H01.
 | section_absent (MD&A or market risk not captured) | 15 / 15 |
 | year_not_held | 12 / 12 |
 | non_corpus_company | 12 / 12 |
-| answered_flagged (D29 disputed figure disclosed) | 24 / 24 |
-| fallback_answered (D44, R31 and H02) | 6 / 6 |
+| answered_flagged (disputed figure disclosed) | 24 / 24 |
+| fallback_answered (market risk answered from Item 1A when Items 7 and 7A were not captured; R31 and H02) | 6 / 6 |
 | ambiguous_company (end to end) | 3 / 3 |
 
-### 5.3 Figure guard and citations (D41)
+### 5.3 Figure guard and citations
 
 | Run | Oracle masked | Oracle redacted | E2E masked | E2E redacted | Invalid citations |
 |---|---|---|---|---|---|
 | 1 | 31 | 0 | 22 | 0 | 0 |
 | 2 | 31 | 0 | 19 | 0 | 0 |
 | 3 | 31 | 0 | 19 | 0 | 0 |
-| Oracle rerun (D50), runs 1–3 | 28 / 28 / 28 | 0 | — | — | 0 / 1 / 0 |
+| Oracle rerun (per-task questions), runs 1–3 | 28 / 28 / 28 | 0 | — | — | 0 / 1 / 0 |
 
 The redaction backstop never fired: masking caught every stored figure before
 the model saw it. One citation in nine runs pointed at a block number that did
@@ -184,7 +191,7 @@ not exist; the citation check detected and counted it. First occurrence, logged.
 
 | Question | Supported | Not found | Not searchable | Fallback |
 |---|---|---|---|---|
-| H08 interest-rate risk (5B headline) | 19 | 1 | 0 | JPM, XOM via Item 1A |
+| H08 interest-rate risk (headline demo question) | 19 | 1 | 0 | JPM, XOM via Item 1A |
 | H05 cybersecurity risk | 19 | 1 | 0 | — |
 | N34 climate / environmental regulation | 17 | 3 | 0 | — |
 | N32 supply chain | 16 | 4 | 0 | — |
@@ -211,15 +218,15 @@ score is reported as primary and the adjudicated score beside it.
 | N29 | single task only | two same-intent tasks also acceptable | Accepted for N22, not here — inconsistent labelling |
 | N20 | answered | not_addressed (honest refusal) | Intel's two strategy chunks are a 10-K cross-reference index; no relevant chunk exists (7.5) |
 | N44 | ratio_or_derived | field_not_queryable defensible | Debt-to-equity needs equity, which is not stored |
-| R35 | BAC revenue answered | answered_flagged | BAC's four fields are in the 2–2 scale tie (5A); revenue is disputed |
+| R35 | BAC revenue answered | answered_flagged | BAC's four checkable fields split 2–2 between two scales, so all four are flagged scale-ambiguous; revenue is disputed |
 | N14 | answered | answered_flagged | The lowest row is Intel, whose net income is disputed |
 
-### 6.2 Harness artifact — oracle hybrids (fixed, D50)
+### 6.2 Harness artifact — oracle hybrids (fixed)
 
 The first oracle passed the whole question to each narrative task, so a hybrid
 ("Describe Tesla's business and give its total revenue") sent the figure clause
 to the chain, which correctly refused it. Five oracle misses were this artifact.
-D50 gives each narrative task of the 13 multi-task labels its own clause, kept in
+The fix gives each narrative task of the 13 multi-task labels its own clause, kept in
 `oracle_params.json` beside the frozen labels; a missing clause now raises. After
 the fix every hybrid passes the oracle.
 
@@ -230,19 +237,21 @@ the fix every hybrid passes the oracle.
   is the correct answer; the defect is the corpus (Intel's Item 1 and MD&A text
   were not captured).
 - **N41** (Apple R&D): the chain returned figure_requested in 1 of 3 runs,
-  treating R&D as a reserved figure. D45's policy is fragile at both the
-  planner and the chain.
+  treating R&D as a reserved figure. The rule that narrative answers may quote
+  figures other than the five stored ones is fragile at both the planner and
+  the chain.
 
 ---
 
 ## 7. Retrieval
 
 Scorer: `scripts/run_retrieval_eval.py`; gold: `data/eval/retrieval_gold.json`
-(frozen by hash, D49); results: `data/eval/retrieval_results.{json,md}`.
+(frozen by SHA-256; the scorer refuses an edited file); results:
+`data/eval/retrieval_results.{json,md}`.
 
 ### 7.1 Why chunk-level gold
 
-Retrieval filters on company and section (D30, D38), so "right company, right
+Retrieval filters on company and section, so "right company, right
 section" is ~100% by construction and measures the filter. What can fail is which
 chunks of the right section reach the 5 the chain reads. That needs chunk-level
 relevance labels.
@@ -282,7 +291,7 @@ and makes 8 of its 19 relevant chunks unreachable (recall@10 70% → 50%).
 Held-out scores higher than dev because the two hardest questions (R28, N29,
 both Walmart MD&A) happen to be in dev; with n = 8 and 10 the gap means little.
 
-### 7.4 Weakest questions, and the diagnosed cause (D51)
+### 7.4 Weakest questions, and the diagnosed cause
 
 | Question | Recall@5 | Why |
 |---|---|---|
@@ -325,7 +334,8 @@ the correct answer and the label is wrong (6.1).
 
 Judge: `src/eval/attribution.py`; run: `scripts/run_attribution_eval.py`;
 results: `data/eval/attribution_results.{json,md}`; labels:
-`data/eval/attribution_labels.json`. Design D43, amended D52 before the first run.
+`data/eval/attribution_labels.json`. The validation design and its pass criteria
+were fixed before the judge ran, and amended once, before its first run (8.2).
 
 ### 8.1 What is measured
 
@@ -353,7 +363,7 @@ confirm none was accidentally supported.
 
 Reference labels for the test claims were written by Claude — a different model
 family from the judge, from claim and excerpts only — at the developer's request,
-not by a human (D52). The single judge–reference disagreement (T02, Tesla:
+not by a human. The single judge–reference disagreement (T02, Tesla:
 "continuous innovation in EV technology" is not in the text) was adjudicated by the
 developer in the judge's favour, giving 40 / 40 agreement on real claims.
 
@@ -361,8 +371,9 @@ Why kappa, and why over test + seeds: 39 of 40 real claims are supported, so a j
 that always said "supported" would score 97.5% raw agreement while catching
 nothing. Kappa discounts chance agreement. At that prevalence it is also unstable:
 the one disagreement alone gives a test-only kappa of 0.66 at 97.5% agreement.
-Adding the 30 known-bad seeds gives both classes enough items (D52, decided before
-the run).
+Adding the 30 known-bad seeds gives both classes enough items. This amendment was
+made before the first judge run, for that statistical reason, and is recorded
+rather than hidden: changing a criterion after seeing results would invalidate it.
 
 Calibration (not gating): 17 / 20 agreement. The judge is stricter on wording than
 the reference — it rejected "substantial" for the filing's "significant" (C20) —
@@ -411,9 +422,9 @@ text is about regulators' compliance focus on AI, not AI causing harm.
 
 | Item | Status |
 |---|---|
-| Chunks lose their subsection heading (R28, N29) | Diagnosed (D51); fix = contextual chunk headers, needs re-embed |
+| Chunks lose their subsection heading (R28, N29) | Diagnosed (7.4); fix = contextual chunk headers, needs re-embed |
 | Unnamed-company questions planned as surveys (N49, N50) | Wrong answers; needs a structural guard, not a prompt rule |
-| R&D and dividend questions refused (N41, N43) | D45 policy fragile; needs a schema signal |
+| R&D and dividend questions refused (N41, N43) | Non-stored-figure rule fragile (6.3); needs a schema signal |
 | ~7% of answer sentences over-interpret their source | Measured; candidate fix = run the judge as a post-generation check |
 | Corpus gaps: Intel/JPM/XOM MD&A, Tesla Item 7A, Intel Item 1 is an index | Logged; acquisition-layer fixes |
 | Planner on a stronger model | Not run; would share the judge's model |
@@ -427,15 +438,15 @@ python -m scripts.diagnostic.dump_section_inventory          # section inventory
 python -m scripts.run_routing_eval                           # routing, 3 runs
 python -m scripts.run_execution_eval                         # oracle + end to end, 3 runs
 python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
-python -m scripts.diagnostic.probe_heading_context           # D51 diagnostic
+python -m scripts.diagnostic.probe_heading_context           # heading-loss test (7.4)
 python -m scripts.diagnostic.probe_judge                     # judge structured-output probe
 python -m scripts.export_attribution_set                     # seeds + label sheet
 python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
-pytest tests                                                 # 186 unit tests
+pytest                                                       # unit tests (no network, no API key)
 ```
 
 Evidence in `data/eval/`: `query_eval_set.json`, `section_inventory.json`,
 `oracle_params.json`, `routing_results_{0ed3e740,f5252664,d4bc8e36}.{json,md}`,
 `execution_results_d4bc8e36_b1d8ee5c{,_oracle}.{json,md}`, `retrieval_gold.json`,
 `retrieval_results.{json,md}`, `attribution_set.json`, `attribution_seeds.json`,
-`attribution_labels.json`, `attribution_results.{json,md}`. Decisions D43–D52.
+`attribution_labels.json`, `attribution_results.{json,md}`.
