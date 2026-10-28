@@ -91,6 +91,7 @@ def _flag(verdict: QualityVerdict) -> QualityFlag:
 
 
 def _sql(verdict: QualityVerdict) -> TaskOutcome:
+    """A successful SQL outcome serving one BAC figure whose flag has the given verdict."""
     row = MetricRow(ticker="BAC", company_name="Bank of America", fiscal_year=2022,
                     fiscal_year_end=None, metric=MetricField.TOTAL_ASSETS, value=1.0,
                     quality=_flag(verdict))

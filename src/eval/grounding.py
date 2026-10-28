@@ -1,6 +1,4 @@
-"""
-src/eval/grounding.py
-Evidence verification for S3's per-field source lines.
+"""Evidence verification for the source line the extraction cites for each figure.
 
 Two independent verdicts on a cited figure:
   - check_grounding            : is the cited line real? (fabrication detector)
@@ -12,9 +10,7 @@ evaluate.py because BOTH the offline evaluator and the write-time extraction
 pipeline call them, and importing evaluate.py from extractor.py is circular
 (evaluate.py imports the extractor to run strategies). One implementation, two
 callers, no cycle — a second copy would mean two calibrations of one instrument,
-which is the failure D12 was about.
-
-Dependencies: src.utils.config, src.utils.logger, src.utils.numbers.
+and an instrument calibrated twice can disagree with itself.
 """
 
 import re
@@ -29,8 +25,7 @@ _EVIDENCE_NUMBER = re.compile(r"\d[\d,]*\.?\d*")
 
 
 def _flatten_for_grounding(text: str) -> str:
-    """
-    Reduce text to a form comparable across cosmetic differences.
+    """Reduce text to a form comparable across cosmetic differences.
 
     Lowercases, removes ALL whitespace, and strips currency symbols. The text
     extractor runs labels into their values ('total assets$85,501'), so a
@@ -51,12 +46,23 @@ def _flatten_for_grounding(text: str) -> str:
 def check_grounding(
     evidence: dict[str, dict] | None, source_text: str
 ) -> dict[str, bool | None]:
-    """
+    """Check that each cited source line really occurs in the source text.
+
     A quoted line that is not a substring of the source was fabricated, so the
     value it supports cannot be trusted regardless of whether it happens to be
     correct. Comparison ignores whitespace and currency symbols (see
     _flatten_for_grounding): the extractor mangles spacing around table values,
     so requiring exact spacing would flag correct citations as fabricated.
+
+    Args:
+        evidence: Field name -> evidence dict with a "source_line", as the
+            evidence strategy returns it; None or empty for no evidence.
+        source_text: The exact text the model was given.
+
+    Returns:
+        Field name -> True (line found), False (not found, i.e. fabricated) or
+        None (no line to check because the field was null). Empty when there is
+        no evidence.
     """
     if not evidence:
         return {}
@@ -78,16 +84,15 @@ def check_grounding(
 def check_evidence_consistency(
     evidence: dict[str, dict] | None,
 ) -> dict[str, bool | None]:
-    """
-    Report, per field, whether the extracted value appears in its own cited line.
+    """Report, per field, whether the extracted value appears in its own cited line.
 
     The second and independent grounding verdict. check_grounding answers "was
     this line fabricated?"; this answers "does the line the model cited actually
     contain the number the model reported?" — a real line cited for a figure it
     does not carry passes the first check and fails this one.
 
-    Found on the eval-10: INTC/WMT/AMZN total_liabilities, where no standalone
-    total-liabilities line exists (Phase 1 D5) and the model cited "Total
+    Found on the 10-document selection set: INTC/WMT/AMZN total_liabilities,
+    where no standalone total-liabilities line exists and the model cited "Total
     liabilities and stockholders' equity" for a figure it had derived; and INTC
     net_income, where the model returned NetIncomeLoss (1,689) while quoting the
     ProfitLoss line (1,675). All four scored `correct` and passed check_grounding.

@@ -14,7 +14,7 @@ def _page() -> str:
 
 
 def test_root_serves_the_demo_page() -> None:
-    """Step 10: "/" returned {"detail": "Not Found"} — a visitor's first view of the Space."""
+    """Before the demo page, "/" returned {"detail": "Not Found"}: a visitor's first view."""
     response = TestClient(create_app()).get("/")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")

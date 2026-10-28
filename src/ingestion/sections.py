@@ -1,6 +1,4 @@
-"""
-src/ingestion/sections.py
-Deterministic section slicing for extraction input.
+"""Deterministic section slicing for extraction input (cover page and Item 8).
 
 Produces the text blocks fed to the extraction prompts BEFORE any LLM call, so
 every strategy in the bake-off receives byte-identical input (the controlled
@@ -20,9 +18,11 @@ attribute a result to input quality vs prompt quality.
 
 edgartools' section detection is used for Item 8 (mature library for solved
 plumbing) but never trusted blindly: the gate + fallback is what makes it safe.
-Phase 3 narrative extraction extends this with Item 1 / Item 1A.
 
-Dependencies: tiktoken, pydantic v2, src.utils.config, src.utils.logger.
+Narrative sections for the retrieval corpus (Items 1, 1A, 7, 7A) are sliced
+separately, in narrative_sections.py. This module's output is part of the
+extraction cache key, so a change here would re-bill every cached extraction
+and invalidate the measured extraction results.
 """
 
 from typing import Protocol
@@ -42,21 +42,20 @@ _ITEM8_KEY = "Item 8"
 
 
 class FilingLike(Protocol):
-    """
-    Structural type for the one capability get_sections needs from an
-    edgartools filing: obj() -> a form object supporting item lookup by key.
+    """Structural type for the one capability get_sections needs from a filing.
 
-    Declared as a Protocol (not the concrete edgar.Filing) so the slicer is
+    obj() returns a form object supporting item lookup by key, as edgartools'
+    Filing does. Declared as a Protocol (not the concrete edgar.Filing) so the slicer is
     decoupled from edgartools' class and unit-testable with a fake.
     """
 
-    def obj(self) -> object:  # noqa: D102 - protocol stub
+    def obj(self) -> object:
+        """Return the parsed form object (for a 10-K, one indexable by item)."""
         ...
 
 
 class Section(BaseModel):
-    """
-    One sliced section of a filing, with provenance.
+    """One sliced section of a filing, with provenance.
 
     Whitespace is deliberately NOT stripped: flattened financial tables rely on
     runs of whitespace to keep columns aligned, and stripping would corrupt the
@@ -83,8 +82,7 @@ def _n_tokens(text: str) -> int:
 
 
 def _try_item8(filing: FilingLike) -> str | None:
-    """
-    Attempt to extract Item 8 text via edgartools.
+    """Attempt to extract Item 8 text via edgartools.
 
     Returns the item text, or None if edgartools returns nothing or raises
     (both are treated the same downstream: gate fails, fallback taken).
@@ -109,8 +107,7 @@ def _try_item8(filing: FilingLike) -> str | None:
 
 
 def _passes_floor(text: str | None) -> bool:
-    """
-    True if the Item 8 slice is present and at least the char floor long.
+    """True if the Item 8 slice is present and at least the char floor long.
 
     The floor (settings.ITEM8_MIN_CHARS) is edgartools' own empirical minimum
     for a 10-K Item 8. A slice below it is a truncated heading, not the
@@ -127,8 +124,7 @@ def _passes_floor(text: str | None) -> bool:
 
 
 def _build_cover(raw_text: str) -> Section:
-    """
-    Build the cover section from the head of the on-disk filing text.
+    """Build the cover section from the head of the on-disk filing text.
 
     The cover page (registrant name, 'for the fiscal year ended <date>') sits
     at the very top of the filing, so a fixed head slice reliably contains the
@@ -152,8 +148,7 @@ def _build_cover(raw_text: str) -> Section:
 def _build_financial_statements(
     filing: FilingLike, raw_text: str, cover_tokens: int
 ) -> Section:
-    """
-    Build the financial-statements section: gated Item 8, else full-text fallback.
+    """Build the financial-statements section: gated Item 8, else full-text fallback.
 
     Item 8 is accepted when it clears the char floor AND the assembled input
     (Item 8 + cover) fits the model input budget. The budget test replaces an
@@ -241,8 +236,7 @@ def _build_financial_statements(
 
 
 def get_sections(filing: FilingLike, raw_text: str) -> dict[str, Section]:
-    """
-    Slice a filing into the sections the extraction prompts consume.
+    """Slice a filing into the sections the extraction prompts consume.
 
     Pure logic: takes the resolved filing (for Item 8) and the on-disk filing
     text (for the cover slice and the fallback), and returns the section dict.

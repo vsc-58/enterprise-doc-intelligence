@@ -1,30 +1,31 @@
-"""
-scripts/diagnostic/test_similarity_search.py — DIAGNOSTIC (print() allowed).
+"""Check retrieval against the built vector store: regression, filters, coverage.
 
-Validates retrieval against the built vector store in three parts:
+Diagnostic (print() allowed), not a pytest test. Validates retrieval against
+the built vector store in three parts:
 
-1. REGRESSION — the six Phase 4 queries, unfiltered, k=3. The query API changed
-   in 5B, the store did not, so best distances must reproduce the Phase 4 table
+1. REGRESSION — the six original retrieval queries, unfiltered, k=3. The query
+   API changed later, the store did not, so best distances must reproduce the
+   table recorded when the store was built
    (0.3168 / 0.3413 / 0.3446 / 0.4046 / 0.4183 / 0.4955) to float noise. A
    difference means the new code path is not searching what the old one did.
 2. FILTERS AND STATUSES — first exercise of Chroma's $and / $in syntax on the
    real store. Asserts every returned chunk satisfies its filter, and that a
    filter matching nothing (INTC has no Item 7) returns NO_MATCHING_CHUNKS
    rather than an empty OK.
-3. COVERAGE — the measurement behind the per-company design (D39): how many
+3. COVERAGE — the measurement behind per-company retrieval: how many
    distinct companies plain top-k reaches for the headline query as k grows,
    versus per-company retrieval from ONE embedding.
 
 Calls the OpenAI embedding API about ten times, ~10 tokens each: effectively
 free. Read-only.
 
-Expected-source tags use tickers, not registrant names (D30). QCOM and META are
-tagged at company granularity only (D20, D24).
+Expected-source tags use tickers, not registrant names, which no query would
+match. QCOM and META are tagged at company granularity only: their business
+description is stored under Item 1A, so a section tag would score the slicer
+rather than the retriever.
 
 Usage:
     python -m scripts.diagnostic.test_similarity_search
-
-Dependencies: src.query.resolve, src.storage.vector_store, src.utils.logger.
 """
 
 from __future__ import annotations
@@ -83,8 +84,8 @@ def show(result: RetrievalResult) -> None:
 
 
 def regression() -> bool:
-    """Part 1. Returns True if every distance reproduces Phase 4."""
-    print(f"\n{'=' * 78}\n1. REGRESSION vs Phase 4 (unfiltered, k={TOP_K})")
+    """Part 1. Return True if every distance reproduces the recorded table."""
+    print(f"\n{'=' * 78}\n1. REGRESSION vs recorded distances (unfiltered, k={TOP_K})")
     ok = True
     for question, ticker, section, expected in REGRESSION:
         print(f"\nQ: {question}")
@@ -99,7 +100,7 @@ def regression() -> bool:
         tickers = {c.ticker for c in result.chunks}
         sections = {c.section for c in result.chunks}
         tag_ok = (ticker is None or ticker in tickers) and (section is None or section in sections)
-        print(f"   best={best:.4f} phase4={expected:.4f} {'MATCH' if same else 'DRIFT'}"
+        print(f"   best={best:.4f} recorded={expected:.4f} {'MATCH' if same else 'DRIFT'}"
               f"  tags {'met' if tag_ok else 'MISSED'}")
         ok = ok and same
     return ok

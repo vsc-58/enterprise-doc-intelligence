@@ -1,12 +1,14 @@
-# src/query/resolve.py
-# Module: Entity and period resolution
-# Purpose: Turn the raw company mention a planner emitted into a corpus identity,
-#          and settle which fiscal year a question refers to.
-# Depends on: src.query.schemas, src.storage.metadata_store, src.utils.logger
-#
-# No LLM and no network. The planner is corpus-blind (D32), so this module is the
-# single place that knows which companies and years are held — one definition to
-# update when the corpus grows, rather than a prompt and a table drifting apart.
+"""Entity and period resolution: match a company mention to a held filing.
+
+Turns the raw company mention the planner copied from the question ("amzn",
+"J&J", "that bank") into a corpus identity, a non-corpus refusal or an
+ambiguity refusal, and settles which fiscal year a question refers to.
+
+No LLM and no network. The planner is corpus-blind (its prompt lists no
+companies or years), so this module is the single place that knows which
+companies and years are held: one definition to update when the corpus grows,
+rather than a prompt and a table drifting apart.
+"""
 
 import re
 from collections.abc import Sequence
@@ -63,8 +65,7 @@ _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
 
 class CorpusEntry(BaseModel):
-    """
-    One held filing, flattened for matching.
+    """One held filing, flattened for matching.
 
     Constructed from the database by load_index(), or by hand in tests — which is
     why resolution is testable with no database, no API key and no network.
@@ -95,8 +96,7 @@ _cached_index: CorpusIndex | None = None
 
 
 def normalise(text: str) -> str:
-    """
-    Lowercase a name and strip punctuation, dropping any state suffix.
+    """Lowercase a name and strip punctuation, dropping any state suffix.
 
     EDGAR registrant names carry forms like "BANK OF AMERICA CORP /DE/" and
     "QUALCOMM INC/DE"; everything from the first slash is discarded before
@@ -114,8 +114,7 @@ def normalise(text: str) -> str:
 
 
 def identifying_tokens(text: str) -> frozenset[str]:
-    """
-    Reduce a name to the tokens that actually identify a company.
+    """Reduce a name to the tokens that actually identify a company.
 
     Args:
         text: A company name or mention.
@@ -128,8 +127,7 @@ def identifying_tokens(text: str) -> frozenset[str]:
 
 
 def build_index(entries: Sequence[CorpusEntry]) -> CorpusIndex:
-    """
-    Precompute the token sets used for matching.
+    """Precompute the token sets used for matching.
 
     Args:
         entries: The held filings.
@@ -144,12 +142,11 @@ def build_index(entries: Sequence[CorpusEntry]) -> CorpusIndex:
 
 
 def load_index(force_refresh: bool = False) -> CorpusIndex:
-    """
-    Build the corpus index from the metadata store, caching it per process.
+    """Build the corpus index from the metadata store, caching it per process.
 
     Reads every Document, then joins the fiscal period end from the latest
-    successful extraction via the canonical read (D31) rather than re-deriving
-    "latest" here.
+    successful extraction via the canonical read, latest_successful_stmt(),
+    rather than re-deriving "latest" here.
 
     Args:
         force_refresh: Rebuild even if an index is cached. Needed after a
@@ -210,8 +207,7 @@ def _entity(entry: CorpusEntry, mention: str) -> ResolvedEntity:
 
 
 def resolve_company(mention: str | None, index: CorpusIndex | None = None) -> Resolution:
-    """
-    Resolve a company mention against the corpus.
+    """Resolve a company mention against the corpus.
 
     Matching runs in three passes, most specific first: exact ticker, then the
     alias table, then identifying-token containment against registrant names. A
@@ -272,8 +268,7 @@ def resolve_company(mention: str | None, index: CorpusIndex | None = None) -> Re
 
 
 def resolve_period(entity: ResolvedEntity, requested_year: int | None) -> Resolution:
-    """
-    Settle which fiscal year a question refers to.
+    """Settle which fiscal year a question refers to.
 
     The corpus holds one filing per company, so an omitted year resolves to that
     filing and the answer states which year it was. A year that is named but not
@@ -302,14 +297,34 @@ def resolve_period(entity: ResolvedEntity, requested_year: int | None) -> Resolu
     )
 
 
+def not_extracted_sentence(entity: ResolvedEntity) -> str:
+    """Say that a held filing has no extracted figures, without blaming the filing.
+
+    The filing almost certainly reports the figure; it is the extraction that
+    failed. Saying the filing "does not report" it would be a false statement
+    about the document.
+
+    Args:
+        entity: The resolved company.
+
+    Returns:
+        The refusal sentence.
+    """
+    return (
+        f"I hold one {entity.company_name} filing, for fiscal year "
+        f"{entity.filing_year}, but its financial figures have not been extracted, "
+        "so I can't answer this from them."
+    )
+
+
 def resolve(
     mention: str | None,
     requested_year: int | None = None,
     index: CorpusIndex | None = None,
     require_embedded: bool = False,
+    require_extracted: bool = False,
 ) -> Resolution:
-    """
-    Resolve a mention and a period together, with the serving check applied.
+    """Resolve a mention and a period together, with the serving check applied.
 
     Args:
         mention: The company as the user referred to it.
@@ -318,6 +333,9 @@ def resolve(
         require_embedded: Set by narrative tasks. A document with no chunks would
             retrieve nothing and look identical to a silent corpus, so it is
             refused with a stated reason instead.
+        require_extracted: Set by financial tasks. A document with no successful
+            extraction has no figures, and an empty lookup would read as "the
+            filing does not report this", so it is refused with a stated reason.
 
     Returns:
         A Resolution carrying the entity or the first failure encountered.
@@ -335,5 +353,10 @@ def resolve(
         return Resolution(
             failure=ResolutionFailure.COMPANY_NOT_EMBEDDED,
             detail=f"{entity.company_name} has no indexed narrative text",
+        )
+    if require_extracted and not entity.is_extracted:
+        return Resolution(
+            failure=ResolutionFailure.COMPANY_NOT_EXTRACTED,
+            detail=not_extracted_sentence(entity),
         )
     return resolution

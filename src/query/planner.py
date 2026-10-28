@@ -1,23 +1,17 @@
-# src/query/planner.py
-# Module: Query planner
-# Purpose: One LLM call turning a question into a validated QueryPlan.
-# Depends on: langchain_openai, src.query.prompts, src.query.schemas,
-#             src.utils.config, src.utils.logger
-#
-# Plans only. No retrieval, no SQL, no entity resolution, no answer. The planner
-# is the only LLM call in the query path that sees the user's question, and no
-# LLM in that path ever sees a stored figure (D27).
+"""Query planner: one LLM call that turns a question into a validated QueryPlan.
+
+Plans only. No retrieval, no SQL, no entity resolution, no answer. The planner
+is the only LLM call in the query path that sees the user's question, and no
+LLM in that path ever sees a stored figure: SQL answers are rendered in Python.
+"""
 
 import hashlib
+import json
 
 from langchain_openai import ChatOpenAI
 
 from src.query.prompts import PLANNER_PROMPT, PLANNER_SYSTEM
-from src.query.schemas import (
-    PlanType,
-    QueryPlan,
-    UnsupportedReason,
-)
+from src.query.schemas import PlanType, QueryPlan
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
@@ -25,11 +19,9 @@ logger = get_logger(__name__)
 
 _llm: ChatOpenAI | None = None
 
-import json
-...
+
 def planner_version() -> str:
-    """
-    Version identifier for the planner prompt, schema and model.
+    """Version identifier for the planner prompt, schema and model.
 
     The bound schema is prompt surface, not just a contract: with_structured_output
     sends QueryPlan's JSON schema — including every class and enum docstring — as a
@@ -45,15 +37,15 @@ def planner_version() -> str:
     payload = f"{PLANNER_SYSTEM}|{settings.OPENAI_MODEL}|{schema}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
 
+
 def _get_llm() -> ChatOpenAI:
-    """
-    Return the process-wide chat model, constructing it once.
+    """Return the process-wide chat model, constructing it once.
 
     api_key is passed explicitly: pydantic-settings loads .env into Settings, not
     into os.environ, so a client relying on ambient environment variables finds
-    nothing (Phase 2 bug 5).
+    nothing (extraction failed this way once).
 
-    timeout and max_retries bound one planner call (D54). The API runs this call
+    timeout and max_retries bound one planner call. The API runs this call
     in a worker thread that a request timeout cannot stop, so these two values
     are what end it: 10 s x (1 retry + 1) = 20 s, inside the 30 s request limit.
     Neither is part of planner_version(): they change how long we wait, not
@@ -75,8 +67,7 @@ def _get_llm() -> ChatOpenAI:
 
 
 def _fallback(reason: str) -> QueryPlan:
-    """
-    Build the plan returned when planning itself fails.
+    """Build the plan returned when planning itself fails.
 
     Clarification rather than unsupported: a failure to plan says nothing about
     whether the system could answer, and claiming a capability limit would be a
@@ -99,8 +90,7 @@ def _fallback(reason: str) -> QueryPlan:
 
 
 def plan_query(question: str) -> QueryPlan:
-    """
-    Plan one question.
+    """Plan one question.
 
     Single-item operation, so a transport failure raises rather than being
     swallowed; only a malformed model response degrades to a clarification plan,

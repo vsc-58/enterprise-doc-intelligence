@@ -1,4 +1,4 @@
-"""The three OpenAI clients carry the D54 per-call limits.
+"""The three OpenAI clients carry the per-call limits: 10 s timeout, 1 retry.
 
 Constructing a client makes no network call, so this runs with the test key.
 Each module caches its client; the cache is cleared before and restored after.
@@ -43,6 +43,6 @@ def test_embedding_client_has_the_per_call_limits(fresh_clients: None) -> None:
 
 
 def test_limits_do_not_change_the_prompt_versions() -> None:
-    """Timeouts change how long we wait, not what the model is asked (5C versions)."""
+    """Timeouts change how long we wait, not what the model is asked (measured versions)."""
     assert planner.planner_version().startswith("d4bc8e36")
     assert chain.chain_version().startswith("b1d8ee5c")

@@ -1,6 +1,4 @@
-"""
-src/ingestion/chunker.py
-Recursive-character chunking of narrative sections for the vector store.
+"""Recursive-character chunking of narrative sections for the vector store.
 
 Reads the artifacts written by scripts/build_narrative_sections.py and splits
 each section into retrieval-sized chunks carrying the metadata the RAG path's
@@ -86,7 +84,7 @@ def chunk_params_hash() -> str:
 
     Stored in the Chroma collection metadata so a parameter change is detectable
     rather than depending on someone remembering to bump a version — the same
-    reasoning as Phase 3's derived prompt_version. Includes the embedding model,
+    reasoning as the derived extraction prompt_version. Includes the embedding model,
     because a re-embed with a different model invalidates the store just as
     surely as a re-split.
 

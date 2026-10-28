@@ -1,25 +1,23 @@
-# src/rag/figure_guard.py
-# Module: Figure guard for the narrative path
-# Purpose: Keep the five stored financial metrics out of narrative answers.
-#          Masks matching values in retrieved text before the LLM sees it, and
-#          redacts any that still appear in a claim (D27, D41).
-# Depends on: re, src.query.schemas, src.storage.metadata_store,
-#             src.storage.quality, src.utils.config, src.utils.logger,
-#             src.utils.numbers
-#
-# Why: every financial figure in an answer must have one auditable source, the
-# structured store. MD&A text carries the same figures, so without this the RAG
-# answer can restate revenue beside the SQL answer — at a different year, a
-# misread scale, or (BAC) the correct value beside a stored value that is wrong.
-#
-# Matching uses stored evidence only, never ground truth (D29). For a field whose
-# quality flag reports a scale problem, the stored value is also tried at x1,000
-# and /1,000, so the guard still recognises the figure where the store is off by
-# that factor — the case where two conflicting numbers would otherwise reach the
-# user.
-#
-# Only the five MetricFields count as figures. Percentages, years, segment
-# figures and prior-year amounts pass: those are not values the SQL tool owns.
+"""Figure guard: keep the five stored financial figures out of narrative answers.
+
+Masks matching values in retrieved text before the LLM sees it, and redacts any
+that still appear in a claim. Masking is the guarantee; redaction is the
+backstop, and it never fired across the evaluation runs.
+
+Why: every financial figure in an answer must have one auditable source, the
+structured store. MD&A text carries the same figures, so without this the RAG
+answer can restate revenue beside the SQL answer — at a different year, a
+misread scale, or (BAC) the correct value beside a stored value that is wrong.
+
+Matching uses stored evidence only, never the evaluation answer key. For a
+field whose quality flag reports a scale problem, the stored value is also
+tried at x1,000 and /1,000, so the guard still recognises the figure where the
+store is off by that factor — the case where two conflicting numbers would
+otherwise reach the user.
+
+Only the five MetricFields count as figures. Percentages, years, segment
+figures and prior-year amounts pass: those are not values the SQL tool owns.
+"""
 
 import re
 from collections.abc import Iterable
@@ -66,8 +64,7 @@ class FigureGuardError(RuntimeError):
 
 @lru_cache(maxsize=1)
 def load_guard_values() -> dict[str, frozenset[float]]:
-    """
-    Load, per ticker, the dollar values the guard treats as stored figures.
+    """Load, per ticker, the dollar values the guard treats as stored figures.
 
     Read once per process: the query path is read-only, and the guard must not
     add a database read to every narrative task. Clear with
@@ -114,8 +111,7 @@ def load_guard_values() -> dict[str, frozenset[float]]:
 
 
 def _readings(number: float, scale_word: str | None) -> Iterable[float]:
-    """
-    Every dollar value a printed amount could denote.
+    """Every dollar value a printed amount could denote.
 
     An explicit scale word fixes the reading. Without one, the scale may sit in
     a table header elsewhere ("in millions"), so every SCALE_MULTIPLIER is tried
@@ -134,8 +130,7 @@ def _readings(number: float, scale_word: str | None) -> Iterable[float]:
 
 
 def _is_stored(readings: Iterable[float], targets: frozenset[float]) -> bool:
-    """
-    Whether any reading matches any target within the relative tolerance.
+    """Whether any reading matches any target within the relative tolerance.
 
     Args:
         readings: Candidate dollar values for one printed amount.
@@ -153,8 +148,7 @@ def _is_stored(readings: Iterable[float], targets: frozenset[float]) -> bool:
 
 
 def withhold_figures(text: str, targets: frozenset[float]) -> tuple[str, int]:
-    """
-    Replace every amount in text that matches a stored value with PLACEHOLDER.
+    """Replace every amount in text that matches a stored value with PLACEHOLDER.
 
     Only tokens that look like money are candidates: a "$", a thousands
     separator, or a scale word. A bare "27" or "2021" is never one, which keeps
@@ -174,6 +168,7 @@ def withhold_figures(text: str, targets: frozenset[float]) -> tuple[str, int]:
     replaced = 0
 
     def substitute(match: re.Match[str]) -> str:
+        """Return the placeholder for a stored dollar amount, else the match unchanged."""
         nonlocal replaced
         raw = match.group("number")
         is_money = bool(match.group("dollar") or match.group("scale") or "," in raw)

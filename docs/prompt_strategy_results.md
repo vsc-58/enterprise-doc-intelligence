@@ -1,5 +1,4 @@
 # Prompt-Strategy Evaluation Results
-## Enterprise Document Intelligence System — Phase 2
 
 **Question:** which prompting approach extracts financial fields from 10-K text
 most accurately, at acceptable cost?
@@ -63,7 +62,9 @@ Ten filings, selected for sector spread and for specific known hazards:
 
 Fields with null ground truth are scored `n_a` and excluded from the
 denominator, so `total_liabilities` runs at n=7 (AMZN, WMT, INTC have no
-standalone tag — a deliberate Phase 1 decision not to derive it).
+standalone tag). The value is deliberately not derived as assets minus equity:
+that would put the project's own arithmetic into the answer key that is meant
+to check the model.
 
 ---
 
@@ -127,52 +128,16 @@ S2 is the only arm that got a value wrong, and its mean relative error is
 2.00e-02 — roughly 600,000× S1's. On this evidence, worked examples made the
 model worse.
 
-<!-- > **[TO FILL]** Identify the failing document and the returned value:
-> ```
-> python -c "
-> import json; r=json.load(open('data/eval/results.json'))
-> for k,v in r['S2']['per_document'].items():
->     s=v['scores']['net_income']
->     if s['outcome']!='correct': print(k, s)
-> "
-> ```
-> Replace this block with: the company, the value returned, the correct value,
-> and the relative error. A named failure is concrete; an unnamed one invites
-> "did you look into it?" -->
+The failure is Walmart FY2023 `net_income` (clean Item 8 input):
 
-{
-  "strategy_id": "S2",
-  "cik": "0000104169",
-  "year": 2023,
-  "extraction": {
-    "company_name": "WALMART INC.",
-    "fiscal_year_end": "2023-01-31",
-    "total_revenue": 611289000000.0,
-    "net_income": 11680.0,
-    "total_assets": 243197000000.0,
-    "total_liabilities": 158847000000.0,
-    "operating_cash_flow": 28841000000.0,
-    "business_description": "Walmart Inc. is a people-led, technology-powered omni-channel retailer dedicated to help people around the world save money and live better – anytime and anywhere – by providing the opportunity to shop in both retail stores and through eCommerce.",
-    "primary_risk_factors": [
-      "Macroeconomic conditions",
-      "Supply chain challenges",
-      "Legal proceedings"
-    ],
-    "auditor_name": "Ernst & Young LLP"
-  },
-  "evidence": null,
-  "section_source": "edgartools_item8",
-  "input_tokens": 27909,
-  "output_tokens": 142,
-  "parsing_error": null
-}
+| Extracted | Ground truth | Relative error |
+|---|---|---|
+| 11,680 | 11,680,000,000 | 0.999999 |
 
-"net_income": {
-            "outcome": "wrong",
-            "extracted": 11680.0,
-            "truth": 11680000000.0,
-            "rel_error": 0.999999
-          },
+The digits are right and the unit is wrong: S2 returned the printed value in
+millions, the exact error the unit rule exists to prevent. Every other S2 field
+on the same document was in actual dollars. Source:
+`data/eval/results.json` (`S2` → `per_document` → `0000104169_2023`).
 
 A plausible mechanism is that the examples anchored the model on their pattern
 rather than the actual table — but this is a hypothesis from a single failure,
@@ -204,7 +169,7 @@ abbreviated. **Invariance across arms is the diagnostic** — a prompt problem
 varies by prompt.
 
 A Corp/Corporation synonym table would push this to 1.00. It was not added:
-fuzzy string matching is exactly what corrupted the ground truth in Phase 1
+fuzzy matching is exactly what corrupted an early version of the ground truth
 (`get_total_liabilities()` returning total assets for Amazon), and inflating a
 metric by loosening the comparison is not a result. Reported at 0.80 with the
 cause stated.
@@ -222,20 +187,22 @@ tell: a prompt problem varies by prompt, a ground-truth problem does not.
 Walmart FY2023, extracted `611,289,000,000`, ground truth `605,881,000,000`.
 The filing's income statement prints:
 
-Net sales 605,881
-Membership and other income 5,408
-Total revenues 611,289
+```
+Net sales                        605,881
+Membership and other income        5,408
+Total revenues                   611,289
+```
 
 605,881 + 5,408 = 611,289. The answer key had captured **net sales** — a
 component — not total revenue.
 
-**Root cause:** the Phase 1 revenue concept list was ordered
+**Root cause:** the original revenue concept list was ordered
 `[RevenueFromContractWithCustomerExcludingAssessedTax, Revenues]`, first match
 wins. Walmart tags both; the first is the contract-revenue component, the second
 is the total line. The ordering had never been tested against a filer that tags
 both, because no earlier document did.
 
-The Phase 1 rule was "true synonyms only — same economic line." That held for
+The original rule was "true synonyms only — same economic line." That held for
 filers tagging one concept or the other. It silently failed for filers tagging
 both, where the two are not synonyms but a subset and its superset.
 
@@ -244,18 +211,18 @@ answer key regenerated from code — never hand-edited, because an answer key
 adjusted to match the model is no longer independent. The diff corrected three
 documents, each verified against the printed income-statement top line:
 
-| Old | New |
-|---|---|
-| 605,881,000,000 | 611,289,000,000 |
-| 50,914,000,000 | 58,496,000,000 |
-| 90,929,000,000 | 81,462,000,000 |
+| Document | Old | New |
+|---|---|---|
+| Walmart FY2023 | 605,881,000,000 | 611,289,000,000 |
+| Pfizer FY2023 | 50,914,000,000 | 58,496,000,000 |
+| Tesla FY2022 | 90,929,000,000 | 81,462,000,000 |
 
-<!-- > **[TO FILL]** Name the two non-Walmart companies. They appear in the diff at
-> lines 66 and 187 of `ground_truth.json`; run the comparison script against
-> `/tmp/ground_truth_PREV2.json` if still present, or re-derive from the CIK
-> blocks around those values. -->
-
-"PFIZER INC" and "Tesla, Inc."
+Tesla's value moved down, which first looked like a lost component; the printed
+statement confirms 81,462 as the filing's own total. "Take the largest matching
+concept" was considered and rejected for that reason: the printed statement is
+the arbiter, not a heuristic. Pfizer and Tesla are not in the ten-filing
+evaluation set, so the fix did not change the scores in section 3 beyond
+Walmart. The previous answer key is kept as `data/eval/ground_truth_PREV.json`.
 
 **Limitation this exposes:** a ground-truth value that is wrong *and* that the
 model also gets wrong in the same way would score `correct` and stay invisible.
@@ -316,14 +283,63 @@ corpus, where accuracy is unmeasured. Ten filings cannot establish that S1 will
 keep scoring 1.00 on the next hundred; S3 makes each individual answer
 checkable regardless.
 
-**Phase 3 implication:** `ExtractedRecord` carries per-field evidence, and the
-grounding check runs at write time. A record whose citation is not found in its
-source text is written with `extraction_status = "partial"`, not silently
-stored.
+**Consequence for the pipeline:** `ExtractedRecord` stores each figure's quoted
+source line and two independent per-field checks, run at write time:
+`<field>_evidence_present` (the quoted line occurs in the source text — catches
+fabrication) and `<field>_evidence_consistent` (the stored value occurs in the
+quoted line — catches a real line attached to the wrong value). A failed check
+flags that figure, not the record: discarding four verified figures over one bad
+citation loses more than it protects.
 
 ---
 
-## 7. Limitations
+## 7. Out-of-Sample Check
+
+S3 was selected on these ten filings, so its 1.00 is in-sample. The other ten
+filings in the corpus also have XBRL ground truth and were never used for
+selection. They were scored once with S3, and it was decided in writing, before
+the numbers were seen, that no prompt would be revised in response: revising
+would turn them into a second development set and leave no out-of-sample claim.
+Results are in `data/eval/held_out_results.json`, kept separate from
+`results.json` so the selection evidence stays exactly as it was.
+
+**Numeric mean F1: 1.00 in-sample, 0.90 held-out** — four wrong values and one
+missing across 46 scored numeric fields.
+
+| Document | Field | Extracted | Ground truth | Cause |
+|---|---|---|---|---|
+| BAC FY2022 | total_assets | 3,051,375,000 | 3,051,375,000,000 | Unit scale |
+| BAC FY2022 | total_liabilities | 2,778,178,000 | 2,778,178,000,000 | Unit scale |
+| GS FY2021 | operating_cash_flow | 921,000 | 921,000,000 | Unit scale |
+| XOM FY2022 | total_revenue | 398,675,000,000 | 413,680,000,000 | Concept choice |
+| BAC FY2022 | operating_cash_flow | null | −6,327,000,000 | Missing |
+
+- **Three of the four wrong values are the unit-scale trap**, both on banks.
+  BAC's balance-sheet header reads "Dollars in millions, except per share
+  information; shares in thousands" — two scales in one header — and the model
+  applied the thousands. GS's header is the terse "$ in millions". Every header
+  in the ten selection filings was a conventional single-scale form, so the
+  unit rule had only been tested on the easy phrasings. That is the case for a
+  held-out set in one example.
+- **XOM** returned "Sales and other operating revenue"; the key holds "Total
+  revenues and other income", which the printed statement confirms. The model
+  took the line that most literally says revenue.
+- **BAC's operating cash flow** is negative in truth. The model returned null
+  rather than a wrong figure, which the scoring treats as the safer error.
+- `company_name` reads 0.50 held-out for the same reason as in section 4.5:
+  EDGAR registrant names ("BANK OF AMERICA CORP /DE/") against the names printed
+  on the filing.
+
+No prompt was changed in response. The query path instead flags these figures:
+a scale-coherence check compares each figure's implied scale with the rest of
+its document, using stored evidence only (never the answer key), and BAC's four
+checkable fields and GS's operating cash flow are served as disputed. A prompt
+revision for non-standard scale headers would be a new experiment, needing a
+new held-out set to be measured honestly.
+
+---
+
+## 8. Limitations
 
 Stated because a result whose boundaries are not stated is not a result.
 
@@ -341,18 +357,22 @@ Stated because a result whose boundaries are not stated is not a result.
   is one draw, not a distribution.
 - **A shared model/ground-truth error is invisible** (see 5.1).
 - **The grounding check is a fabrication detector**, not proof that the cited
-  line supports the value it is attached to.
+  line supports the value it is attached to. The pipeline's second check,
+  evidence consistency (section 6), covers that gap, and is itself blind to
+  unit scale because it allows for the printed scale when matching.
 
 ---
 
-## 8. Artifacts
+## 9. Artifacts
 
 | Path | Contents |
 |---|---|
 | `data/eval/ground_truth.json` | XBRL answer key, per document |
 | `data/eval/results.json` | Per-field, per-strategy precision/recall/F1, denominators, provenance split, per-document scores |
+| `data/eval/held_out_results.json` | S3 on the ten filings not used for selection (section 7) |
+| `data/eval/ground_truth_PREV.json` | The answer key before the revenue-concept fix (section 5.1) |
 | `data/eval/raw_outputs/{strategy}/` | Every model response, cached by content hash — the evidence behind the table |
-| `docs/decisions.md` | Phase 2 decision log |
+| `docs/design_notes.md` | Why the extraction pipeline and its evaluation are built this way |
 
 Raw outputs are keyed by a hash of strategy, model, prompt template and input
 text, so a changed prompt or re-sliced input invalidates the cache

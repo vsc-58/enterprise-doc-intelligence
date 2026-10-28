@@ -1,16 +1,16 @@
-"""
-scripts/diagnostic/test_query.py — DIAGNOSTIC (print() allowed).
+"""Run hand-picked questions through the whole query path and print each answer.
 
-End-to-end check of the full query path: question -> planner -> resolver ->
-executor -> SQL path and/or narrative chain -> synthesizer -> assembled answer.
-Supersedes test_query_sql.py (Phase 5A), whose 13 SQL cases are kept as
-regressions, with the last one now answered by the narrative path.
+Diagnostic (print() allowed), not a pytest test. End-to-end check of the full
+query path: question -> planner -> resolver -> executor -> SQL path and/or
+narrative chain -> synthesizer -> assembled answer.
 
-Phase 5B adds: single-company narrative, a section-absent refusal, a figure asked
-as narrative, the R38 partial hybrid, a full hybrid whose figure must appear once,
+The first 13 cases are the original SQL-path checks, kept as regressions (the
+last one is now answered by the narrative path). The rest cover the narrative
+path: a single-company answer, a section-absent refusal, a figure asked as
+narrative, the R38 partial hybrid, a full hybrid whose figure must appear once,
 and the corpus-wide headline question.
 
-What to look for in the 5B cases:
+What to look for in the narrative cases:
   - every narrative sentence carries [n] markers and every [n] is in Sources;
   - R38 prints Intel's figure, then the margin question with the not-captured
     sentence — never a dropped half;
@@ -22,9 +22,6 @@ $0.02 total.
 
 Usage:
     python -m scripts.diagnostic.test_query
-
-Dependencies: src.query.executor, src.query.planner, src.query.synthesizer,
-src.utils.logger.
 """
 
 from __future__ import annotations
@@ -66,27 +63,26 @@ CASES: list[tuple[str, str]] = [
     ("What is Apple's current stock price?",
      "out_of_scope"),
     ("What risks did Goldman Sachs flag?",
-     "5B: cited risk-factor answer (was the RAG stub)"),
-    # --- Phase 5B ---------------------------------------------------------
+     "cited risk-factor answer"),
+    # --- Narrative path ---------------------------------------------------
     ("Why did Apple's net sales grow?",
      "cited MD&A claims, no dollar figure, Sources list"),
     ("Why did Intel's revenue change?",
      "refused: Intel's MD&A (Item 7) not captured"),
     ("What does Meta do?",
-     "answered from Item 1A via the alias table (D40)"),
+     "answered from Item 1A via the alias table (Meta's business text sits there)"),
     ("What was Intel's net income, and why did its margins fall?",
      "R38: figure with its flag, then the margin question + not-captured sentence"),
     ("What was Apple's revenue and why did it grow?",
      "hybrid: revenue stated ONCE (SQL part); narrative part has no dollar figure"),
     ("Which companies flagged interest rate risk?",
      "corpus-wide: supported list with markers, then coverage lines; JPM, XOM "
-     "judged on Item 1A via the market_risk fallback (D44), named in a fallback line"),
+     "judged on Item 1A via the market_risk fallback, named in a fallback line"),
 ]
 
 
 def describe_plan(plan: QueryPlan) -> str:
-    """
-    Render a one-line summary of a plan.
+    """Render a one-line summary of a plan.
 
     Args:
         plan: The plan to describe.
@@ -104,8 +100,7 @@ def describe_plan(plan: QueryPlan) -> str:
 
 
 async def run_case(question: str, expectation: str) -> None:
-    """
-    Plan, execute and assemble one question, printing the answer.
+    """Plan, execute and assemble one question, printing the answer.
 
     Args:
         question: The question to run.

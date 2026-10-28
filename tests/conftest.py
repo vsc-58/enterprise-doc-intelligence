@@ -13,8 +13,7 @@ def anyio_backend() -> str:
 
 @pytest.fixture
 def index() -> CorpusIndex:
-    """
-    A corpus index over hand-written entries.
+    """A corpus index over hand-written entries.
 
     Registrant names are the real ones, including the forms that motivated the
     normalisation rules: the slash-suffixed state, the spaced "AMAZON COM INC",

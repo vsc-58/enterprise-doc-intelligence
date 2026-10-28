@@ -2,7 +2,14 @@
 
 import pytest
 
-from src.query.resolve import CorpusIndex, identifying_tokens, normalise, resolve
+from src.query.resolve import (
+    CorpusEntry,
+    CorpusIndex,
+    build_index,
+    identifying_tokens,
+    normalise,
+    resolve,
+)
 from src.query.schemas import ResolutionFailure
 
 
@@ -48,7 +55,7 @@ def test_resolution_carries_the_held_year_and_period_end(index: CorpusIndex) -> 
 
 
 def test_target_period_end_is_a_year_ahead_of_its_key(index: CorpusIndex) -> None:
-    """TGT's filing_year 2021 ends 2021-01-30 — the user's 'fiscal 2020' (D1)."""
+    """TGT's filing_year 2021 ends 2021-01-30: the user's 'fiscal 2020'. Years key on period end."""
     entity = resolve("Target", index=index).entity
     assert entity is not None
     assert entity.filing_year == 2021
@@ -83,3 +90,18 @@ def test_unembedded_company_refused_only_for_narrative(index: CorpusIndex) -> No
     assert resolve("Qualcomm", index=index).entity is not None
     narrative = resolve("Qualcomm", index=index, require_embedded=True)
     assert narrative.failure is ResolutionFailure.COMPANY_NOT_EMBEDDED
+
+
+def test_unextracted_company_refused_only_for_figures() -> None:
+    """A held filing whose extraction never succeeded: figures are refused, and
+    the sentence blames the extraction, not the filing."""
+    index = build_index([
+        CorpusEntry(ticker="INTC", cik="0000050863", company_name="INTEL CORP",
+                    document_id=1, filing_year=2023, fiscal_year_end="2023-12-30",
+                    is_extracted=False),
+    ])
+    assert resolve("Intel", index=index).entity is not None
+    figures = resolve("Intel", index=index, require_extracted=True)
+    assert figures.failure is ResolutionFailure.COMPANY_NOT_EXTRACTED
+    assert "have not been extracted" in (figures.detail or "")
+    assert "does not report" not in (figures.detail or "")

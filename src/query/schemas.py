@@ -1,8 +1,15 @@
-# src/query/schemas.py
-# Module: Query-path contracts (plan, tasks, resolved entities, typed results)
-# Purpose: Every object that crosses a boundary between planner, resolver,
-#          executor, tools and assembler. Nothing here executes anything.
-# Depends on: pydantic v2, src.storage.metadata_store, src.storage.quality
+"""Data contracts for the query path.
+
+Every object that crosses a boundary between the planner, the resolver, the
+executor, the two tools and the synthesizer. Nothing here executes anything.
+
+Planner output schema: QueryPlan and the classes nested in it (Task, Intent,
+MetricField, Comparison, Direction, PlanType, UnsupportedReason) are sent to
+the planner model as its structured-output schema, docstrings included. Their
+docstrings are therefore part of the planner prompt and are hashed into
+planner_version(). They stay byte-for-byte as they were when routing was
+measured; tests/test_prompt_versions.py fails if they change.
+"""
 
 from enum import Enum
 
@@ -11,6 +18,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.storage.quality import QualityFlag
 
 
+# Planner prompt text: this docstring is sent to the model and hashed into
+# planner_version(). It is frozen at the measured version, so its references
+# to the private design log (Dnn) stay. See the module docstring.
 class Intent(str, Enum):
     """
     What information a single task needs.
@@ -95,6 +105,7 @@ class PlanType(str, Enum):
     OUT_OF_SCOPE = "out_of_scope"
 
 
+# Planner prompt text: frozen at the measured version (see Intent).
 class UnsupportedReason(str, Enum):
     """
     Capability gaps the planner may declare.
@@ -121,12 +132,14 @@ class UnsupportedReason(str, Enum):
 
 
 class ResolutionFailure(str, Enum):
-    """
-    Corpus-membership outcomes, produced only by the resolver.
+    """Corpus-membership outcomes, produced only by the resolver.
 
     NON_CORPUS_COMPANY: no document for that company.
     COMPANY_NOT_EMBEDDED: the document exists but has no chunks, so a narrative
         task would retrieve nothing and look like an empty corpus.
+    COMPANY_NOT_EXTRACTED: the document exists but no figure extraction has
+        succeeded for it, so a financial task would find no record and the
+        answer would wrongly suggest the filing lacks the figure.
     YEAR_NOT_HELD: the company is held, for a different fiscal year.
     AMBIGUOUS_COMPANY: the mention matches more than one held company.
     NO_COMPANY_MENTION: the question named no company and the task needs one.
@@ -134,11 +147,13 @@ class ResolutionFailure(str, Enum):
 
     NON_CORPUS_COMPANY = "non_corpus_company"
     COMPANY_NOT_EMBEDDED = "company_not_embedded"
+    COMPANY_NOT_EXTRACTED = "company_not_extracted"
     YEAR_NOT_HELD = "year_not_held"
     AMBIGUOUS_COMPANY = "ambiguous_company"
     NO_COMPANY_MENTION = "no_company_mention"
 
 
+# Planner prompt text: frozen at the measured version (see Intent).
 class Task(BaseModel):
     """
     One information requirement.
@@ -182,8 +197,7 @@ class Task(BaseModel):
 
     @model_validator(mode="after")
     def check_intent_parameters(self) -> "Task":
-        """
-        Reject parameter sets an intent cannot execute.
+        """Reject parameter sets an intent cannot execute.
 
         Returns:
             The validated task.
@@ -211,6 +225,7 @@ _FINANCIAL_INTENTS = frozenset(
 MAX_TASKS_PER_PLAN = 3
 
 
+# Planner prompt text: frozen at the measured version (see Intent).
 class QueryPlan(BaseModel):
     """
     The planner's whole output.
@@ -244,8 +259,7 @@ class QueryPlan(BaseModel):
 
     @model_validator(mode="after")
     def check_shape(self) -> "QueryPlan":
-        """
-        Enforce the task count and required field for each plan type.
+        """Enforce the task count and required field for each plan type.
 
         Returns:
             The validated plan.
@@ -274,13 +288,25 @@ _TASKLESS_PLANS = frozenset(
     {PlanType.CLARIFICATION, PlanType.UNSUPPORTED, PlanType.OUT_OF_SCOPE}
 )
 
+
 class ResolvedEntity(BaseModel):
-    """
-    A company mention resolved against the corpus.
+    """A company mention resolved against the corpus.
 
     Carries the identifiers each store actually keys on: the ticker for chunk
-    metadata (D30), the document id for the structured read, and the filing year
-    the corpus holds, which the caller did not necessarily ask for.
+    metadata, the document id for the structured read, and the filing year the
+    corpus holds, which the caller did not necessarily ask for. Chunks are
+    filtered by ticker, never by name: the stored name is the EDGAR registrant
+    ("BANK OF AMERICA CORP /DE/"), which no model-written name would match.
+
+    Attributes:
+        mention: The company as the question referred to it.
+        ticker, cik, company_name: The held company; company_name is the
+            display name.
+        document_id: Row id in the documents table.
+        filing_year: The one fiscal year the corpus holds for this company.
+        fiscal_year_end: Period end date from the extraction, if known.
+        is_embedded, is_extracted: Whether its text is in the vector store and
+            its figures are in the figures table.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -295,13 +321,20 @@ class ResolvedEntity(BaseModel):
     is_embedded: bool = True
     is_extracted: bool = True
 
+
 class Resolution(BaseModel):
-    """
-    The outcome of resolving one company mention against the corpus.
+    """The outcome of resolving one company mention against the corpus.
 
     Either entity or failure is set, never both. A failure is an answer about the
     corpus, not an error: "I don't hold Nvidia" is correct and final, so it
     travels as data rather than as an exception.
+
+    Attributes:
+        entity: The resolved company, on success.
+        failure: Why the mention did not resolve, on failure.
+        detail: The sentence shown to the user when the mention does not
+            resolve ("I don't hold a filing for Nvidia.").
+        candidates: Tickers the mention matched, for AMBIGUOUS_COMPANY.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -313,8 +346,7 @@ class Resolution(BaseModel):
 
     @model_validator(mode="after")
     def check_exclusive(self) -> "Resolution":
-        """
-        Enforce exactly one of entity or failure.
+        """Enforce exactly one of entity or failure.
 
         Returns:
             The validated resolution.
@@ -326,12 +358,20 @@ class Resolution(BaseModel):
             raise ValueError("resolution must carry exactly one of entity or failure")
         return self
 
+
 class MetricRow(BaseModel):
-    """
-    One company's figure, with the context needed to read it honestly.
+    """One company's figure, with the context needed to read it honestly.
 
     fiscal_year travels with every row because a multi-row answer over this
-    corpus mixes fiscal years, and a ranking that hides that is misleading (D33).
+    corpus mixes fiscal years (one filing per company, FY2021-2023), and a
+    ranking that hides that is misleading.
+
+    Attributes:
+        ticker, company_name: Which company; company_name is the display name.
+        fiscal_year, fiscal_year_end: The period the figure belongs to.
+        metric: Which of the five figures.
+        value: The stored value in actual dollars, or None if not extracted.
+        quality: The figure's data-quality flag, always shown to the user.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -346,8 +386,7 @@ class MetricRow(BaseModel):
 
 
 class MetricResult(BaseModel):
-    """
-    The SQL tool's output: rows plus what the renderer must disclose.
+    """The SQL tool's output: rows plus what the renderer must disclose.
 
     Attributes:
         rows: Result rows, already ordered.
@@ -355,19 +394,21 @@ class MetricResult(BaseModel):
             Reported rather than silently omitted: BAC's operating cash flow is
             null because the true figure is negative, so "lowest cash flow" would
             otherwise skip the correct answer.
-        mixed_years: Whether rows span more than one fiscal year (D33).
-        sql_preview: The rendered statement, for logging and the API response.
+        mixed_years: Whether rows span more than one fiscal year; the answer
+            then says the figures are not like-for-like.
         threshold_value: The parsed filter threshold in dollars, or None for
-        non-filter intents. Carried rather than reparsed so the number that
-        selected the rows and the number quoted back to the user are the same
-        value, computed once.
+            non-filter intents. Carried rather than reparsed so the number that
+            selected the rows and the number quoted back to the user are the
+            same value, computed once.
         flagged_not_shown: Companies left out of a ranking or filter whose
             figure is scale-flagged and which a 1,000x scale correction would
-            put in the answer (D53, narrowed by D56). The renderer names each.
-            Always empty for single-company lookups.
+            put in the answer. The renderer names each, so a mis-scaled figure
+            cannot silently drop a company from a list. Only scale flags count:
+            a wrong citation does not move a figure across a threshold. Always
+            empty for single-company lookups.
         excluded_null: Companies left out because the queried figure was not
             extracted, named in the answer with what that means for the
-            question (D56). excluded_null_count is its length.
+            question. excluded_null_count is its length.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -377,18 +418,23 @@ class MetricResult(BaseModel):
     excluded_null: list[MetricRow] = Field(default_factory=list)
     excluded_null_count: int = 0
     mixed_years: bool = False
-    sql_preview: str | None = None
     threshold_value: float | None = None
 
 
 class SourceRef(BaseModel):
-    """
-    One retrieved chunk, as cited.
+    """One retrieved chunk, as cited.
 
-    distance is Chroma's cosine DISTANCE — lower is closer. Named distance, not
-    score, because Phase 4 found the opposite reading easy to make and costly.
-    Section granularity is the honest limit of the citation: a chunk cites the
-    section it came from, not a page (Phase 4).
+    distance is Chroma's cosine DISTANCE: lower is closer. Named distance, not
+    score, because reading it as a similarity (higher is better) is an easy
+    mistake that silently inverts every ranking. Section granularity is the
+    honest limit of the citation: a chunk cites the 10-K item it came from, not
+    a page.
+
+    Attributes:
+        ticker, company_name, fiscal_year: Which filing.
+        section: The stored section label, e.g. "Item 7".
+        chunk_index: Position of the chunk within that section.
+        distance: Cosine distance to the query embedding.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -402,17 +448,18 @@ class SourceRef(BaseModel):
 
 
 class NarrativeRefusal(str, Enum):
-    """
-    Why a narrative task produced no answer. Each has one fixed sentence,
-    written in Python (src.rag.chain.refusal_message), so the refusal metric
-    compares enums rather than parsing model prose.
+    """Why a narrative task produced no answer.
+
+    Each reason has one fixed sentence, written in Python
+    (src.rag.chain.refusal_message), so the refusal metric compares enums rather
+    than parsing model prose.
 
     SECTION_ABSENT: the company holds none of the intent's sections (INTC, JPM
         and XOM have no Item 7). Decided by retrieval, before any LLM call.
     NOT_ADDRESSED: the retrieved passages do not answer the question. Judged by
         the chain.
-    FIGURE_REQUESTED: the question asks for one of the five stored metrics,
-        which only the SQL tool may state (D27, D41).
+    FIGURE_REQUESTED: the question asks for one of the five stored metrics.
+        Only the SQL tool states those, so no model ever writes a stored figure.
     UNCITED: the chain answered, but no claim survived citation validation.
         Separate from NOT_ADDRESSED because it is a model fault, not a fact
         about the filing.
@@ -427,13 +474,16 @@ class NarrativeRefusal(str, Enum):
 
 
 class CitedClaim(BaseModel):
-    """
-    One sentence of a narrative answer and the chunks it cites.
+    """One sentence of a narrative answer and the chunks it cites.
 
     Citations are a typed field, not markers parsed out of prose, and every
     source here was cited by the model for this sentence and validated to exist
     in the retrieved set. Sources are therefore not "everything retrieved",
-    which is what keeps the attribution check meaningful (D41).
+    which is what keeps the attribution check meaningful.
+
+    Attributes:
+        text: The sentence shown to the user.
+        sources: The chunks it cites; at least one.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -443,8 +493,11 @@ class CitedClaim(BaseModel):
 
 
 class FindingStatus(str, Enum):
-    """
-    One company's result in a corpus-wide narrative task (D39).
+    """One company's result in a corpus-wide narrative task.
+
+    A corpus-wide question ("which companies discuss X?") is answered with one
+    retrieval and one verdict per company, not one shared top-k, so every
+    company gets a status and none is crowded out by larger filers.
 
     SUPPORTED: a retrieved passage discusses the topic for this company.
     NOT_FOUND: no supporting passage in the retrieved text — NOT a claim that
@@ -460,8 +513,7 @@ class FindingStatus(str, Enum):
 
 
 class CompanyFinding(BaseModel):
-    """
-    One company's verdict in a corpus-wide narrative task.
+    """One company's verdict in a corpus-wide narrative task.
 
     Attributes:
         ticker, company_name, fiscal_year: Which company.
@@ -469,7 +521,8 @@ class CompanyFinding(BaseModel):
         claim: The cited claim, for SUPPORTED.
         sections_searched: Stored section labels this company was judged on.
         fallback_from: The intent's own sections, when they were absent for
-            this company and the intent's fallback was searched instead (D44).
+            this company and the intent's fallback was searched instead (only
+            market risk has one: Item 1A when Items 7 and 7A are missing).
             Empty when no fallback applied.
     """
 
@@ -490,31 +543,32 @@ class CompanyFinding(BaseModel):
 
 
 class NarrativeResult(BaseModel):
-    """
-    The RAG tool's output. Structured, not prose: the synthesizer renders it.
+    """The RAG tool's output, structured rather than prose.
 
     A single-company task fills claims; a corpus-wide task fills findings. A
-    refusal leaves both empty. Never carries a stored figure: matching values
-    are masked in the context before the model sees it and redacted from claims
-    if one still appears (D27, D41); the counters make both measurable in 5C.
+    refusal leaves both empty. The synthesizer renders it. Never carries a
+    stored figure: matching values are masked in the context before the model
+    sees it, and redacted from claims if one still appears. The counters make
+    both steps measurable in evaluation.
 
     Attributes:
         claims: Cited sentences, in the model's order.
         findings: One per corpus company, in corpus order.
         refusal: Why there is no answer, or None.
         figures_masked: Stored-metric values withheld from the context.
-        figures_redacted: Stored-metric values removed from claims — the
-        backstop firing, i.e. masking missed one.
+        figures_redacted: Stored-metric values removed from claims: the
+            backstop firing, meaning masking missed one.
         invalid_citations: Cited block numbers that did not exist.
-        sections_searched: Stored section labels a single-company task filtered
-        on, after aliases — carried so a refusal can name what was searched
-        ("no MD&A (Item 7) text") rather than a generic "narrative". Empty
-        for corpus-wide tasks, whose sections are per company. When a
-        fallback applied, these are the fallback sections.
+        sections_searched: Stored section labels a single-company task
+            filtered on, after aliases. Carried so a refusal can name what was
+            searched ("no MD&A (Item 7) text") rather than a generic
+            "narrative". Empty for corpus-wide tasks, whose sections are per
+            company. When a fallback applied, these are the fallback sections.
         fallback_from: The intent's own sections, when the company held none
-        of them and the intent's fallback was searched instead (D44). Empty
-        when no fallback applied. Carried so the answer discloses the
-        substitution and the eval can report fallback answers separately.
+            of them and the intent's fallback was searched instead. Empty when
+            no fallback applied. Carried so the answer discloses the
+            substitution and the evaluation can report fallback answers
+            separately.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -540,8 +594,7 @@ class NarrativeResult(BaseModel):
 
 
 class TaskStatus(str, Enum):
-    """
-    How one task ended.
+    """How one task ended.
 
     REFUSED is not FAILED: a refusal is a correct answer about the corpus, and
     an assembled response must say so rather than dropping the task, so that a
@@ -554,7 +607,21 @@ class TaskStatus(str, Enum):
 
 
 class TaskOutcome(BaseModel):
-    """One task's result, whatever happened to it."""
+    """One task's result, whatever happened to it.
+
+    Attributes:
+        task_id, intent: The task this outcome belongs to.
+        tool: The tool the executor ran it with.
+        status: success, refused or failed.
+        metric_result: The SQL tool's output, for financial intents.
+        narrative_result: The RAG tool's output, for narrative intents.
+        resolution_failure: Why the company mention did not resolve, if that
+            is why the task was refused.
+        message: The text the synthesizer shows for this task: the rendered
+            SQL answer, the fallback note before a narrative answer, or the
+            refusal or failure sentence. None when a narrative answer needs no
+            note.
+    """
 
     model_config = ConfigDict(frozen=True)
 

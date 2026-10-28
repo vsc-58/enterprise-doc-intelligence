@@ -1,13 +1,12 @@
-# API Contract — Phase 6
+# API Contract
 
 What the API accepts, what it returns, and which status code means what.
-Written before any code (Phase 6, step 2). Steps 3–9 build to this document;
-if the code and this document disagree, one of them is wrong.
+This document was written before the API code, and the tests in
+`tests/test_api_*.py` hold the code to it. If the code and this document
+disagree, one of them is wrong.
 
-Sources followed: the code on `main`, then `Phase_5c_summary.md` and
-`decisions.md`, then `02_project_phases.md`. Where `02_project_phases.md`
-differs (route_taken, `/ingest`, `/extract`, `/query` filters), this document
-wins and the reason is in D54.
+The API is a thin layer over the existing query path. It adds validation,
+status codes, timeouts and usage limits; it adds no answering logic.
 
 ---
 
@@ -17,12 +16,12 @@ wins and the reason is in D54.
 |---|---|---|
 | `/query` | POST | Answer one question through the existing query path |
 | `/documents` | GET | List the filings the corpus holds |
-| `/export` | GET | `extracted_records` as CSV, with D29 quality columns |
+| `/export` | GET | `extracted_records` as CSV, with the data-quality columns |
 | `/health` | GET | Readiness: database, vector store, corpus index, figure guard |
 | `/docs`, `/openapi.json` | GET | Swagger UI and the OpenAPI schema (FastAPI built-in) |
-| `/` | GET | Demo page for non-developers: one static HTML page calling the endpoints above. Not in the OpenAPI schema (D56) |
+| `/` | GET | Demo page for non-developers: one static HTML page calling the endpoints above. A page, not an API endpoint, so it is left out of the OpenAPI schema |
 
-**Not in the API (D54):** `/ingest`, `/extract`. Acquisition, extraction and
+**Not in the API:** `/ingest`, `/extract`. Acquisition, extraction and
 embedding stay as the existing scripts. Reasons: they call SEC and paid
 OpenAI; they write to Chroma, whose local store is single-process, while
 `/query` reads it; and they run for minutes, which would need 202 + background
@@ -71,7 +70,10 @@ and the plan type in `QueryPlan`. The route reads all three.
 | `question` | string | Whitespace stripped, then 1 ≤ length ≤ `QUERY_MAX_CHARS` (500) |
 
 - **Extra fields are rejected** (`extra="forbid"`). `{"question": ..., "company": "AAPL"}`
-  is a 422, so the dropped filter (D54) fails loudly instead of being ignored.
+  is a 422, so a client that sends a company or year filter learns it is not
+  supported instead of having it silently ignored. There are no filters
+  because company membership is decided in one place, the resolver, and a
+  filter could silently drop half of a two-company question.
 - The longest question in the 109-question eval set is 83 characters, so 500
   leaves room while bounding cost per call.
 
@@ -124,20 +126,27 @@ and the plan type in `QueryPlan`. The route reads all three.
 | `tasks` | plan tasks + outcomes, plan order | Empty for clarification / unsupported / out_of_scope |
 | `tasks[].status` | `TaskOutcome.status` | success, refused, failed |
 | `tasks[].refusal_reason` | see §3.1 | `null` when status is success |
-| `tasks[].figures` | `metric_result.rows` | SQL tasks only. `quality` always present (D29) |
-| `tasks[].flagged_not_shown` | `metric_result.flagged_not_shown` | Rankings/filters: scale-flagged companies left out that a 1,000x correction would bring in (D53, D56) |
-| `tasks[].excluded_null` | `metric_result.excluded_null` | Rankings/filters: companies left out because the figure was not extracted (value `null`), named in the answer (D56) |
-| `tasks[].excluded_null_count`, `mixed_years` | `metric_result` | Rankings/filters (D33) |
+| `tasks[].figures` | `metric_result.rows` | SQL tasks only. `quality` is always present: a figure is never served without its data-quality verdict |
+| `tasks[].flagged_not_shown` | `metric_result.flagged_not_shown` | Rankings/filters: companies left out whose figure has a scale flag, named only when a 1,000x correction would bring them in |
+| `tasks[].excluded_null` | `metric_result.excluded_null` | Rankings/filters: companies left out because the figure was not extracted (value `null`), named in the answer |
+| `tasks[].excluded_null_count`, `mixed_years` | `metric_result` | Rankings/filters. `mixed_years` is true when the rows come from different fiscal years, so they are not like-for-like |
 | `tasks[].findings` | `narrative_result.findings` | Corpus-wide RAG only: `{ticker, status}` per company |
 | `sources` | `AssembledAnswer.sources` | `{number, ticker, company_name, fiscal_year, section, chunk_index, label}` |
 | `planner_version`, `chain_version` | `planner_version()`, `chain_version()` | Which prompts produced this answer |
 | `request_id`, `latency_ms` | middleware | Also in the `X-Request-ID` response header |
 
 **Never in the response:** `QueryPlan.rationale` (docstring: never shown to
-the user), `MetricResult.sql_preview`, retrieved chunk text, any XBRL value.
+the user), the SQL statement, retrieved chunk text, any XBRL value.
 
 `quality.note` is `QualityFlag.note()` — the same sentence the answer text and
 the CSV use, so the three never drift apart.
+
+**Enum descriptions in Swagger.** `intent` and `unsupported_reason` reuse the
+planner's enums, whose docstrings are planner prompt text: they are sent to the
+model and hashed into `planner_version`. The OpenAPI schema replaces those two
+descriptions with text written for API readers
+(`OPENAPI_SCHEMA_DESCRIPTIONS` in `src/api/models.py`), so the classes the
+planner sees stay unchanged.
 
 ### 3.1 `refusal_reason` — one field, three sources
 
@@ -146,12 +155,13 @@ the CSV use, so the three never drift apart.
 | Company not in corpus | `non_corpus_company` | `ResolutionFailure` |
 | Year not held | `year_not_held` | `ResolutionFailure` |
 | Ambiguous company / no company named / not embedded | `ambiguous_company`, `no_company_mention`, `company_not_embedded` | `ResolutionFailure` |
+| Figure asked for a held filing whose extraction never succeeded | `company_not_extracted` | `ResolutionFailure` |
 | Section absent, not addressed, figure requested, uncited | `section_absent`, `not_addressed`, `figure_requested`, `uncited` | `NarrativeRefusal` |
 | SQL filter threshold unreadable ("fifty billion dollars") | `threshold_unparsed` | API mapping: SQL task, refused, no resolver failure, intent `financial_filter` |
 | Any other refused SQL task without a resolver failure | `sql_not_runnable` | API mapping (defensive; not reachable today) |
 
-Mapped in the API layer, so no Phase 5 code changes (D54). A `failed` task has
-`refusal_reason: null`: failure is not a refusal.
+Mapped in the API layer, so the query layer needed no change for it. A
+`failed` task has `refusal_reason: null`: failure is not a refusal.
 
 ### Response — refusal (still 200)
 
@@ -193,21 +203,23 @@ ticker. No query parameters: 20 rows.
 - `Content-Type: text/csv; charset=utf-8`,
   `Content-Disposition: attachment; filename="extracted_records.csv"`.
 - One row per document: **latest successful extraction only**
-  (`latest_successful_records()`, D31).
+  (`latest_successful_records()`, the one shared definition of "latest" that
+  the SQL path also builds on).
 - Built with pandas; a plain `Response`, not streaming — 20 rows.
-- **Never reads `ground_truth.json` or XBRL** (edgartools boundary rule).
+- **Never reads `ground_truth.json` or XBRL** (edgartools boundary rule: XBRL
+  is the evaluation answer key, never system output).
 
 | Columns | Notes |
 |---|---|
 | `ticker, company_name, cik, fiscal_year, fiscal_year_end, auditor_name` | identity |
-| for each of the 5 metrics: `<m>`, `<m>_quality`, `<m>_quality_reason`, `<m>_quality_note`, `<m>_source_line` | value in actual dollars + D29 flag + its sentence + the cited line |
+| for each of the 5 metrics: `<m>`, `<m>_quality`, `<m>_quality_reason`, `<m>_quality_note`, `<m>_source_line` | value in actual dollars + its data-quality flag + the flag's sentence + the cited line |
 | `extraction_strategy_used, prompt_version, model_name, extracted_at` | provenance |
 
 Tests: the column list, the quality columns and the boundary rule (the export
 module imports nothing from `src.eval` or edgartools) are asserted in
-`tests/test_api_routes.py`. The values were checked against the database in
-step 10 by `scripts/diagnostic/verify_export.py`, which reads SQLite with plain
-SQL rather than the export's own code path: 220 values matched.
+`tests/test_api_routes.py`. The values were checked against a live database
+with `scripts/diagnostic/verify_export.py`, which reads SQLite with plain SQL
+rather than the export's own code path: 220 values matched.
 
 ---
 
@@ -228,20 +240,22 @@ No LLM call. Checks run in a thread.
      "documents": 20, "chunks": null, "...": "..."}
 ```
 
-One check per readiness part (D57). A check is `ok` only when the readiness
-state counts the part as usable **and** its live check, if it has one, passes,
-so a 503 always names at least one part.
+One check per readiness part. A check is `ok` only when the readiness state
+counts the part as usable **and** its live check, if it has one, passes, so a
+503 always names at least one part. A test asserts there is exactly one check
+field per readiness part, so a part added later cannot be left out.
 
 - `database`: the SQLite file exists and `SELECT 1` succeeds (live).
 - `vector_store`: the Chroma folder exists and `collection_count()` is above 0 (live).
 - `index`: the corpus index is loaded (readiness state).
 - `figure_guard`: the stored figures the guard masks are loaded (readiness
-  state). `/query` cannot run without them (D41).
+  state). `/query` cannot run without them: the guard is what keeps stored
+  figures out of the narrative model's input.
 
 Live checks look for the file or folder before opening it: opening a missing
 SQLite file or Chroma folder creates an empty one.
 
-**Startup never crashes on a missing store (D54).** If `load_index()` raises
+**Startup never crashes on a missing store.** If `load_index()` raises
 (empty database) or the store cannot open, the lifespan logs the error and
 starts anyway; `/health` returns 503 naming the failed part, and `/query`
 returns 503 `not_ready`. On Hugging Face this shows *why* in a browser instead
@@ -269,7 +283,7 @@ means something broke. Only `failed` can make a response 5xx.
 |---|---|---|
 | all `success` | 200 | answered |
 | all `refused` | 200 | each part's own refusal sentence, e.g. year not held + section absent |
-| `success` + `refused` / `failed` (any mix with one success) | 200 | partial answer, each part explained (5A design) |
+| `success` + `refused` / `failed` (any mix with one success) | 200 | partial answer, each part explained |
 | `refused` + `failed` | 200 | the refused part is a complete answer; the failed part says it could not be answered; `tasks[].status` tells a client which is which |
 | all `failed` | 503 `service_degraded` | nothing was answered and nothing is known about the corpus; a retry may work |
 
@@ -281,10 +295,10 @@ Python-written), and a generic line would hide which reason applied.
 server is not ready: validation costs nothing, readiness may touch the disk, and
 "try again in 5 s" would be wrong advice for a request that can never succeed.
 (FastAPI runs dependencies before body validation, so `/query` checks readiness
-inside the handler — found running the server in step 6.)
+inside the handler — found when the server was first run.)
 
 **OpenAI down → 503, not 502.** 502 says "an upstream gave a bad response";
-the user-facing meaning (try again later) is 503's. Stated default.
+the user-facing meaning (try again later) is 503's. A judgement call.
 
 ### Error envelope (every non-422 error)
 
@@ -299,7 +313,7 @@ paths, SQL and keys go to the logs only.
 
 ---
 
-## 8. Timeouts (D54)
+## 8. Timeouts
 
 | Setting | Value | Applies to |
 |---|---|---|
@@ -310,7 +324,9 @@ paths, SQL and keys go to the logs only.
 Rule: `OPENAI_TIMEOUT_SECONDS × (OPENAI_MAX_RETRIES + 1) < QUERY_TIMEOUT_SECONDS`
 (10 × 2 = 20 < 30). A hung planner call — the one that runs in a thread and
 cannot be cancelled — finishes before the request times out, and a retry still
-fits. Async chain calls are cancelled by the request timeout.
+fits. Async chain calls are cancelled by the request timeout. Equal timeouts
+were rejected: the per-call timeout could then only fire after the request had
+already timed out, and with a retry a planner thread could outlive its request.
 
 Consequences to know:
 - Touches `planner._get_llm()`, `chain._get_llm()` and `vector_store._embeddings()`.
@@ -324,7 +340,7 @@ Consequences to know:
 
 ---
 
-## 9. Settings added in Phase 6
+## 9. API settings
 
 | Setting | Default | Purpose |
 |---|---|---|
@@ -334,10 +350,10 @@ Consequences to know:
 | `OPENAI_MAX_RETRIES` | 1 | §8 |
 | `READINESS_RETRY_SECONDS` | 5 | Minimum gap between readiness re-tries; `Retry-After` on 503 |
 | `CORS_ALLOW_ORIGINS` | `[]` | No cross-origin browser access; Swagger is same-origin |
-| `RATE_LIMIT_PER_MINUTE` | `None` (off) | Per client IP, `/query` only → 429. Phase 8 switches on |
-| `DAILY_QUERY_BUDGET` | `None` (off) | Max `/query` calls per UTC day → 429. Phase 8 switches on |
+| `RATE_LIMIT_PER_MINUTE` | `None` (off) | Per client IP, `/query` only → 429. To be switched on for the public deployment |
+| `DAILY_QUERY_BUDGET` | `None` (off) | Max `/query` calls per UTC day → 429. To be switched on for the public deployment |
 
-### Usage limits (D55, `src/api/limits.py`)
+### Usage limits (`src/api/limits.py`)
 
 - **What is counted:** `/query` requests that are about to spend money — checked
   after body validation and readiness, immediately before the planner. A 422 or
@@ -348,13 +364,14 @@ Consequences to know:
   requests is a dollar cap of about N × $0.004. Count tokens if that ceiling
   ever goes.
 - **Per client:** sliding 60-second window per client IP. `Retry-After` is the
-  seconds until that client's oldest counted request leaves the window.
+  seconds until that client's oldest counted request leaves the window. Idle
+  clients are swept once per window, so memory cannot grow without bound.
 - **Daily:** all clients together, per UTC day. `Retry-After` is the seconds
   until UTC midnight.
 - **Client identity** is the address the server sees. Behind a proxy (the
   Hugging Face Space) run uvicorn with `--proxy-headers --forwarded-allow-ips`
-  so it is the real client's; to confirm in Phase 8 with two devices.
-  `X-Forwarded-For` is never parsed in code: any client can send it.
+  so it is the real client's; still to be confirmed on the deployed Space with
+  two devices. `X-Forwarded-For` is never parsed in code: any client can send it.
 - In-memory counters — correct only because there is one worker (§1) — and
   reset on restart.
 - The OpenAI dashboard spend limit stays the final guard (it also covers a
@@ -362,7 +379,7 @@ Consequences to know:
 
 ---
 
-## 10. Files (steps 3–9)
+## 10. Files
 
 ```
 src/api/models.py          request/response models (this document, §3–§6)
@@ -385,6 +402,7 @@ tests/test_api_query.py    POST /query: statuses, timeout, 422 before readiness
 tests/test_api_routes.py   /documents, /export, /health
 tests/test_demo_page.py    GET /, server text inserted as text only
 tests/test_limits.py       usage limits, including the 429s through /query
+tests/test_openapi.py      what Swagger shows: API-written enum descriptions
 tests/test_readiness.py, test_dependencies.py, test_llm_clients.py
 ```
 

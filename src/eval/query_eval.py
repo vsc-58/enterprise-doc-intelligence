@@ -1,22 +1,21 @@
-# src/eval/query_eval.py
-# Module: Query-path evaluation — labels, routing scoring, intervals
-# Purpose: Load the frozen eval set (hash-checked), turn a QueryPlan into a
-#          comparable signature, score it strictly and leniently against the
-#          labels, classify every miss, and aggregate across runs with
-#          per-question disagreement (D35).
-# Depends on: pydantic v2, src.query.resolve, src.query.schemas,
-#             src.utils.config, src.utils.logger
-#
-# Pure scoring: no LLM and no database here. The runner supplies plans and the
-# corpus index, which is why every rule below is unit-testable.
-#
-# Company is compared as a RESOLVED identity, not as text. The planner copies
-# mentions verbatim ("amzn", "jnj", "that bank"), so string comparison would
-# score correct plans as wrong. The resolver turns a mention into a ticker,
-# NON_CORPUS or AMBIGUOUS, which is what the labels hold. A label expecting a
-# held company whose observed mention resolves to NON_CORPUS or AMBIGUOUS is
-# flagged resolver_suspect: the planner only copies, so the likelier fault is a
-# resolver gap, and it is reported separately rather than charged to routing.
+"""Query-path evaluation: frozen labels, routing scores and confidence intervals.
+
+Load the frozen eval set (hash-checked), turn a QueryPlan into a comparable
+signature, score it strictly and leniently against the labels, classify every
+miss, and aggregate across runs with per-question disagreement (temperature 0
+is not deterministic, so one run is a point estimate, not a measurement).
+
+Pure scoring: no LLM and no database here. The runner supplies plans and the
+corpus index, which is why every rule below is unit-testable.
+
+Company is compared as a RESOLVED identity, not as text. The planner copies
+mentions verbatim ("amzn", "jnj", "that bank"), so string comparison would
+score correct plans as wrong. The resolver turns a mention into a ticker,
+NON_CORPUS or AMBIGUOUS, which is what the labels hold. A label expecting a
+held company whose observed mention resolves to NON_CORPUS or AMBIGUOUS is
+flagged resolver_suspect: the planner only copies, so the likelier fault is a
+resolver gap, and it is reported separately rather than charged to routing.
+"""
 
 import hashlib
 import json
@@ -64,8 +63,7 @@ class ExpectedTask(BaseModel):
     outcome: str = "answered"
 
     def key(self) -> TaskKey:
-        """
-        The comparable identity of this task.
+        """The comparable identity of this task.
 
         Returns:
             (intent, company, metric, year, direction).
@@ -113,8 +111,7 @@ class EvalSet(BaseModel):
 
 
 def canonical_sha256(path: Path) -> str:
-    """
-    Hash a file with line endings normalised to LF.
+    """Hash a file with line endings normalised to LF.
 
     Git on Windows may check text files out with CRLF; the content is unchanged,
     so the hash must be too.
@@ -132,8 +129,7 @@ def canonical_sha256(path: Path) -> str:
 
 
 def load_eval_set(path: Path | None = None, expected_sha256: str | None = None) -> EvalSet:
-    """
-    Load the eval set, refusing anything but the frozen version.
+    """Load the eval set, refusing anything but the frozen version.
 
     Args:
         path: Label file; settings.EVAL_DATA_PATH / QUERY_EVAL_SET_FILE when omitted.
@@ -185,9 +181,9 @@ class ObservedTask(BaseModel):
     question: str | None = None
 
     def key(self) -> TaskKey:
-        """
-        The comparable identity of this task. The rephrased question is recorded
-        for error analysis but not scored.
+        """Return the comparable identity of this task.
+
+        The rephrased question is recorded for error analysis but not scored.
 
         Returns:
             (intent, company, metric, year, direction).
@@ -207,8 +203,7 @@ class ObservedPlan(BaseModel):
     rationale: str | None = None
 
     def signature(self) -> str:
-        """
-        A stable string identifying this plan, for cross-run disagreement.
+        """A stable string identifying this plan, for cross-run disagreement.
 
         Task order is ignored, as in scoring.
 
@@ -223,8 +218,7 @@ class ObservedPlan(BaseModel):
 
 
 def resolved_company(mention: str | None, index: CorpusIndex) -> str | None:
-    """
-    Map a raw mention onto the label vocabulary.
+    """Map a raw mention onto the label vocabulary.
 
     Args:
         mention: The company as the planner copied it, or None.
@@ -246,8 +240,7 @@ def resolved_company(mention: str | None, index: CorpusIndex) -> str | None:
 
 
 def observe(plan: QueryPlan, index: CorpusIndex) -> ObservedPlan:
-    """
-    Reduce a planner output to a comparable observation.
+    """Reduce a planner output to a comparable observation.
 
     Args:
         plan: The planner's plan.
@@ -280,8 +273,7 @@ def observe(plan: QueryPlan, index: CorpusIndex) -> ObservedPlan:
 
 
 class MissCategory(str, Enum):
-    """
-    The first point at which a plan departs from its closest label.
+    """The first point at which a plan departs from its closest label.
 
     Ordered from coarse to fine; a miss is classified at the earliest level that
     differs, so each miss is counted once. CALL_ERROR is a planner call that
@@ -312,8 +304,7 @@ class QuestionScore(BaseModel):
 
 
 def matches(observed: ObservedPlan, alternative: PlanAlternative) -> bool:
-    """
-    Whether a plan matches one acceptable label.
+    """Whether a plan matches one acceptable label.
 
     Args:
         observed: The planner's plan.
@@ -336,8 +327,7 @@ def _closest(observed: ObservedPlan, alternatives: list[PlanAlternative]) -> Pla
 
 
 def classify_miss(observed: ObservedPlan, alternatives: list[PlanAlternative]) -> MissCategory:
-    """
-    Name the first level at which a plan departs from its closest label.
+    """Name the first level at which a plan departs from its closest label.
 
     Args:
         observed: A plan that matched no alternative.
@@ -365,8 +355,7 @@ def classify_miss(observed: ObservedPlan, alternatives: list[PlanAlternative]) -
 
 
 def _resolver_suspect(observed: ObservedPlan, alternatives: list[PlanAlternative]) -> bool:
-    """
-    Whether a company miss looks like a resolver gap rather than a planner error.
+    """Whether a company miss looks like a resolver gap rather than a planner error.
 
     True when a label expects a held company and the observed mention for the
     same intent resolved to NON_CORPUS or AMBIGUOUS.
@@ -385,8 +374,7 @@ CALL_ERROR_SCORE = QuestionScore(strict=False, lenient=False, miss=MissCategory.
 
 
 def score_question(question: EvalQuestion, observed: ObservedPlan) -> QuestionScore:
-    """
-    Score one plan against one question's labels.
+    """Score one plan against one question's labels.
 
     Args:
         question: The labelled question.
@@ -415,13 +403,12 @@ def score_question(question: EvalQuestion, observed: ObservedPlan) -> QuestionSc
 
 
 def wilson_interval(successes: float, n: int, z: float = 1.96) -> tuple[float, float]:
-    """
-    Wilson score interval for a proportion.
+    """Wilson score interval for a proportion.
 
     Accepts a fractional success count so a mean over runs can be passed with n
     equal to the number of QUESTIONS: repeated runs measure the model's
     variability on the same questions, not new samples, so they do not narrow
-    the interval (D35).
+    the interval.
 
     Args:
         successes: Number (or mean number) of successes.
@@ -461,8 +448,7 @@ def summarise(
     scores: dict[str, list[QuestionScore]],
     signatures: dict[str, list[str]],
 ) -> GroupSummary:
-    """
-    Aggregate one group of questions across runs.
+    """Aggregate one group of questions across runs.
 
     Args:
         questions: The group.

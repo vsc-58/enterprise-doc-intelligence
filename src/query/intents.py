@@ -1,9 +1,10 @@
-# src/query/intents.py
-# Module: Intent policy table (tool selection + section policy)
-# Purpose: The application-controlled mapping from intent to tool, to the set
-#          of corpus sections a narrative intent searches, and to the one
-#          section fallback the corpus justifies. Data, not logic.
-# Depends on: pydantic v2, src.query.schemas
+"""Intent policy table: which tool serves each intent, and which sections it searches.
+
+The application-controlled mapping from intent to tool, from a narrative
+intent to the set of 10-K sections it searches, and to the one section
+fallback the corpus justifies. Data, not logic: the planner labels each task
+with an intent, and this table, not the model, decides how it executes.
+"""
 
 from pydantic import BaseModel, ConfigDict
 
@@ -18,11 +19,10 @@ CORPUS_SECTIONS: frozenset[str] = frozenset({ITEM_1, ITEM_1A, ITEM_7, ITEM_7A})
 
 
 class IntentPolicy(BaseModel):
-    """
-    How one intent executes.
+    """How one intent executes.
 
     The sections are a UNION, searched in one filtered query and ranked by
-    distance alone, so the section a chunk came from carries no weight (D38).
+    distance alone, so the section a chunk came from carries no weight.
     A frozenset rather than a tuple makes that structural: there is no order to
     misread as priority. A miss — the company holds none of the listed sections —
     is always a refusal, which is why there is no `required` flag: under a union
@@ -30,15 +30,16 @@ class IntentPolicy(BaseModel):
     makes an MD&A question about INTC, JPM or XOM refuse rather than answer from
     risk factors.
 
-    No retrieval hint. Hints were the stated reason intents sharing a section
-    could still differ (D28); they were unvalidated, the planner's rephrased
-    question already carries the same vocabulary, and a generic hint dilutes a
-    specific question. Query expansion is the lever to revisit if the 5C
-    retrieval hit-rate is poor.
+    No retrieval hint. Hints were once the reason intents sharing a section
+    could still differ; they were unvalidated, the planner's rephrased question
+    already carries the same vocabulary, and a generic hint dilutes a specific
+    question. Intents whose section sets were identical executed identically,
+    so they were merged; a test keeps every narrative intent's set distinct.
+    Query expansion is the lever to revisit if retrieval recall is poor.
 
     Attributes:
         tool: Which capability serves it. Read by the executor; the planner never
-            sets this, so a plan cannot route itself (D25).
+            sets this, so a plan cannot route itself.
         sections: Corpus sections a narrative intent may draw from. Empty for SQL
             intents, which never touch the vector store.
     """
@@ -79,13 +80,13 @@ INTENT_POLICY: dict[Intent, IntentPolicy] = {
 # itself in the value to search both). Data, not code: the retriever applies
 # this generically, so a newly found mislabelling is one entry here.
 #
-# QCOM and META: the Item 1 slice was rejected by the overlap check because
-# their business description sits inside the Item 1A slice (D20). An Item 1
-# question must therefore search Item 1A for them — and only Item 1A, not the
-# whole document, so the intent still controls which text is eligible (D40).
+# QCOM and META: the Item 1 slice was rejected by the section slicer's overlap
+# check because their business description sits inside the Item 1A slice. An
+# Item 1 question must therefore search Item 1A for them, and only Item 1A, not
+# the whole document, so the intent still controls which text is eligible.
 #
-# Candidate for automation: the Phase 4 overlap check detects exactly this
-# condition at ingestion and could emit these entries (stretch goal).
+# Candidate for automation: the overlap check in the narrative section slicer
+# detects exactly this condition at ingestion and could emit these entries.
 SECTION_ALIASES: dict[str, dict[str, frozenset[str]]] = {
     "QCOM": {ITEM_1: frozenset({ITEM_1A})},
     "META": {ITEM_1: frozenset({ITEM_1A})},
@@ -93,14 +94,12 @@ SECTION_ALIASES: dict[str, dict[str, frozenset[str]]] = {
 
 
 class SectionFallback(BaseModel):
-    """
-    Where a narrative intent searches when a company holds none of its sections.
+    """Where a narrative intent searches when a company holds none of its sections.
 
     Applied only on structural absence — retrieval returned NO_MATCHING_CHUNKS
     for the intent's own sections — and never because the chain judged the
     retrieved text NOT_ADDRESSED. Retrying on "the model couldn't answer" would
-    search until something answers, which biases the system toward answering
-    (D44).
+    search until something answers, which biases the system toward answering.
 
     Attributes:
         sections: Canonical sections searched instead. Aliases apply to them
@@ -115,7 +114,7 @@ class SectionFallback(BaseModel):
     caveat: str
 
 
-# Admission test for an entry, applied per intent (D44): the fallback section
+# Admission test for an entry, applied per intent: the fallback section
 # must answer the SAME KIND of question as the intent's own sections, not merely
 # a related one.
 #
@@ -142,8 +141,7 @@ SECTION_FALLBACKS: dict[Intent, SectionFallback] = {
 
 
 def _stored(sections: frozenset[str], ticker: str) -> frozenset[str]:
-    """
-    Map canonical sections to the stored labels that hold them for one company.
+    """Map canonical sections to the stored labels that hold them for one company.
 
     Args:
         sections: Canonical section labels.
@@ -160,8 +158,7 @@ def _stored(sections: frozenset[str], ticker: str) -> frozenset[str]:
 
 
 def fallback_for(intent: Intent, ticker: str) -> SectionFallback | None:
-    """
-    The fallback one company is searched under when its intent sections are absent.
+    """The fallback one company is searched under when its intent sections are absent.
 
     Args:
         intent: A narrative intent.
@@ -178,8 +175,7 @@ def fallback_for(intent: Intent, ticker: str) -> SectionFallback | None:
 
 
 def sections_for(intent: Intent, ticker: str) -> frozenset[str]:
-    """
-    The sections one company is searched under for one intent.
+    """The sections one company is searched under for one intent.
 
     Applies SECTION_ALIASES to the intent's canonical sections. Companies with
     no entry are searched under the canonical sections unchanged.
@@ -195,8 +191,7 @@ def sections_for(intent: Intent, ticker: str) -> frozenset[str]:
 
 
 def policy_for(intent: Intent) -> IntentPolicy:
-    """
-    Look up how an intent executes.
+    """Look up how an intent executes.
 
     Args:
         intent: The intent to resolve.

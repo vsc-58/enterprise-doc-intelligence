@@ -152,7 +152,7 @@ def test_plans_without_tasks_render_their_fixed_text() -> None:
     clarify = QueryPlan(plan_type=PlanType.CLARIFICATION, clarification_question="Which bank?")
     assert assemble(clarify, []).text == "Which bank?"
 
-# --- Section fallback (D44) ---------------------------------------------------
+# --- Section fallback (market risk -> Item 1A) -------------------------------
 
 
 def test_fallback_disclosure_precedes_the_answer() -> None:

@@ -1,11 +1,11 @@
-# src/api/context.py
-# Module: Per-request context helpers
-# Purpose: The request-id header name, the request timer and the client
-#          address, shared by the middleware in main.py and the routes.
-# Depends on: fastapi
-#
-# Separate from main.py because main.py imports the routes: a route importing
-# main.py would be a circular import.
+"""Per-request helpers: request-id header, request timer and client address.
+
+The request-id header name, the request timer and the client address, shared by
+the middleware in main.py and the routes.
+
+Separate from main.py because main.py imports the routes: a route importing
+main.py would be a circular import.
+"""
 
 import time
 
@@ -15,8 +15,7 @@ REQUEST_ID_HEADER = "X-Request-ID"
 
 
 def elapsed_ms(request: Request) -> int:
-    """
-    Milliseconds since the middleware started handling this request.
+    """Milliseconds since the middleware started handling this request.
 
     Args:
         request: The current request.
@@ -32,8 +31,7 @@ def elapsed_ms(request: Request) -> int:
 
 
 def request_id_of(request: Request) -> str:
-    """
-    The id the middleware gave this request.
+    """The id the middleware gave this request.
 
     Args:
         request: The current request.
@@ -45,8 +43,7 @@ def request_id_of(request: Request) -> str:
 
 
 def client_address(request: Request) -> str:
-    """
-    The client's address, as the server sees it.
+    """The client's address, as the server sees it.
 
     Behind a proxy this is the proxy's address unless uvicorn runs with
     --proxy-headers (see src/api/limits.py). Never read from X-Forwarded-For

@@ -30,6 +30,11 @@ GUARD = {"AAPL": frozenset({365_817_000_000.0})}
 
 
 def _context(company: CompanyRef, status: RetrievalStatus, n: int = 3) -> CompanyContext:
+    """Build one company's retrieved context: n Item 7 blocks for OK, none otherwise.
+
+    Each block contains Apple's stored revenue ($365,817 million), so the figure
+    guard has something to mask.
+    """
     blocks = [
         ContextBlock(number=i, chunk=RetrievedChunk(
             text=f"Passage {i}. Total net sales$365,817.", ticker=company.ticker,
@@ -54,6 +59,11 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict:
         return [state["contexts"][c.ticker] for c in companies]
 
     async def invoke(prompt, schema, variables):
+        """Fake LLM call: record what the model would see and track peak concurrency.
+
+        Returns the draft registered for the company, or raises it if it is an
+        exception (to simulate a failed call).
+        """
         state["seen"].append(variables)
         state["active"] += 1
         state["peak"] = max(state["peak"], state["active"])
@@ -72,6 +82,7 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict:
 
 
 def _answer(state: dict, draft) -> "chain.NarrativeResult":
+    """Answer a management-commentary question for Apple with the given model draft."""
     state["contexts"]["AAPL"] = _context(APPLE, RetrievalStatus.OK)
     state["drafts"]["Apple Inc."] = draft
     return asyncio.run(chain.answer_for_company("q", Intent.MANAGEMENT_COMMENTARY, APPLE))
@@ -205,13 +216,14 @@ def test_inline_passage_reference_is_stripped_from_answers(wired: dict) -> None:
     ]))
     assert result.claims[0].text == "Growth came from iPhone."
 
-# --- Section fallback (D44) ---------------------------------------------------
+# --- Section fallback (market risk -> Item 1A) -------------------------------
 
 JPM = CompanyRef(ticker="JPM", company_name="JPMORGAN CHASE & CO", fiscal_year=2023)
 ABSENT = frozenset({"Item 7", "Item 7A"})
 
 
 def _fallback_context(company: CompanyRef) -> CompanyContext:
+    """A context relabelled as a fallback: Item 1A, searched because Items 7 and 7A were absent."""
     base = _context(company, RetrievalStatus.OK)
     return base.model_copy(update={
         "sections_searched": frozenset({"Item 1A"}), "fallback_from": ABSENT,

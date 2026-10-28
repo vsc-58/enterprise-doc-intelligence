@@ -1,29 +1,28 @@
-# src/api/dependencies.py
-# Module: Route dependencies
-# Purpose: What each endpoint needs to run, and the readiness check that guards
-#          it. A needed part that is missing raises NotReadyError (-> 503
-#          not_ready, Retry-After) after re-trying readiness if due.
-# Depends on: fastapi, src.api.errors, src.api.readiness, src.query.resolve
-#
-# Per-endpoint needs (contract §6):
-#   /query      database, index, vector_store, figure_guard -> query_ready_index
-#   /documents  index                                       -> documents_index
-#   /export     database                                    -> database_ready
-#   /health     nothing: it reports readiness, so it never depends on it
-#
-# ORDER MATTERS FOR /query. FastAPI runs a route's dependencies BEFORE it
-# validates the request body. Found in step 6 against a server with no data:
-# an empty question got 503 "try again in 5 s" instead of 422, and the readiness
-# re-try touched the disk for a request that was malformed anyway. So /query
-# takes only get_readiness (which never raises) as a dependency and calls
-# query_ready_index inside the handler, after validation: 422 always wins.
-# Routes without a body use the raising dependencies directly.
-#
-# Every endpoint reaches readiness through Depends(get_readiness) — directly or
-# as a sub-dependency — so one app.dependency_overrides[get_readiness] swaps it
-# for a hand-built Readiness everywhere, and route tests need no database.
-# (Calling get_readiness(request) directly would bypass the override: found
-# when the step-7 route tests first ran.)
+"""Route dependencies: what each endpoint needs to run, and the readiness check guarding it.
+
+A needed part that is missing raises NotReadyError (503 not_ready, with
+Retry-After) after re-trying readiness if due.
+
+Per-endpoint needs (docs/api_contract.md §6):
+  /query      database, index, vector_store, figure_guard -> query_ready_index
+  /documents  index                                       -> documents_index
+  /export     database                                    -> database_ready
+  /health     nothing: it reports readiness, so it never depends on it
+
+ORDER MATTERS FOR /query. FastAPI runs a route's dependencies BEFORE it
+validates the request body. Found by running the server with no data: an
+empty question got 503 "try again in 5 s" instead of 422, and the readiness
+re-try touched the disk for a request that was malformed anyway. So /query
+takes only get_readiness (which never raises) as a dependency and calls
+query_ready_index inside the handler, after validation: 422 always wins.
+Routes without a body use the raising dependencies directly.
+
+Every endpoint reaches readiness through Depends(get_readiness) — directly or
+as a sub-dependency — so one app.dependency_overrides[get_readiness] swaps it
+for a hand-built Readiness everywhere, and route tests need no database.
+(Calling get_readiness(request) directly would bypass the override: found
+when the route tests first ran.)
+"""
 
 from typing import Annotated
 
@@ -40,8 +39,7 @@ EXPORT_NEEDS = frozenset({DATABASE})
 
 
 def get_readiness(request: Request) -> Readiness:
-    """
-    The readiness state the lifespan created. Never raises.
+    """The readiness state the lifespan created. Never raises.
 
     Args:
         request: The current request.
@@ -53,8 +51,7 @@ def get_readiness(request: Request) -> Readiness:
 
 
 def get_limiter(request: Request) -> UsageLimiter:
-    """
-    The usage limiter create_app() attached. Never raises.
+    """The usage limiter create_app() attached. Never raises.
 
     Args:
         request: The current request.
@@ -66,8 +63,7 @@ def get_limiter(request: Request) -> UsageLimiter:
 
 
 async def require(readiness: Readiness, needs: frozenset[str]) -> Readiness:
-    """
-    Re-try readiness if due, then fail fast if a needed part is missing.
+    """Re-try readiness if due, then fail fast if a needed part is missing.
 
     Args:
         readiness: The app's readiness state.
@@ -88,8 +84,7 @@ async def require(readiness: Readiness, needs: frozenset[str]) -> Readiness:
 
 
 def _loaded_index(readiness: Readiness) -> CorpusIndex:
-    """
-    The corpus index, which a usable INDEX part guarantees is loaded.
+    """The corpus index, which a usable INDEX part guarantees is loaded.
 
     Args:
         readiness: A state whose INDEX part is usable.
@@ -107,8 +102,7 @@ def _loaded_index(readiness: Readiness) -> CorpusIndex:
 
 
 async def query_ready_index(readiness: Readiness) -> CorpusIndex:
-    """
-    For /query, called inside the handler after the body is validated.
+    """For /query, called inside the handler after the body is validated.
 
     Args:
         readiness: From Depends(get_readiness).
@@ -125,8 +119,7 @@ async def query_ready_index(readiness: Readiness) -> CorpusIndex:
 async def documents_index(
     readiness: Annotated[Readiness, Depends(get_readiness)],
 ) -> CorpusIndex:
-    """
-    Dependency for /documents: the corpus index only.
+    """Dependency for /documents: the corpus index only.
 
     Args:
         readiness: From get_readiness, as a sub-dependency so a test override
@@ -142,8 +135,7 @@ async def documents_index(
 
 
 async def database_ready(readiness: Annotated[Readiness, Depends(get_readiness)]) -> None:
-    """
-    Dependency for /export: the database file is present.
+    """Dependency for /export: the database file is present.
 
     Args:
         readiness: From get_readiness, as a sub-dependency.

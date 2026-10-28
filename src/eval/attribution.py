@@ -1,20 +1,21 @@
-# src/eval/attribution.py
-# Module: Attribution support — the validated LLM judge (D43)
-# Purpose: Decide, for one answer sentence and the blocks it cites, whether the
-#          blocks support every detail of the sentence; plus the agreement and
-#          stability statistics that decide whether the judge may be trusted.
-# Depends on: langchain-core, langchain-openai, pydantic v2, src.storage.vector_store,
-#             src.utils.config, src.utils.logger
-#
-# The judge sees the claim, the company it is about, and the cited blocks — each
-# headed by its company, fiscal year and section. Not the user's question and
-# not the rest of the answer: it rules on support, not relevance. The company is
-# metadata, not the question: a claim that says "the company" could otherwise be
-# "supported" by another company's block, which is exactly the citation error a
-# judge must catch.
-#
-# The judge model (gpt-6-luna) differs from the system model (gpt-4o-mini) to
-# reduce self-preference. It is evaluation tooling only.
+"""Attribution support: the LLM judge, validated before its score is trusted.
+
+Decide, for one answer sentence and the blocks it cites, whether the blocks
+support every detail of the sentence; plus the agreement and stability
+statistics that decide whether the judge may be trusted.
+
+The judge sees the claim, the company it is about, and the cited blocks — each
+headed by its company, fiscal year and section. Not the user's question and
+not the rest of the answer: it rules on support, not relevance. The company is
+metadata, not the question: a claim that says "the company" could otherwise be
+"supported" by another company's block, which is exactly the citation error a
+judge must catch.
+
+The judge model (gpt-6-luna) differs from the system model (gpt-4o-mini) to
+reduce self-preference. It is evaluation tooling only. Its score is reported
+only if it passes criteria committed before it ran: catching planted errors,
+agreeing with reference labels (Cohen's kappa) and staying stable across runs.
+"""
 
 import hashlib
 import json
@@ -87,10 +88,11 @@ _llm: ChatOpenAI | None = None
 
 
 def judge_version() -> str:
-    """
-    Version of everything that can change a verdict: prompt, model, reasoning
-    setting, structured-output method and the output schema (whose field
-    descriptions are sent to the model).
+    """Return a version hash of everything that can change a verdict.
+
+    Covers the prompt, model, reasoning setting, structured-output method and
+    the output schema (whose field descriptions are sent to the model). Scores
+    are comparable only at one judge version.
 
     Returns:
         32-character hex digest.
@@ -103,8 +105,7 @@ def judge_version() -> str:
 
 
 def _get_llm() -> ChatOpenAI:
-    """
-    The process-wide judge client, constructed once.
+    """The process-wide judge client, constructed once.
 
     No temperature is set: reasoning-class models reject non-default values.
     reasoning_effort is passed only when configured.
@@ -123,14 +124,14 @@ def _get_llm() -> ChatOpenAI:
 
 
 def render_excerpts(blocks: list[RetrievedChunk]) -> str:
-    """
-    Number and head the cited blocks as the judge sees them.
+    """Number and head the cited blocks as the judge sees them.
 
     Args:
         blocks: Cited chunks, in citation order.
 
     Returns:
-        "[1] Company · FY2023 · Item 1A\\n<text>" blocks separated by blank lines.
+        Blocks headed "[1] Company · FY2023 · Item 1A", each followed by its
+        text on the next line, separated by blank lines.
     """
     return "\n\n".join(
         f"[{n}] {b.company_name} · FY{b.fiscal_year} · {b.section}\n{b.text.strip()}"
@@ -145,8 +146,7 @@ def _normalise(text: str) -> str:
 
 
 class JudgeResult(BaseModel):
-    """
-    One judge call's outcome.
+    """One judge call's outcome.
 
     Attributes:
         label: The verdict, or None if the call failed or returned nothing usable.
@@ -168,8 +168,7 @@ class JudgeResult(BaseModel):
 
 
 def judge_claim(company: str, claim: str, blocks: list[RetrievedChunk]) -> JudgeResult:
-    """
-    Judge one claim against its cited blocks.
+    """Judge one claim against its cited blocks.
 
     Batch-safe: never raises. A failed call returns label None with the error,
     so one bad call cannot sink a run of hundreds; the caller counts failures.
@@ -206,8 +205,7 @@ def judge_claim(company: str, claim: str, blocks: list[RetrievedChunk]) -> Judge
 
 
 def majority(labels: list[JudgeLabel | None]) -> JudgeLabel | None:
-    """
-    The majority label over runs, ignoring failed calls.
+    """The majority label over runs, ignoring failed calls.
 
     Args:
         labels: One label per run (None = failed call).
@@ -229,8 +227,7 @@ def flipped(labels: list[JudgeLabel | None]) -> bool:
 
 
 def cohen_kappa(a: list[JudgeLabel], b: list[JudgeLabel]) -> float | None:
-    """
-    Cohen's kappa for two binary raters.
+    """Cohen's kappa for two binary raters.
 
     Kappa, not raw agreement: most real claims are supported, so a judge that
     always says SUPPORTED would score high raw agreement and kappa near 0.
@@ -264,8 +261,7 @@ def cohen_kappa(a: list[JudgeLabel], b: list[JudgeLabel]) -> float | None:
 
 
 class JudgedItem(BaseModel):
-    """
-    Anything the judge rules on: a real claim, a validation item or a seed.
+    """Anything the judge rules on: a real claim, a validation item or a seed.
 
     Attributes:
         id: Stable identifier ("R26|1|c1" for a claim, "T05" or "S3-02" in the
@@ -288,8 +284,7 @@ class JudgedItem(BaseModel):
 
 
 def split_key(key: str) -> tuple[str, str, int]:
-    """
-    Parse a chunk key.
+    """Parse a chunk key.
 
     Args:
         key: "TICKER|section|index".
@@ -310,8 +305,7 @@ def _keys(sources: list[dict]) -> list[str]:
 
 
 def claims_from_execution(document: dict, mode: str = "end_to_end", run: int = 1) -> list[JudgedItem]:
-    """
-    Every judged sentence in one run of an execution results file.
+    """Every judged sentence in one run of an execution results file.
 
     Single-company answers contribute each cited claim; corpus-wide surveys
     contribute each supported finding's claim. Ids match those in the
@@ -351,8 +345,7 @@ class LabelSheetError(ValueError):
 
 
 def parse_label_sheet(text: str, expected_ids: list[str]) -> dict[str, str]:
-    """
-    Read S/N labels from the blind labelling sheet.
+    """Read S/N labels from the blind labelling sheet.
 
     Each item is a "## <id>" heading followed, somewhere before the next
     heading, by a "Label: S" or "Label: N" line (case-insensitive).

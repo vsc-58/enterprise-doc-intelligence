@@ -1,19 +1,18 @@
-# src/query/synthesizer.py
-# Module: Answer assembly
-# Purpose: Turn a plan and its task outcomes into the one answer the user sees —
-#          parts in plan order, citation numbers assigned across the whole answer,
-#          one Sources list, and an explicit sentence for every part that could
-#          not be answered.
-# Depends on: pydantic v2, src.query.schemas, src.rag.chain, src.utils.logger,
-#             src.utils.text
-#
-# Python only. There is no synthesiser LLM: every figure was rendered by sql_path,
-# every narrative sentence was written and cited by the chain, and every refusal
-# sentence is fixed text. This module only orders, numbers and joins (D27, D41).
-#
-# Citation numbers are assigned here, not by the chain. Each chain call numbers
-# its own blocks from 1, so a hybrid or corpus-wide answer would otherwise show
-# two different passages both labelled [1]. A chunk cited twice keeps one number.
+"""Answer assembly: turn a plan and its task outcomes into the one answer the user sees.
+
+Parts appear in plan order, citation numbers are assigned across the whole
+answer, there is one Sources list, and every part that could not be answered
+gets an explicit sentence.
+
+Python only. There is no synthesizer LLM: every figure was rendered by sql_path,
+every narrative sentence was written and cited by the chain, and every refusal
+sentence is fixed text. This module only orders, numbers and joins, so no model
+ever sees a stored figure on the way out either.
+
+Citation numbers are assigned here, not by the chain. Each chain call numbers
+its own blocks from 1, so a hybrid or corpus-wide answer would otherwise show
+two different passages both labelled [1]. A chunk cited twice keeps one number.
+"""
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -65,8 +64,7 @@ _MISSING_PART_TEXT = "This part could not be answered."
 
 
 class NumberedSource(BaseModel):
-    """
-    One entry in the answer's Sources list.
+    """One entry in the answer's Sources list.
 
     Attributes:
         number: The citation number shown in the answer text.
@@ -79,11 +77,11 @@ class NumberedSource(BaseModel):
     ref: SourceRef
 
     def label(self) -> str:
-        """
-        Render the Sources-list line.
+        """Render the Sources-list line.
 
         chunk_index is shown so a reviewer can find the exact passage; section
-        granularity is otherwise the honest limit of the citation (Phase 4).
+        granularity is otherwise the honest limit of the citation (chunks
+        carry their 10-K item, not a page or subsection).
 
         Returns:
             e.g. "[2] Apple Inc., FY2021, MD&A (Item 7), chunk 2".
@@ -97,14 +95,13 @@ class NumberedSource(BaseModel):
 
 
 class AssembledAnswer(BaseModel):
-    """
-    The final answer to one question.
+    """The final answer to one question.
 
     Attributes:
         text: Everything the user reads, Sources list included.
         sources: The numbered sources, in citation order.
         statuses: Each task's status, in plan order. Empty for plans that carry
-            no tasks. For the API response and the 5C eval.
+            no tasks. Used by the API status policy and the evaluation.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -115,8 +112,7 @@ class AssembledAnswer(BaseModel):
 
 
 def _key(ref: SourceRef) -> tuple[str, int, str, int]:
-    """
-    Identity of a cited chunk, independent of its distance to any one query.
+    """Identity of a cited chunk, independent of its distance to any one query.
 
     Args:
         ref: A source.
@@ -131,12 +127,12 @@ class _Citations:
     """Assigns answer-wide citation numbers, first citation first."""
 
     def __init__(self) -> None:
+        """Start with no sources numbered."""
         self._numbers: dict[tuple[str, int, str, int], int] = {}
         self.sources: list[NumberedSource] = []
 
     def markers(self, refs: list[SourceRef]) -> str:
-        """
-        Number a claim's sources and render its markers.
+        """Number a claim's sources and render its markers.
 
         Args:
             refs: The claim's sources, in the order the chain cited them.
@@ -156,8 +152,7 @@ class _Citations:
 
 
 def plan_refusal_text(plan: QueryPlan) -> str:
-    """
-    The answer for a plan that carries no tasks.
+    """The answer for a plan that carries no tasks.
 
     Args:
         plan: A clarification, unsupported or out-of-scope plan.
@@ -175,8 +170,7 @@ def plan_refusal_text(plan: QueryPlan) -> str:
 
 
 def _cited(claim: CitedClaim, citations: _Citations) -> str:
-    """
-    Render one claim with its markers.
+    """Render one claim with its markers.
 
     Args:
         claim: A cited claim.
@@ -189,8 +183,7 @@ def _cited(claim: CitedClaim, citations: _Citations) -> str:
 
 
 def _tickers(result: NarrativeResult, status: FindingStatus) -> str:
-    """
-    Comma-joined tickers of the findings with one status.
+    """Comma-joined tickers of the findings with one status.
 
     Args:
         result: A corpus-wide result.
@@ -203,11 +196,11 @@ def _tickers(result: NarrativeResult, status: FindingStatus) -> str:
 
 
 def _render_findings(result: NarrativeResult, citations: _Citations) -> str:
-    """
-    Render a corpus-wide result: supported companies, then the coverage statement.
+    """Render a corpus-wide result: supported companies, then the coverage statement.
 
     "No supporting passage found" is worded as what it is — the two retrieved
-    passages did not support the topic — never as "did not disclose" (D39).
+    passages did not support the topic — never as "did not disclose": two
+    chunks per company are not the whole filing.
 
     Args:
         result: A corpus-wide NarrativeResult.
@@ -241,8 +234,7 @@ def _render_findings(result: NarrativeResult, citations: _Citations) -> str:
 
 
 def _fallback_lines(result: NarrativeResult) -> list[str]:
-    """
-    Coverage lines for companies judged on fallback sections (D44).
+    """Coverage lines for companies judged on fallback sections.
 
     Grouped by which sections were absent and which were searched instead, so
     each line states its own substitution. A supported company's own claim
@@ -267,8 +259,7 @@ def _fallback_lines(result: NarrativeResult) -> list[str]:
 
 
 def _render_narrative(result: NarrativeResult, citations: _Citations) -> str:
-    """
-    Render a successful narrative result.
+    """Render a successful narrative result.
 
     Args:
         result: A NarrativeResult with claims or findings.
@@ -292,8 +283,7 @@ def _render_part(
     citations: _Citations,
     multi_part: bool,
 ) -> str:
-    """
-    Render one task's part of the answer.
+    """Render one task's part of the answer.
 
     In a multi-part answer an unanswered part is introduced by the task's own
     question, so the reader can tell which half could not be answered — the R38
@@ -312,7 +302,7 @@ def _render_part(
         if outcome.tool is Tool.RAG and outcome.narrative_result is not None:
             body = _render_narrative(outcome.narrative_result, citations)
             # A successful narrative carries a message only for a fallback
-            # disclosure (D44), which must precede the answer it qualifies.
+            # disclosure, which must precede the answer it qualifies.
             return f"{outcome.message}\n{body}" if outcome.message else body
         return outcome.message or _MISSING_PART_TEXT
 
@@ -323,8 +313,7 @@ def _render_part(
 
 
 def assemble(plan: QueryPlan, outcomes: list[TaskOutcome]) -> AssembledAnswer:
-    """
-    Assemble the final answer for a plan.
+    """Assemble the final answer for a plan.
 
     Parts follow plan order. A task with no outcome — which the executor never
     produces, but which must not silently vanish if it did — is reported as an

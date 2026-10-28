@@ -1,6 +1,4 @@
-"""
-scripts/run_extraction.py
-Run the winning extraction strategy across every un-extracted document.
+"""Run the selected extraction strategy across every document not yet extracted.
 
 Selects documents where Document.is_extracted is False — the single unambiguous
 signal, since is_extracted is set only by a SUCCESS write. A document with two
@@ -8,14 +6,15 @@ failed attempts is still pending and gets picked up again; a successful one is
 never re-billed.
 
 Cost is reported split: tokens billed on this run vs tokens replayed from the
-Phase 2 response cache. The eval-10 hit that cache (their prompt, model and
-sliced input are unchanged), so a correct run shows ~10 cached hits and pays
-only for the held-out half.
+extraction response cache. The 10-document strategy-selection set hits that
+cache (its prompt, model and sliced input are unchanged), so a correct full
+run shows ~10 cached hits and pays only for the held-out half.
+
+Side effects: writes one extracted_records row per attempt and sets
+Document.is_extracted on success. Calls the OpenAI API for uncached documents;
+--dry-run estimates the cost without spending.
 
 Run: python -m scripts.run_extraction [--strategy S3] [--limit N] [--dry-run]
-
-Dependencies: src.extraction.extractor, src.storage.metadata_store,
-src.utils.config, src.utils.logger.
 """
 
 import argparse
@@ -37,8 +36,7 @@ _OUTPUT_USD_PER_MTOK = 0.60
 
 
 def _pending_documents() -> list[tuple[int, str, int]]:
-    """
-    Return (id, ticker, filing_year) for every document not yet extracted.
+    """Return (id, ticker, filing_year) for every document not yet extracted.
 
     Ordered by id so a resumed run processes in the same sequence as the first,
     which makes a partial run's progress readable against the previous log.
@@ -56,8 +54,7 @@ def _pending_documents() -> list[tuple[int, str, int]]:
 
 
 def _estimate_usd(input_tokens: int, output_tokens: int) -> float:
-    """
-    Convert token counts to an approximate USD cost.
+    """Convert token counts to an approximate USD cost.
 
     Args:
         input_tokens: prompt tokens billed.
@@ -73,8 +70,7 @@ def _estimate_usd(input_tokens: int, output_tokens: int) -> float:
 
 
 def main() -> None:
-    """
-    Extract all pending documents and report the outcome and cost.
+    """Extract all pending documents and report the outcome and cost.
 
     --dry-run lists what would be processed and exits without calling the model
     or writing any record: the last checkpoint before spending.
@@ -85,8 +81,9 @@ def main() -> None:
     parser.add_argument(
         "--strategy",
         type=str,
-        default="S3",
-        help="Strategy id to apply. Defaults to the Phase 2 winner.",
+        default=settings.EXTRACTION_STRATEGY,
+        help="Strategy id to apply (default: settings.EXTRACTION_STRATEGY, the "
+        "strategy selected by the prompt-strategy comparison).",
     )
     parser.add_argument(
         "--limit",

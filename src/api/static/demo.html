@@ -2,8 +2,9 @@
 <!--
   src/api/static/demo.html — the demo page served at "/".
   Purpose: let a non-developer ask a question and read the answer: prose with
-  line breaks, every figure with its quality mark (D29), companies left out
-  (D53/D56), numbered sources. Swagger stays at /docs for developers.
+  line breaks, every figure with its data-quality mark, companies a list left
+  out that may belong in it, numbered sources. Swagger stays at /docs for
+  developers.
   Depends on: POST /query, GET /documents, GET /openapi.json (for the examples).
 
   Security: every value from the server is inserted with textContent, never as

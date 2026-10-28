@@ -1,14 +1,14 @@
-# src/storage/quality.py
-# Module: Extraction quality flags (scale coherence + evidence agreement)
-# Purpose: Decides how much assurance a stored figure carries, from the evidence
-#          columns alone, so the query path and /export can both disclose it.
-# Depends on: pydantic v2, src.storage.metadata_store, src.utils.config,
-#             src.utils.logger, src.utils.numbers
-#
-# BOUNDARY RULE: this module never reads data/eval/ground_truth.json. Every input
-# is something the extraction pipeline itself produced. If the check ever needs
-# the answer key to work, it is an evaluation metric, not a runtime feature, and
-# it does not ship (D29).
+"""Data-quality flags for stored figures: scale coherence and evidence agreement.
+
+Decides how much assurance each extracted figure carries (verified, unverified
+or disputed), from the stored evidence columns alone, so the query path, the
+API and the CSV export all disclose it in the same words.
+
+Boundary rule: this module never reads data/eval/ground_truth.json. Every input
+is something the extraction pipeline itself produced. If the check ever needed
+the answer key to work, it would be an evaluation metric, not a runtime
+feature, and it would not ship.
+"""
 
 from collections import Counter
 from collections.abc import Mapping
@@ -25,8 +25,7 @@ logger = get_logger(__name__)
 
 
 class QualityVerdict(str, Enum):
-    """
-    How much assurance a stored figure carries.
+    """How much assurance a stored figure carries.
 
     VERIFIED: the cited line contains the value, and the scale implied by that
         citation agrees with the rest of the document.
@@ -45,15 +44,15 @@ class QualityVerdict(str, Enum):
 
 
 class QualityReason(str, Enum):
-    """
-    Why a verdict was reached.
+    """Why a verdict was reached.
 
     CONSISTENT: both checks passed.
     NULL_FIELD: no value was extracted, so there is nothing to check.
     EVIDENCE_MISMATCH: the cited line does not contain the stored value at any
         scale. Observed where the target line does not exist in the filing and
-        the model derived a figure while citing a neighbouring row (Phase 1 D5),
-        and where it returned one accounting concept while quoting another.
+        the model derived a figure while citing a neighbouring row (filers with
+        no total-liabilities line), and where it returned one accounting
+        concept while quoting another.
     SCALE_DISAGREEMENT: the citation matches, but at a different scale from the
         document's other fields. The minority field is the suspect.
     SCALE_AMBIGUOUS: the document's fields split evenly between two scales, so
@@ -73,8 +72,7 @@ class QualityReason(str, Enum):
 
 
 class QualityFlag(BaseModel):
-    """
-    The assurance attached to one stored figure.
+    """The assurance attached to one stored figure.
 
     Attributes:
         field: The extraction field this describes.
@@ -98,8 +96,7 @@ class QualityFlag(BaseModel):
     suspected_true_value: float | None = None
 
     def note(self) -> str | None:
-        """
-        Render the one-sentence disclosure shown beside the figure.
+        """Render the one-sentence disclosure shown beside the figure.
 
         Wording lives here so the API response, the answer text and the export
         never drift apart.
@@ -136,8 +133,7 @@ class QualityFlag(BaseModel):
 
 
 def implied_multiplier(value: float | None, source_line: str | None) -> float | None:
-    """
-    Infer the scale a citation implies for a stored value.
+    """Infer the scale a citation implies for a stored value.
 
     Tries each multiplier in SCALE_MULTIPLIERS against every number printed in
     the cited line, under the same relative tolerance the grounding check uses,
@@ -164,8 +160,7 @@ def implied_multiplier(value: float | None, source_line: str | None) -> float | 
 
 
 def document_scale(multipliers: Mapping[str, float | None]) -> tuple[float | None, bool]:
-    """
-    Establish the document's majority scale from its per-field multipliers.
+    """Establish the document's majority scale from its per-field multipliers.
 
     Args:
         multipliers: Field to implied multiplier, None where not inferable.
@@ -190,8 +185,7 @@ def assess(
     values: Mapping[str, float | None],
     source_lines: Mapping[str, str | None],
 ) -> dict[str, QualityFlag]:
-    """
-    Assess every numeric field of one extraction.
+    """Assess every numeric field of one extraction.
 
     Pure: no I/O, no database, no LLM, no answer key. Takes the two pieces of
     stored evidence and returns one flag per field.
@@ -248,8 +242,7 @@ def assess(
 
 
 def assess_record(record: ExtractedRecord) -> dict[str, QualityFlag]:
-    """
-    Assess one stored extraction row.
+    """Assess one stored extraction row.
 
     Thin adapter over assess(), reading the flattened evidence columns rather
     than evidence_json — the same projection /export reads, so a figure and its

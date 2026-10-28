@@ -1,16 +1,12 @@
-"""
-scripts/inspect_chunks.py — DIAGNOSTIC (print() allowed).
+"""Report chunk size distribution and boundary quality before anything is embedded.
 
-Chunks documents from their narrative artifacts and reports size distribution,
-boundary quality and metadata. No embedding, no Chroma, no API calls — pure
-local inspection before any spend.
+Diagnostic (print() allowed). Chunks documents from their narrative artifacts
+and reports size distribution, boundary quality and metadata. No embedding, no
+Chroma, no API calls — pure local inspection before any spend.
 
 Usage:
-    python -m scripts.inspect_chunks              # all documents, summary only
-    python -m scripts.inspect_chunks BAC          # one ticker, with chunk text
-
-Dependencies: sqlalchemy, src.ingestion.chunker, src.storage.metadata_store,
-src.utils.logger.
+    python -m scripts.diagnostic.inspect_chunks              # all documents, summary only
+    python -m scripts.diagnostic.inspect_chunks BAC          # one ticker, with chunk text
 """
 
 from __future__ import annotations

@@ -1,8 +1,6 @@
-"""
-scripts/run_heldout_eval.py
-Score the winning strategy on the held-out half of the corpus.
+"""Score the selected extraction strategy on the held-out half of the corpus.
 
-The eval-10 is the set S3 was SELECTED on, so its 1.00 is in-sample. The other
+The 10-document selection set is the set S3 was SELECTED on, so its 1.00 is in-sample. The other
 ten documents have XBRL ground truth and were never used for selection, so
 scoring them is a free out-of-sample measurement — the advantage of an automatic
 answer key over hand labelling.
@@ -20,10 +18,7 @@ that decision was made.
 
 Reads cached responses only — no API cost.
 
-Run: python -m scripts.run_heldout_eval [--strategy S3]
-
-Dependencies: src.eval.evaluate, src.eval.eval_set, src.eval.grounding,
-src.extraction.extractor, src.storage.metadata_store, src.utils.*
+Run: python -m scripts.run_heldout_eval [--strategy ID]   (default: settings.EXTRACTION_STRATEGY)
 """
 
 import argparse
@@ -44,8 +39,7 @@ logger = get_logger(__name__)
 
 
 def _held_out_documents() -> list[tuple[str, int, str]]:
-    """
-    Return (cik, filing_year, ticker) for every document outside the eval set.
+    """Return (cik, filing_year, ticker) for every document outside the eval set.
 
     The corpus comes from SQLite and the split comes from src.eval.eval_set, so
     "held out" means precisely "acquired but not used to select the strategy" —
@@ -68,10 +62,9 @@ def _held_out_documents() -> list[tuple[str, int, str]]:
 
 
 def _consistency_rate(results: list[ExtractionResult]) -> tuple[float | None, dict]:
-    """
-    Compute the value-in-cited-line rate that evaluate_strategy does not cover.
+    """Compute the value-in-cited-line rate that evaluate_strategy does not cover.
 
-    evaluate_strategy is the Phase 2 artifact and runs check_grounding only, so
+    evaluate_strategy produced the strategy comparison and runs check_grounding only, so
     it reports fabricated quotes but not miscitation. Rather than edit it — which
     would make the bake-off and this run incomparable — the second verdict is
     computed here and reported alongside.
@@ -100,7 +93,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Score the winning strategy out of sample."
     )
-    parser.add_argument("--strategy", type=str, default="S3")
+    parser.add_argument(
+        "--strategy", type=str, default=settings.EXTRACTION_STRATEGY,
+        help="Strategy to score (default: the selected strategy, settings.EXTRACTION_STRATEGY).",
+    )
     args = parser.parse_args()
 
     held_out = _held_out_documents()

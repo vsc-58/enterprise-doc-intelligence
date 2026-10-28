@@ -1,22 +1,20 @@
-# src/rag/retriever.py
-# Module: Narrative retrieval
-# Purpose: Turn a narrative task into numbered context blocks — one company's
-#          blocks for a single-company task, one set per eligible company for a
-#          corpus-wide task — carrying the source identity each citation needs.
-# Depends on: pydantic v2, src.query.intents, src.query.schemas,
-#             src.storage.vector_store, src.utils.config, src.utils.logger,
-#             src.utils.text
-#
-# Deterministic: no LLM call. Section policy is applied here and nowhere else,
-# including the one section fallback (D44): when a company holds none of an
-# intent's sections, the intent's fallback sections are searched instead. The
-# trigger is structural absence in the store, never the chain's judgment.
-#
-# Block numbers are LOCAL to one CompanyContext. The chain cites by number, and
-# the number maps back to a block by construction; but in a corpus-wide answer
-# every company's blocks start at 1, so the number is not a citation key across
-# companies. ContextBlock.source_ref() carries the chunk's real identity, and the
-# synthesizer assigns final display numbers when it merges sources.
+"""Narrative retrieval: turn a narrative task into numbered context blocks.
+
+Returns one company's blocks for a single-company task, or one set per
+eligible company for a corpus-wide task, each carrying the source identity its
+citation needs.
+
+Deterministic: no LLM call. Section policy is applied here and nowhere else,
+including the one section fallback: when a company holds none of an intent's
+sections, the intent's fallback sections are searched instead. The trigger is
+structural absence in the store, never the chain's judgment.
+
+Block numbers are LOCAL to one CompanyContext. The chain cites by number, and
+the number maps back to a block by construction; but in a corpus-wide answer
+every company's blocks start at 1, so the number is not a citation key across
+companies. ContextBlock.source_ref() carries the chunk's real identity, and the
+synthesizer assigns final display numbers when it merges sources.
+"""
 
 from collections.abc import Sequence
 
@@ -39,14 +37,14 @@ logger = get_logger(__name__)
 
 
 class CompanyRef(BaseModel):
-    """
-    The identity a retrieval needs for one company.
+    """The identity a retrieval needs for one company.
 
     Built from a ResolvedEntity (single-company) or a CorpusEntry (corpus-wide),
     so the retriever depends on neither.
 
     Attributes:
-        ticker: Filtering key (D30).
+        ticker: Filtering key. Chunks are filtered by ticker, never by the
+            registrant name, which a model-written name would not match.
         company_name: Registrant name as stored.
         fiscal_year: The filing_year the corpus holds for this company.
     """
@@ -59,8 +57,7 @@ class CompanyRef(BaseModel):
 
 
 class ContextBlock(BaseModel):
-    """
-    One numbered chunk as the chain will see it.
+    """One numbered chunk as the chain will see it.
 
     Attributes:
         number: 1-based position within its CompanyContext.
@@ -73,8 +70,7 @@ class ContextBlock(BaseModel):
     chunk: RetrievedChunk
 
     def source_ref(self) -> SourceRef:
-        """
-        The citation record for this block.
+        """The citation record for this block.
 
         Returns:
             A SourceRef carrying the chunk's identity and distance.
@@ -90,8 +86,7 @@ class ContextBlock(BaseModel):
 
 
 class CompanyContext(BaseModel):
-    """
-    Retrieval for one company under one intent.
+    """Retrieval for one company under one intent.
 
     Attributes:
         company: Which company.
@@ -117,8 +112,7 @@ class CompanyContext(BaseModel):
     fallback_from: frozenset[str] = frozenset()
 
     def block(self, number: int) -> ContextBlock | None:
-        """
-        Look up a block by the number the chain cited.
+        """Look up a block by the number the chain cited.
 
         Args:
             number: A cited block number.
@@ -133,8 +127,7 @@ class CompanyContext(BaseModel):
 
 
 def _number(chunks: Sequence[RetrievedChunk]) -> list[ContextBlock]:
-    """
-    Number chunks from 1 in the order given (nearest first).
+    """Number chunks from 1 in the order given (nearest first).
 
     Args:
         chunks: Retrieved chunks.
@@ -151,8 +144,7 @@ def _retrieve(
     company: CompanyRef,
     k: int,
 ) -> CompanyContext:
-    """
-    Run one company's filtered search with a precomputed query vector.
+    """Run one company's filtered search with a precomputed query vector.
 
     If the company holds none of the intent's sections and the intent has a
     fallback, the fallback sections are searched once with the same vector. The
@@ -211,8 +203,7 @@ def _all_failed(
     companies: Sequence[CompanyRef],
     detail: str,
 ) -> list[CompanyContext]:
-    """
-    One FAILED context per company, for when the shared embedding call fails.
+    """One FAILED context per company, for when the shared embedding call fails.
 
     Args:
         intent: Narrative intent.
@@ -239,8 +230,7 @@ def retrieve_for_company(
     company: CompanyRef,
     k: int | None = None,
 ) -> CompanyContext:
-    """
-    Retrieve context for a single-company narrative task.
+    """Retrieve context for a single-company narrative task.
 
     Never raises on a runtime fault: an embedding or store failure comes back as
     a FAILED context so the executor can refuse that task and keep the others.
@@ -278,11 +268,10 @@ def retrieve_corpus_wide(
     companies: Sequence[CompanyRef],
     k: int | None = None,
 ) -> list[CompanyContext]:
-    """
-    Retrieve context for a corpus-wide narrative task, one company at a time.
+    """Retrieve context for a corpus-wide narrative task, one company at a time.
 
     Embeds the question once and runs one filtered search per company, so the
-    largest filers cannot crowd the rest out of a shared top-k (D39). The
+    largest filers cannot crowd the rest out of a shared top-k. The
     searches are local and take milliseconds, so they run sequentially in the
     caller's worker thread; only the verdict LLM calls downstream are concurrent.
 
@@ -321,13 +310,13 @@ def retrieve_corpus_wide(
 
 
 def format_context(context: CompanyContext) -> str:
-    """
-    Render a company's blocks as the text the chain receives.
+    """Render a company's blocks as the text the chain receives.
 
     Each block is headed by its number, company, fiscal year and the stored
     section label, so the model can cite by number and the reader can see the
     provenance. The label is the stored one: for an aliased company the citation
-    honestly says Item 1A, where the text actually sits (D20).
+    honestly says Item 1A, where the text actually sits (the section slicer
+    found QCOM's and META's business description inside their Item 1A).
 
     Args:
         context: An OK context.

@@ -1,26 +1,25 @@
-# src/eval/retrieval_eval.py
-# Module: Retrieval evaluation — gold labels and ranking metrics
-# Purpose: Load the chunk-level retrieval gold, score one ranking against it
-#          (hit, recall and precision at k, first relevant rank, unjudged
-#          chunks), and pull the planner's rephrased task questions out of a
-#          routing results file so retrieval can be scored on what production
-#          actually embeds.
-# Depends on: pydantic v2, src.eval.query_eval, src.utils.config, src.utils.logger
-#
-# Pure scoring: no embedding call and no store access here. The runner supplies
-# rankings, which is why every rule below is unit-testable.
-#
-# Three label states, not two. A pooled chunk is JUDGED: labelled rel, labelled
-# border, or (unlabelled) not relevant. A chunk outside the pool is UNJUDGED —
-# nobody read it. Scoring counts an unjudged chunk as not relevant, which can
-# only understate precision, and reports how many there were so the number is
-# never read as final while any remain.
-#
-# Recall at k is CAPPED: relevant found in the top k divided by min(k, R). A
-# question with 17 relevant chunks cannot have more than 5 of them in a top 5,
-# and plain recall would call a perfect top 5 "29%". The cap turns the metric
-# into "how much of what fits in k is relevant to what was asked for", which is
-# what the chain reading k chunks experiences. R is reported beside it.
+"""Retrieval evaluation: chunk-level gold labels and ranking metrics.
+
+Load the chunk-level retrieval gold, score one ranking against it (hit, recall
+and precision at k, first relevant rank, unjudged chunks), and pull the
+planner's rephrased task questions out of a routing results file so retrieval
+can be scored on what production actually embeds.
+
+Pure scoring: no embedding call and no store access here. The runner supplies
+rankings, which is why every rule below is unit-testable.
+
+Three label states, not two. A pooled chunk is JUDGED: labelled rel, labelled
+border, or (unlabelled) not relevant. A chunk outside the pool is UNJUDGED —
+nobody read it. Scoring counts an unjudged chunk as not relevant, which can
+only understate precision, and reports how many there were so the number is
+never read as final while any remain.
+
+Recall at k is CAPPED: relevant found in the top k divided by min(k, R). A
+question with 17 relevant chunks cannot have more than 5 of them in a top 5,
+and plain recall would call a perfect top 5 "29%". The cap turns the metric
+into "how much of what fits in k is relevant to what was asked for", which is
+what the chain reading k chunks experiences. R is reported beside it.
+"""
 
 import json
 from enum import Enum
@@ -41,8 +40,7 @@ class GoldError(RuntimeError):
 
 
 class Relevance(str, Enum):
-    """
-    A pooled chunk's label.
+    """A pooled chunk's label.
 
     REL: a reader could write at least one sentence answering the question from
         this chunk alone, for this company.
@@ -65,8 +63,7 @@ class GoldLabel(BaseModel):
 
 
 class GoldQuestion(BaseModel):
-    """
-    Retrieval gold for one question.
+    """Retrieval gold for one question.
 
     Attributes:
         id: Eval-set question id.
@@ -112,8 +109,7 @@ class GoldQuestion(BaseModel):
         return self
 
     def relevant(self, lenient: bool) -> frozenset[str]:
-        """
-        The chunks counted as relevant.
+        """The chunks counted as relevant.
 
         Args:
             lenient: Count border chunks too.
@@ -125,8 +121,7 @@ class GoldQuestion(BaseModel):
         return frozenset(label.key for label in self.labels if label.relevance in accepted)
 
     def judged(self) -> frozenset[str]:
-        """
-        The chunks someone read.
+        """The chunks someone read.
 
         Returns:
             Pooled chunk keys.
@@ -155,8 +150,7 @@ class RetrievalGold(BaseModel):
 
 
 def load_gold(path: Path | None = None, expected_sha256: str | None = None) -> RetrievalGold:
-    """
-    Load the retrieval gold, check it is the frozen version, and validate it.
+    """Load the retrieval gold, check it is the frozen version, and validate it.
 
     Args:
         path: Gold file; settings.EVAL_DATA_PATH / settings.RETRIEVAL_GOLD_FILE
@@ -195,8 +189,7 @@ def load_gold(path: Path | None = None, expected_sha256: str | None = None) -> R
 
 
 class CutoffScore(BaseModel):
-    """
-    Metrics at one cut-off k.
+    """Metrics at one cut-off k.
 
     Attributes:
         k: The cut-off.
@@ -219,8 +212,7 @@ class CutoffScore(BaseModel):
 
 
 class RankingScore(BaseModel):
-    """
-    One ranking scored against one relevance set.
+    """One ranking scored against one relevance set.
 
     Attributes:
         relevant_total: R, the number of relevant chunks in the gold.
@@ -236,8 +228,7 @@ class RankingScore(BaseModel):
     cutoffs: list[CutoffScore]
 
     def at(self, k: int) -> CutoffScore:
-        """
-        The score at cut-off k.
+        """The score at cut-off k.
 
         Args:
             k: A cut-off that was scored.
@@ -260,8 +251,7 @@ def score_ranking(
     judged: frozenset[str],
     ks: list[int],
 ) -> RankingScore:
-    """
-    Score one ranking.
+    """Score one ranking.
 
     Args:
         ranking: Chunk keys, nearest first.
@@ -294,8 +284,7 @@ def score_ranking(
 
 
 def unjudged_in_top(ranking: list[str], judged: frozenset[str], k: int) -> list[str]:
-    """
-    Chunks in the top k that nobody has read.
+    """Chunks in the top k that nobody has read.
 
     Args:
         ranking: Chunk keys, nearest first.
@@ -325,8 +314,7 @@ def planner_queries(
     accepted_intents: list[str],
     ticker: str,
 ) -> list[PlannerQuery | None]:
-    """
-    The planner's narrative task for this company, per run.
+    """The planner's narrative task for this company, per run.
 
     Production embeds the planner's self-contained task question, not the user's
     words, and filters on the planner's intent, so both are what retrieval must
@@ -363,8 +351,7 @@ def planner_queries(
 
 
 def mean_or_none(values: list[float | None]) -> float | None:
-    """
-    Mean of the non-None values.
+    """Mean of the non-None values.
 
     Args:
         values: Numbers, some possibly None (not measurable).

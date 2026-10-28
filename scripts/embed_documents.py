@@ -1,13 +1,10 @@
-"""
-scripts/embed_documents.py
-Chunk and embed every document whose narrative sections have not yet been
-indexed, and flip Document.is_embedded on success.
+"""Chunk and embed every document not yet indexed, and set Document.is_embedded.
 
-Entrypoint for the Phase 4 indexing step. Reads narrative artifacts from disk
+Entrypoint for the indexing step. Reads narrative artifacts from disk
 (written by scripts/build_narrative_sections.py), chunks them, and writes chunks
 plus embeddings to ChromaDB.
 
-Discipline mirrors Phase 3's is_extracted: the flag is set ONLY after the
+Discipline mirrors is_extracted in the extraction run: the flag is set ONLY after the
 document's chunks are fully written. A partially embedded document therefore
 keeps is_embedded=False and is picked up by a re-run — a half-indexed document
 that claimed to be complete would silently under-serve retrieval with no error
@@ -22,9 +19,6 @@ Usage:
     python -m scripts.embed_documents --all        # re-embed everything
     python -m scripts.embed_documents --reset      # drop collection, rebuild all
     python -m scripts.embed_documents --dry-run    # chunk and cost only, no spend
-
-Dependencies: sqlalchemy, src.ingestion.chunker, src.storage.vector_store,
-src.storage.metadata_store, src.utils.config, src.utils.logger.
 """
 
 from __future__ import annotations

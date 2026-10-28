@@ -1,6 +1,4 @@
-"""
-scripts/run_execution_eval.py
-Phase 5C steps 5–6: what each question actually produces, in two modes.
+"""Execution evaluation: what each eval question actually produces, in two modes.
 
   oracle      the label's strict plan, executed directly — the downstream
               system (resolver, SQL path, retriever, fallback, chain, guard)
@@ -8,14 +6,14 @@ Phase 5C steps 5–6: what each question actually produces, in two modes.
   end_to_end  the planner's own plan, executed — what a user receives.
 
 Every task is reduced to an outcome class the code already emits (resolver
-failure, NarrativeRefusal, D29 quality verdict, D44 fallback) and compared with
+failure, NarrativeRefusal, figure quality verdict, section fallback) and compared with
 the label. A question is correct when every task matches; end to end it must
 also have routed correctly. A miss in oracle mode is a downstream failure no
 routing fix would cure; a miss only end to end is a routing cost.
 
 Also recorded per run, both modes: the figure-guard counters (masked,
 redacted), invalid citations, fallback use, and every claim with its cited
-sources — the input for the attribution judge (D43). Any redaction is a
+sources — the input for the attribution judge. Any redaction is a
 masking miss to investigate.
 
 HELD-OUT IS REPORT-ONLY, as for routing.
@@ -28,9 +26,6 @@ Run:  python -m scripts.run_execution_eval
 
 Cost: roughly $1 for the full set, both modes, three runs. Corpus-wide surveys
 are most of it (one verdict call per company).
-
-Dependencies: src.eval.execution_eval, src.eval.query_eval, src.query.*,
-src.rag.chain, src.utils.config, src.utils.logger.
 """
 
 import argparse
@@ -79,8 +74,7 @@ async def _run_question(
     filters: OracleParams,
     semaphore: asyncio.Semaphore,
 ) -> dict:
-    """
-    Plan (or take the gold plan), execute, assemble and record one question.
+    """Plan (or take the gold plan), execute, assemble and record one question.
 
     Batch rule: any failure is logged with the question id and recorded as an
     error, never raised.
@@ -202,8 +196,7 @@ async def _run_all(
 
 
 def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
-    """
-    Run the execution eval and write results.
+    """Run the execution eval and write results.
 
     Returns:
         Process exit code: 0 on completion, 1 if setup failed.
@@ -303,7 +296,7 @@ def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--runs", type=int, default=settings.QUERY_EVAL_RUNS)
     parser.add_argument("--ids", type=str, default=None,
                         help="Comma-separated question ids, for a smoke test.")

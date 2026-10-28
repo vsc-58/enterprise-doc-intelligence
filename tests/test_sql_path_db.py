@@ -1,11 +1,11 @@
 """The SQL path against a real SQLite database built for each test.
 
-Until Phase 6 the SQL path had no unit tests: it was checked only by the Phase 5
-eval harness and end-to-end scripts against the project database. These tests
-build a throwaway database in pytest's tmp_path — no network, no API key, and
-never the project's db/metadata.db — so the real SQL, the canonical
-latest-extraction rule (D31), the D29 quality flags, D33 mixed years, D36's
-ordering caveat and D53's flagged-not-shown query all run for real.
+The SQL path was first checked only by the evaluation harness and end-to-end
+scripts against the project database. These tests build a throwaway database
+in pytest's tmp_path — no network, no API key, and never the project's
+db/metadata.db — so the real SQL runs: the canonical latest-extraction rule,
+the figure quality flags, the mixed-fiscal-years note, the ordering caveat for
+flagged rows, and the query that names flagged companies a list left out.
 
 Figures and cited lines follow the real filings' shapes (millions, BAC's mixed
 balance-sheet scale, GS's thousand-times-small operating cash flow), so each
@@ -37,6 +37,7 @@ K = 1e3      # BAC's balance sheet, GS's cash flow line: thousands
 
 
 def _record(doc: Document, when: datetime, status: str = "success", **fields: object) -> ExtractedRecord:
+    """An extraction attempt for a document at a given time; figures passed as fields."""
     return ExtractedRecord(
         document_id=doc.id, extraction_strategy_used="S3", prompt_version="v1",
         model_name="gpt-4o-mini", extraction_status=status, extracted_at=when, **fields,
@@ -74,7 +75,7 @@ def db(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Document]:
         session.flush()
         session.add_all([
             # Apple: an OLDER success with a wrong value, the CURRENT success,
-            # and a NEWER failed attempt. D31: serve the latest SUCCESS only.
+            # and a NEWER failed attempt. Serve the latest SUCCESS only.
             _record(docs["AAPL"], t0, fiscal_year_end="2021-09-25", **_figures(1, 1, 1, 1, 1)),
             _record(docs["AAPL"], t1, fiscal_year_end="2021-09-25",
                     **_figures(365_817, 94_680, 351_002, 287_912, 104_038)),
@@ -125,7 +126,7 @@ def test_lookup_without_a_company_is_refused(db) -> None:
         run_financial_task(task, None)
 
 
-# --- Filter (D53, D33) ---------------------------------------------------------------------
+# --- Filter: flagged companies left out, mixed years -----------------------------------
 
 
 def test_filter_names_the_flagged_company_it_left_out(db) -> None:
@@ -151,7 +152,7 @@ def test_filter_threshold_in_words_is_refused_not_guessed(db) -> None:
 
 
 def test_filter_no_correction_could_pass_names_nobody(db) -> None:
-    """BAC is $3.05 trillion at most: it cannot pass $5 trillion, so it is not named (D56)."""
+    """BAC is $3.05 trillion at most: it cannot pass $5 trillion, so it is not named."""
     task = Task(task_id="t1", intent=Intent.FINANCIAL_FILTER, metric=MetricField.TOTAL_ASSETS,
                 comparison=Comparison.GT, threshold_text="$5 trillion")
     result = run_financial_task(task, None)
@@ -159,7 +160,7 @@ def test_filter_no_correction_could_pass_names_nobody(db) -> None:
     assert render(task, result, None) == "No company in the corpus matches that total assets criterion."
 
 
-# --- Ranking (D36, null exclusion) -----------------------------------------------------------
+# --- Ranking: ordering caveat, null exclusion ------------------------------------------
 
 
 def test_highest_cash_flow_names_the_null_but_not_the_flag_that_could_not_win(db) -> None:
@@ -174,7 +175,7 @@ def test_highest_cash_flow_names_the_null_but_not_the_flag_that_could_not_win(db
 
 
 def test_lowest_cash_flow_puts_the_flagged_figure_first_and_says_so(db) -> None:
-    """D36: GS sorts first only because its value is 1,000x too small."""
+    """GS sorts first only because its value is 1,000x too small, so the ordering is caveated."""
     task = Task(task_id="t1", intent=Intent.FINANCIAL_RANKING,
                 metric=MetricField.OPERATING_CASH_FLOW, direction=Direction.LOWEST, limit=1)
     result = run_financial_task(task, None)
@@ -192,3 +193,49 @@ def test_ranking_orders_every_company_by_value(db) -> None:
                 direction=Direction.HIGHEST, limit=20)
     result = run_financial_task(task, None)
     assert _tickers(result.rows) == ["AAPL", "JPM", "BAC", "GS"]
+
+
+# --- Missing figures are never blamed on the filing ------------------------------------
+
+
+def test_lookup_of_a_null_figure_says_it_was_not_extracted(db) -> None:
+    """BAC's operating cash flow is null: one sentence blaming the extraction, no repeat note."""
+    doc = db["BAC"]
+    bac = ResolvedEntity(mention="BofA", ticker="BAC", cik=doc.cik,
+                         company_name="Bank of America Corp.", document_id=doc.id, filing_year=2022)
+    task = Task(task_id="t1", intent=Intent.FINANCIAL_METRIC, company_mention="BofA",
+                metric=MetricField.OPERATING_CASH_FLOW)
+    text = render(task, run_financial_task(task, bac), bac)
+    assert text == (
+        "Bank of America Corp.'s operating cash flow for fiscal year 2022 (period ending "
+        "2022-12-31) was not extracted from the filing, so I can't give it."
+    )
+
+
+def test_ranking_names_a_company_whose_extraction_failed(db) -> None:
+    """A filing with only a failed attempt has no figures; a list must name it, not drop it."""
+    with metadata_store._SessionFactory() as session:
+        intel = Document(ticker="INTC", company_name="INTEL CORP", cik="0000050863",
+                         filing_year=2023)
+        session.add(intel)
+        session.flush()
+        session.add(_record(intel, datetime(2026, 9, 1), status="failed"))
+        session.commit()
+    task = Task(task_id="t1", intent=Intent.FINANCIAL_RANKING,
+                metric=MetricField.TOTAL_REVENUE, direction=Direction.HIGHEST, limit=20)
+    result = run_financial_task(task, None)
+    assert "INTC" not in _tickers(result.rows)
+    assert _tickers(result.excluded_null) == ["INTC"] and result.excluded_null_count == 1
+    assert result.excluded_null[0].quality.reason is QualityReason.NULL_FIELD
+    text = render(task, result, None)
+    assert "(INTC) — its total revenue was not extracted from the filing" in text
+
+
+def test_empty_lookup_never_says_the_filing_lacks_the_figure(db) -> None:
+    """Defensive path (the resolver refuses first): the wording still blames the extraction."""
+    entity = ResolvedEntity(mention="Intel", ticker="INTC", cik="0000050863",
+                            company_name="Intel Corp.", document_id=999, filing_year=2023)
+    task = Task(task_id="t1", intent=Intent.FINANCIAL_METRIC, company_mention="Intel",
+                metric=MetricField.NET_INCOME)
+    text = render(task, run_financial_task(task, entity), entity)
+    assert "have not been extracted" in text and "does not report" not in text

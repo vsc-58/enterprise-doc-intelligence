@@ -1,6 +1,4 @@
-"""
-src/eval/eval_set.py
-The fixed Phase 2 evaluation set, and the held-out complement.
+"""The fixed strategy-selection set of 10 filings, and the held-out complement.
 
 This constant is an experimental fact, not configuration: it records which
 documents S3 was SELECTED on. Everything scored against it is in-sample;
@@ -11,7 +9,7 @@ Dependencies: none (deliberately — importing this must not pull in edgartools,
 SQLAlchemy, or the LLM stack).
 """
 
-# 10 documents, chosen in Phase 2 for sector spread and specific hazards
+# 10 documents, chosen before the strategy comparison for sector spread and specific hazards
 # (Sep/Jun/Jan fiscal year ends, Revenues vs RevenueFromContract concepts,
 # ProfitLoss concept, null liabilities, the single fallback document).
 # (ticker, fiscal-period-end year).
@@ -32,8 +30,7 @@ EVAL_KEYS: frozenset[tuple[str, int]] = frozenset(EVAL_SET)
 
 
 def is_eval_document(ticker: str, year: int) -> bool:
-    """
-    Report whether a document was part of the Phase 2 selection set.
+    """Report whether a document was part of the strategy-selection set.
 
     Args:
         ticker: the company ticker as stored on the Document row.

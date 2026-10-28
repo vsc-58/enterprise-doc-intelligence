@@ -1,7 +1,13 @@
-"""scripts/check_filing_dates.py — throwaway verification.
+"""Log ticker, fiscal year and filing date for every filing, and list any missing date.
 
-# DIAGNOSTIC — throwaway investigation script, not project code.
-# Uses print() deliberately for readable tabular output; project code uses logger."""
+Read-only check of the documents table. No network, no API calls.
+
+Usage:
+    python -m scripts.diagnostic.check_filing_dates
+
+Diagnostic script: print() is used deliberately for readable output;
+project code logs through structlog.
+"""
 
 from sqlalchemy import select
 

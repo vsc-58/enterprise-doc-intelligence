@@ -1,16 +1,16 @@
-"""
-scripts/build_sections.py
-Build section artifacts for the acquired corpus.
+"""Build the extraction-input section artifacts (cover page and Item 8) for the corpus.
 
 For each selected document: read its Document row (for the on-disk text path
 and CIK), load the raw filing text, resolve the filing object (for Item 8), run
 get_sections, and write data/raw/{cik}_{year}_sections.json.
 
 Targets come from SQLite, not a hardcoded list — the acquired Document row is
-the source of truth for what exists (Phase 1 D6). --eval-only / --held-out
+the source of truth for what exists: a row is written only once a filing is
+fully acquired. --eval-only / --held-out
 filter that set using src.eval.eval_set; they do not define it.
 
-Two measurements are emitted per document because Phase 3 depends on them:
+Two measurements are emitted per document because the extraction run depends
+on them:
   * assembled input tokens vs MODEL_INPUT_TOKEN_BUDGET — a document over budget
     cannot be extracted at all, and must be caught before any API spend.
   * unchanged vs changed against an existing artifact — the S3 response cache is
@@ -19,10 +19,6 @@ Two measurements are emitted per document because Phase 3 depends on them:
 
 Run: python -m scripts.build_sections [--eval-only | --held-out]
                                       [--tickers AAPL,MSFT]
-
-Dependencies: src.ingestion.acquire, src.ingestion.sections,
-src.storage.metadata_store, src.eval.eval_set, src.utils.config,
-src.utils.logger.
 """
 
 import argparse
@@ -47,15 +43,14 @@ DocumentTarget = tuple[str, int, str, str]
 def _load_targets(
     scope: str, tickers: list[str] | None
 ) -> list[DocumentTarget]:
-    """
-    Read the corpus from SQLite and apply the requested filters.
+    """Read the corpus from SQLite and apply the requested filters.
 
     Plain tuples are returned rather than Document instances so no attribute is
     accessed after the session closes (a committed session expires its objects
     by default, which would raise DetachedInstanceError at use time).
 
     Args:
-        scope: "all", "eval", or "held_out". Filters on the Phase 2 selection
+        scope: "all", "eval", or "held_out". Filters on the strategy-selection
             set defined in src.eval.eval_set.
         tickers: optional explicit ticker allowlist, applied after scope.
 
@@ -95,8 +90,7 @@ def _load_targets(
 def _build_payload(
     cik: str, year: int, sections: dict[str, Section]
 ) -> dict:
-    """
-    Assemble the JSON-serialisable artifact for one document.
+    """Assemble the JSON-serialisable artifact for one document.
 
     Args:
         cik: canonical 10-digit CIK from the Document row.
@@ -104,7 +98,8 @@ def _build_payload(
         sections: the get_sections output.
 
     Returns:
-        The artifact dict, identical in shape to the Phase 2 artifacts.
+        The artifact dict, identical in shape to the artifacts the strategy
+        comparison ran on.
     """
     return {
         "cik": cik,
@@ -114,8 +109,7 @@ def _build_payload(
 
 
 def _write_sections(cik: str, year: int, payload: dict) -> tuple[Path, str]:
-    """
-    Write the artifact, reporting whether it differs from an existing one.
+    """Write the artifact, reporting whether it differs from an existing one.
 
     The comparison is on the serialised bytes because that is what the S3 cache
     key hashes: identical bytes mean the cached response is still valid and the
@@ -148,8 +142,7 @@ def _write_sections(cik: str, year: int, payload: dict) -> tuple[Path, str]:
 
 
 def main() -> None:
-    """
-    Build and persist section artifacts for the selected documents.
+    """Build and persist section artifacts for the selected documents.
 
     Emits a per-document log line and a batch summary carrying the provenance
     distribution, the over-budget list, and the cache-impact counts.
@@ -157,7 +150,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build 10-K section artifacts.")
     scope_group = parser.add_mutually_exclusive_group()
     scope_group.add_argument(
-        "--eval-only", action="store_true", help="Phase 2 selection set only."
+        "--eval-only", action="store_true", help="Strategy-selection set only."
     )
     scope_group.add_argument(
         "--held-out", action="store_true", help="Everything outside the eval set."
@@ -245,7 +238,7 @@ def main() -> None:
         logger.warning(
             "documents_exceed_token_budget",
             documents=over_budget,
-            consequence="extraction will fail on context length; resolve before Phase 3 spend",
+            consequence="extraction will fail on context length; resolve before extraction spend",
         )
 
 

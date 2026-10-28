@@ -1,6 +1,4 @@
-"""
-scripts/run_eval.py
-Runs the prompt-strategy bake-off and writes the results artifact.
+"""Run the extraction prompt-strategy comparison and write the results artifact.
 
 For each strategy over each evaluation document: extract (reading the on-disk
 cache where the content hash matches, calling the API otherwise), score against
@@ -37,8 +35,7 @@ _OUTPUT_COST_PER_M = 0.60
 
 
 def _resolve_ciks(eval_set: list[tuple[str, int]]) -> list[tuple[str, str, int]]:
-    """
-    Resolve each (ticker, year) to its canonical CIK from the Document rows.
+    """Resolve each (ticker, year) to its canonical CIK from the Document rows.
 
     Args:
         eval_set: the (ticker, year) pairs to evaluate.
@@ -67,8 +64,7 @@ def run_strategy(
     documents: list[tuple[str, str, int]],
     use_cache: bool,
 ) -> list[ExtractionResult]:
-    """
-    Run one strategy over every evaluation document.
+    """Run one strategy over every evaluation document.
 
     Args:
         strategy_id: the strategy to run.
@@ -118,8 +114,7 @@ def _fmt(value: float | None, places: int = 3) -> str:
 
 
 def print_summary(evaluations: dict[str, dict]) -> None:
-    """
-    Print the per-strategy results table.
+    """Print the per-strategy results table.
 
     Every cell carries its denominator, because a precision over four documents
     is not the same evidence as one over ten.

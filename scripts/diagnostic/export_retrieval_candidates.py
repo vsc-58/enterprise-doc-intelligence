@@ -1,11 +1,12 @@
-"""
-scripts/diagnostic/export_retrieval_candidates.py — DIAGNOSTIC (print() allowed).
+"""Export the candidate chunk pool for labelling retrieval gold.
 
-Phase 5C step 4, part 1: export the candidate pool for retrieval gold labelling.
+Diagnostic (print() allowed). The first step of the retrieval evaluation: it
+produces the pool that is labelled, frozen by hash, then scored by
+run_retrieval_eval.
 
 For each narrative-set question (plus N20, an audit case), the eligible chunks
 are those the system may search: the strict label's intent and company, after
-section aliases, and after the D44 fallback when the intent's own sections are
+section aliases, and after the section fallback when the intent's own sections are
 absent. Every eligible chunk is ranked against the question so recall@k can be
 computed for any k later.
 
@@ -27,9 +28,6 @@ chunk text). Send that file for labelling.
 
 Usage:
     python -m scripts.diagnostic.export_retrieval_candidates
-
-Dependencies: src.eval.query_eval, src.query.intents, src.query.schemas,
-src.storage.vector_store, src.utils.config, src.utils.logger.
 """
 
 from __future__ import annotations
@@ -97,8 +95,7 @@ KEYWORDS: dict[str, list[str] | None] = {
 
 
 def eligible_sections(intent: Intent, ticker: str, held: set[str]) -> tuple[list[str], list[str]]:
-    """
-    The sections retrieval searches for this company, applying the D44 fallback.
+    """The sections retrieval searches for this company, applying the section fallback.
 
     Args:
         intent: The labelled intent.

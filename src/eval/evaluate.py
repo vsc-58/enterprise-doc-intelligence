@@ -1,6 +1,4 @@
-"""
-src/eval/evaluate.py
-Scores extraction output against the XBRL ground-truth answer key.
+"""Score extraction output against the XBRL ground-truth answer key.
 
 Two levels:
   - score_extraction()  : one document -> per-field outcome (correct / wrong /
@@ -11,15 +9,15 @@ Two levels:
                           fallback input), and — for evidence strategies — the
                           grounding rate.
 
-The n_a outcome is load-bearing: where the answer key has no value (bank revenue
-excluded by D4, untagged liabilities by D5), the field is EXCLUDED from the
+The n_a outcome is load-bearing: where the answer key has no value (bank
+revenue, deliberately excluded because a bank's net revenue is a different
+concept; total liabilities for filers that tag no such line), the field is
+EXCLUDED from the
 denominator rather than counted against the model. Scoring a null truth as a
 miss would punish the model for correctly reporting an absent value.
 
 Ground truth is read here only; it is never written and never enters the
 extraction store (the boundary rule).
-
-Dependencies: pydantic v2, src.extraction.*, src.utils.*
 """
 
 import json
@@ -36,7 +34,7 @@ from src.extraction.schemas import FilingExtraction
 from src.utils.config import settings
 from src.utils.logger import get_logger
 
-from src.eval.grounding import check_evidence_consistency, check_grounding
+from src.eval.grounding import check_grounding
 
 logger = get_logger(__name__)
 
@@ -55,8 +53,7 @@ CORRECT, WRONG, MISSING, N_A = "correct", "wrong", "missing", "n_a"
 
 
 class FieldScore(BaseModel):
-    """
-    The outcome of one field on one document.
+    """The outcome of one field on one document.
 
     Attributes:
         outcome: correct | wrong | missing | n_a.
@@ -77,8 +74,7 @@ class FieldScore(BaseModel):
 
 
 def normalize_string(value: str | None) -> str | None:
-    """
-    Normalise a string field for comparison.
+    """Normalise a string field for comparison.
 
     Lowercases, removes periods and commas (so 'Netflix, Inc.' matches
     'NETFLIX INC'), and collapses internal whitespace. Punctuation is stripped
@@ -101,8 +97,7 @@ def normalize_string(value: str | None) -> str | None:
 def _numeric_outcome(
     extracted: float | None, truth: float | None
 ) -> tuple[str, float | None]:
-    """
-    Classify a numeric field and compute its relative error.
+    """Classify a numeric field and compute its relative error.
 
     Args:
         extracted: the model's value.
@@ -123,8 +118,7 @@ def _numeric_outcome(
 
 
 def _string_outcome(extracted: str | None, truth: str | None) -> str:
-    """
-    Classify a string field after normalisation.
+    """Classify a string field after normalisation.
 
     Args:
         extracted: the model's value.
@@ -145,8 +139,7 @@ def _string_outcome(extracted: str | None, truth: str | None) -> str:
 def score_extraction(
     extracted: FilingExtraction | None, truth: dict
 ) -> dict[str, FieldScore]:
-    """
-    Score one document's extraction against its ground-truth record.
+    """Score one document's extraction against its ground-truth record.
 
     A None extraction (schema validation failed) is scored as `missing` on every
     field that has ground truth — the model produced no usable value, which
@@ -191,8 +184,7 @@ def score_extraction(
 
 
 def load_ground_truth() -> dict:
-    """
-    Load the XBRL answer key.
+    """Load the XBRL answer key.
 
     Returns:
         The full ground-truth mapping keyed '{cik}_{year}'.
@@ -207,8 +199,7 @@ def load_ground_truth() -> dict:
 
 
 def _aggregate_field(scores: list[FieldScore]) -> dict:
-    """
-    Aggregate one field's scores across documents into precision/recall/F1.
+    """Aggregate one field's scores across documents into precision/recall/F1.
 
     Denominators are reported explicitly: a precision computed over four
     documents is not the same evidence as one computed over ten, and a bare
@@ -255,8 +246,7 @@ def _aggregate_field(scores: list[FieldScore]) -> dict:
 def evaluate_strategy(
     strategy_id: str, results: list[ExtractionResult]
 ) -> dict:
-    """
-    Aggregate one strategy's results across the evaluation set.
+    """Aggregate one strategy's results across the evaluation set.
 
     Takes already-run ExtractionResults rather than calling the model itself, so
     scoring is decoupled from extraction: the scorer can be re-run repeatedly

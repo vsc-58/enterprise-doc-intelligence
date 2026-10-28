@@ -1,16 +1,14 @@
-"""
-scripts/verify_latest_records.py — DIAGNOSTIC (print() allowed).
+"""Check the canonical "latest successful extraction" read returns one correct row per filing.
 
-Checks the canonical read after the D31 refactor: one row per document, the
+Diagnostic (print() allowed). Written when that read became a composable
+SELECT the SQL path builds on. Checks: one row per document, the
 latest SUCCESS attempt, and a statement that stays composable when a caller
 attaches its own WHERE and ORDER BY.
 
 Read-only. No LLM, no network.
 
 Usage:
-    python -m scripts.verify_latest_records
-
-Dependencies: src.storage.metadata_store, src.utils.logger.
+    python -m scripts.diagnostic.verify_latest_records
 """
 
 from __future__ import annotations

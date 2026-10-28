@@ -1,17 +1,17 @@
-# src/api/routes/demo.py
-# Module: GET / — the demo page
-# Purpose: Serve one static HTML page where a non-developer can ask a question
-#          and read the answer, with figures, quality marks and sources laid
-#          out (Step 10 finding: raw JSON in Swagger reads as unfinished, and
-#          "/" returned {"detail": "Not Found"} — the first thing a visitor of
-#          the Space would see). Swagger stays at /docs for developers.
-# Depends on: fastapi, src.utils.config
-#
-# The page is plain HTML + JavaScript in src/api/static/demo.html, calling the
-# public endpoints (/query, /documents, /openapi.json) like any other client:
-# no second code path into the query pipeline, no build step, no framework.
-# It is read once at import; QUERY_MAX_CHARS is filled in so the input box and
-# the API enforce the same limit.
+"""GET /: the demo page for non-developers.
+
+Serves one static HTML page where a non-developer can ask a question and read
+the answer, with figures, quality marks and sources laid out. Added after a
+manual run of the demo: raw JSON in Swagger read as unfinished, and "/" returned
+{"detail": "Not Found"}, the first thing a visitor of the hosted demo would
+see. Swagger stays at /docs for developers.
+
+The page is plain HTML + JavaScript in src/api/static/demo.html, calling the
+public endpoints (/query, /documents, /openapi.json) like any other client:
+no second code path into the query pipeline, no build step, no framework.
+It is read once at import; QUERY_MAX_CHARS is filled in so the input box and
+the API enforce the same limit.
+"""
 
 from pathlib import Path
 
@@ -26,8 +26,7 @@ DEMO_PAGE_PATH = Path(__file__).resolve().parent.parent / "static" / "demo.html"
 
 
 def load_demo_page() -> str:
-    """
-    Read the page and fill in the settings it shows.
+    """Read the page and fill in the settings it shows.
 
     Returns:
         The HTML, with __QUERY_MAX_CHARS__ replaced.
@@ -45,8 +44,7 @@ _PAGE = load_demo_page()
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def demo_page() -> HTMLResponse:
-    """
-    The demo page.
+    """The demo page.
 
     Returns:
         The HTML page. Not listed in the OpenAPI schema: it is not part of the API.

@@ -1,13 +1,14 @@
-# src/api/errors.py
-# Module: API error types
-# Purpose: The exceptions the API raises on purpose, each tied to one status code
-#          and one ErrorCode, plus the fixed user-facing sentence for every code.
-# Depends on: fastapi (status constants), src.api.models
-#
-# Raising a typed error and letting one handler in main.py build the response
-# keeps every error body identical in shape (contract §7). The message a user
-# sees is chosen here by code, never taken from the exception: exception text
-# can carry paths, SQL or library internals, and goes to the logs only.
+"""API error types and the fixed user-facing sentence for each error code.
+
+The exceptions the API raises on purpose, each tied to one status code and one
+ErrorCode, plus the fixed user-facing sentence for every code.
+
+Raising a typed error and letting one handler in main.py build the response
+keeps every error body identical in shape (docs/api_contract.md §7). The
+message a user sees is chosen here by code, never taken from the exception:
+exception text can carry paths, SQL or library internals, and goes to the logs
+only.
+"""
 
 from fastapi import status
 
@@ -36,8 +37,7 @@ ERROR_MESSAGES: dict[ErrorCode, str] = {
 
 
 class ApiError(Exception):
-    """
-    Base class for errors the API turns into the error envelope.
+    """Base class for errors the API turns into the error envelope.
 
     Subclasses fix the status code and error code. The exception's own message
     is a detail for the logs and is never sent to the client.
@@ -54,7 +54,8 @@ class ApiError(Exception):
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
 
     def __init__(self, detail: str = "", retry_after_s: int | None = None) -> None:
-        """
+        """Create the error.
+
         Args:
             detail: What went wrong, for the logs only.
             retry_after_s: Seconds until a retry can succeed, when known.
@@ -71,7 +72,7 @@ class NotReadyError(ApiError):
 
 
 class ServiceDegradedError(ApiError):
-    """Every task in the plan failed: nothing was answered (contract §7)."""
+    """Every task in the plan failed, so nothing was answered (docs/api_contract.md §7)."""
 
     code = ErrorCode.SERVICE_DEGRADED
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE

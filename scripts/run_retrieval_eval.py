@@ -1,10 +1,8 @@
-"""
-scripts/run_retrieval_eval.py
-Phase 5C step 4: retrieval quality of the narrative path against chunk-level gold.
+"""Retrieval evaluation: rank quality of the narrative path against chunk-level gold labels.
 
 For every question in the retrieval gold, ranks the company's eligible chunks
 with the production retriever (retrieve_for_company: same sections, aliases and
-D44 fallback the system uses) and scores the ranking at settings.RETRIEVAL_EVAL_KS:
+section fallback the system uses) and scores the ranking at settings.RETRIEVAL_EVAL_KS:
 hit, capped recall, precision, first relevant rank. Strict counts rel chunks;
 lenient adds border.
 
@@ -29,10 +27,6 @@ Writes settings.EVAL_DATA_PATH / RETRIEVAL_RESULTS_FILE plus a markdown summary.
 
 Run:  python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
       python -m scripts.run_retrieval_eval --ids R28,N22        (subset)
-
-Dependencies: src.eval.query_eval, src.eval.retrieval_eval, src.query.resolve,
-src.query.schemas, src.rag.retriever, src.storage.vector_store, src.utils.config,
-src.utils.logger.
 """
 
 import argparse
@@ -69,8 +63,7 @@ def chunk_key(ticker: str, section: str, index: int) -> str:
 
 
 def company_ref(ticker: str, index: CorpusIndex) -> CompanyRef:
-    """
-    The retriever's company identity for a gold ticker.
+    """The retriever's company identity for a gold ticker.
 
     Args:
         ticker: Gold company.
@@ -91,8 +84,7 @@ def company_ref(ticker: str, index: CorpusIndex) -> CompanyRef:
 
 
 def accepted_intents(eval_set: EvalSet, question_id: str, ticker: str, gold_intent: str) -> list[str]:
-    """
-    Intents the frozen labels accept for this question's company, strict first.
+    """Intents the frozen labels accept for this question's company, strict first.
 
     Args:
         eval_set: The frozen eval set.
@@ -115,8 +107,7 @@ def accepted_intents(eval_set: EvalSet, question_id: str, ticker: str, gold_inte
 
 
 def _score_both(ranking: list[str], gold: GoldQuestion) -> dict[str, RankingScore]:
-    """
-    Strict and lenient scores for one ranking.
+    """Strict and lenient scores for one ranking.
 
     Args:
         ranking: Chunk keys, nearest first.
@@ -133,8 +124,7 @@ def _score_both(ranking: list[str], gold: GoldQuestion) -> dict[str, RankingScor
 
 
 def _variant_metrics(variants: list[dict[str, Any]], source: str, mode: str) -> dict[str, Any]:
-    """
-    Average one query source's scores for one question (planner: over runs).
+    """Average one query source's scores for one question (planner: over runs).
 
     Args:
         variants: The question's scored variants.
@@ -158,8 +148,7 @@ def _variant_metrics(variants: list[dict[str, Any]], source: str, mode: str) -> 
 
 
 def _group(records: list[dict[str, Any]], mode: str) -> dict[str, Any]:
-    """
-    Aggregate a group of questions for both query sources.
+    """Aggregate a group of questions for both query sources.
 
     Each question counts once: planner runs are averaged within the question
     first, so a question is not weighted by how many runs it was measurable in.
@@ -188,8 +177,7 @@ def _group(records: list[dict[str, Any]], mode: str) -> dict[str, Any]:
 
 
 def _paired(records: list[dict[str, Any]], k: int) -> dict[str, list[str]]:
-    """
-    Which questions the planner's rewording helped or hurt, at recall@k (strict).
+    """Which questions the planner's rewording helped or hurt, at recall@k (strict).
 
     Args:
         records: Per-question records with both sources measured.
@@ -217,8 +205,7 @@ def _fmt(value: float | None, pct: bool = True) -> str:
 
 
 def main(routing_path: Path | None, ids: set[str] | None) -> int:
-    """
-    Run the retrieval eval and write results.
+    """Run the retrieval eval and write results.
 
     Args:
         routing_path: Routing results file for planner queries; None scores the
@@ -382,8 +369,7 @@ def main(routing_path: Path | None, ids: set[str] | None) -> int:
 
 
 def _write_markdown(path: Path, results: dict[str, Any], records: list[dict[str, Any]]) -> None:
-    """
-    Write the human-readable summary.
+    """Write the human-readable summary.
 
     Args:
         path: Output path.
@@ -470,7 +456,7 @@ def _write_markdown(path: Path, results: dict[str, Any], records: list[dict[str,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--routing", type=Path, default=None,
                         help="Routing results JSON whose plans supply the planner queries.")
     parser.add_argument("--ids", type=str, default=None, help="Comma-separated question ids.")

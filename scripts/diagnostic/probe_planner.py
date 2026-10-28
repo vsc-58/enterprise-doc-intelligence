@@ -1,20 +1,18 @@
-"""
-scripts/probe_planner.py — DIAGNOSTIC (print() allowed).
+"""Smoke-test the query planner on one question per plan type.
 
-Smoke-tests the planner on one question per plan type before the executor is
-built, so a prompt problem surfaces here rather than inside an execution trace.
+Diagnostic (print() allowed). Smoke-tests the planner on one question per plan
+type before the executor is built, so a prompt problem surfaces here rather
+than inside an execution trace.
 
-Not the routing evaluation. These questions overlap the Phase 5C set, so they
-are a development aid only — tuning the prompt against them and then reporting
-5C numbers from the same questions would be scoring the prompt on its own
-training data (D17).
+Not the routing evaluation. These questions overlap the frozen eval set, so
+they are a development aid only: tuning the prompt against them and then
+reporting routing numbers from the same questions would be scoring the prompt
+on its own training data.
 
 Calls the OpenAI API: ~11 calls, roughly $0.003.
 
 Usage:
-    python -m scripts.probe_planner
-
-Dependencies: src.query.planner, src.utils.logger.
+    python -m scripts.diagnostic.probe_planner
 """
 
 from __future__ import annotations

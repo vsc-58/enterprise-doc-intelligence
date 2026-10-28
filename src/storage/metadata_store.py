@@ -1,14 +1,15 @@
-# src/storage/metadata_store.py
-# Module: Metadata store (SQLite via SQLAlchemy 2.x)
-# Purpose: Defines the Document tracking table (Phase 1), the ExtractedRecord
-#          extraction-output table (Phase 3), and the engine/session machinery
-#          used across the project.
-# Depends on: sqlalchemy>=2.0, src.utils.config, src.utils.logger
-#
-# BOUNDARY RULE: no XBRL financial value ever reaches extracted_records. Every
-# numeric in that table is produced by the LLM extraction pipeline. XBRL lives
-# only in data/eval/ground_truth.json, on the evaluation side, where it scores
-# this table rather than populating it.
+"""Metadata store: SQLite tables and session handling (SQLAlchemy 2.x).
+
+Defines the documents table (one acquired 10-K per company), the
+extracted_records table (one row per extraction attempt), the engine and
+session factory, and the single canonical read of "the current extraction"
+(latest_successful_stmt / latest_successful_records).
+
+Boundary rule: no XBRL financial value ever reaches extracted_records. Every
+figure in that table is produced by the LLM extraction pipeline. XBRL lives
+only in data/eval/ground_truth.json, on the evaluation side, where it scores
+this table rather than populating it.
+"""
 
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -27,6 +28,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    exists,
     select,
     Select,
 )
@@ -50,8 +52,7 @@ EVIDENCE_FIELDS: tuple[str, ...] = (
 
 
 class ExtractionStatus(str, Enum):
-    """
-    Outcome of one extraction attempt.
+    """Outcome of one extraction attempt.
 
     SUCCESS: the model returned a schema-valid extraction. The record holds its
         fields; per-field grounding flags qualify individual figures. A record is
@@ -60,14 +61,15 @@ class ExtractionStatus(str, Enum):
     EXTRACTION_FAILED: the call completed and was billed, but produced no usable
         extraction (schema validation failed, or the output was unusable). The
         row is written anyway, because a paid response must be persisted before
-        anything else happens to it (Phase 2 bug 3).
+        anything else happens to it (an early run lost ten paid responses to an
+        exception raised after the call).
     TECHNICAL_FAILED: the call never completed — transport error, timeout, rate
         limit, context-length rejection. Not a statement about the model.
 
     Only SUCCESS sets Document.is_extracted, so both failure kinds are picked up
     by a re-run. The two failure kinds are kept apart for the same reason the
-    Phase 2 cache kept them apart: a timeout is not a result, a validation
-    failure is.
+    extraction response cache keeps them apart: a timeout is not a result, a
+    validation failure is.
 
     str-valued so the enum member persists as readable text in SQLite and is
     directly comparable in a raw SQL query from DB Browser.
@@ -85,8 +87,7 @@ class Base(DeclarativeBase):
 
 
 class Document(Base):
-    """
-    Tracking record for one acquired 10-K filing.
+    """Tracking record for one acquired 10-K filing.
 
     One row per (company, fiscal year). The (cik, filing_year) pair is the
     domain key — a company files exactly one 10-K per fiscal year — and is
@@ -94,8 +95,8 @@ class Document(Base):
     the database level regardless of which code path writes.
 
     The two boolean flags (is_extracted, is_embedded) track two independent
-    downstream processes — extraction (Phase 3) and embedding (Phase 4) —
-    that both read the acquired text. They are deliberately separate flags
+    downstream processes, extraction and embedding, that both read the
+    acquired text. They are deliberately separate flags
     rather than a single linear status, because a document can be embedded
     but not yet extracted, or vice versa.
 
@@ -107,13 +108,14 @@ class Document(Base):
              canonical 10-digit zero-padded form (int would drop leading zeros).
         filing_year: Fiscal year the 10-K covers.
         filing_date: EDGAR filing date. Joined into extraction output rather
-             than extracted by the LLM (Phase 2 D9).
+             than extracted by the LLM: it is not a scored field, so asking
+             the model for it could only add error.
         accession_number: EDGAR's unique submission ID. Stored for reference
              only — not uniquely constrained, since the access pattern is by
              (cik, filing_year).
         local_path: Path to the saved raw filing text on disk.
-        is_extracted: Set True by the Phase 3 extraction pipeline, on SUCCESS only.
-        is_embedded: Set True by the Phase 4 embedding pipeline.
+        is_extracted: Set True by the extraction pipeline, on SUCCESS only.
+        is_embedded: Set True by the embedding pipeline.
         created_at: UTC timestamp when the row was created.
     """
 
@@ -141,6 +143,7 @@ class Document(Base):
     )
 
     def __repr__(self) -> str:
+        """Short form for logs and the debugger: id, ticker, CIK and year."""
         return (
             f"Document(id={self.id}, ticker={self.ticker!r}, "
             f"cik={self.cik!r}, filing_year={self.filing_year})"
@@ -148,8 +151,7 @@ class Document(Base):
 
 
 class ExtractedRecord(Base):
-    """
-    One extraction attempt against one document.
+    """One extraction attempt against one document.
 
     ONE ROW PER ATTEMPT, not per document. A re-run after a prompt change appends
     a row rather than overwriting, so a failure and its eventual fix both survive
@@ -167,22 +169,24 @@ class ExtractedRecord(Base):
     and unreadable in the /export CSV a reviewer opens. Storage stays flexible;
     the artifact stays legible.
 
-    TWO INDEPENDENT GROUNDING VERDICTS per numeric field, because Phase 2 D12
-    established the first is not sufficient:
+    TWO INDEPENDENT GROUNDING VERDICTS per numeric field, because the first
+    alone is not sufficient:
       - *_evidence_present:    the quoted line occurs in the source text. Catches
-        fabricated citations. Read 1.00 across the eval-10.
+        fabricated citations. Passed on every figure of the 10-document
+        strategy-selection set.
       - *_evidence_consistent: the stored value occurs in the quoted line. Catches
-        misattribution — a real line cited for a figure it does not contain. Found
-        4 failures the first check passed, concentrated where the target line does
-        not exist (AMZN/WMT/INTC total_liabilities, per Phase 1 D5) plus INTC
-        net_income, where the model returned NetIncomeLoss while quoting the
-        ProfitLoss line.
+        misattribution — a real line cited for a figure it does not contain. On
+        the same set it found 4 failures the first check passed, concentrated
+        where the target line does not exist (AMZN/WMT/INTC total_liabilities:
+        these filers print no total-liabilities line, so the model derives the
+        value and cites the neighbouring row) plus INTC net_income, where the
+        model returned NetIncomeLoss while quoting the ProfitLoss line.
 
     Both flags are bool | None. None means NOT CHECKABLE — the field came back
     null, so there is no value and no quote to compare. That is different from
     False (checked, failed). Collapsing them would make the legitimately-null bank
-    revenue and untagged liabilities look like grounding failures, which is the
-    honest-gap-versus-wrong-value distinction Phase 1 D5 drew.
+    revenue and untagged liabilities look like grounding failures: an honest gap
+    is not a wrong value.
 
     Neither flag failing fails the record: it marks one figure unverified so
     consumers filter per field.
@@ -190,9 +194,9 @@ class ExtractedRecord(Base):
     Attributes:
         id: Surrogate primary key.
         document_id: FK to the parent document.
-        company_name: LLM-extracted registrant name (a scored field — kept as an
-            LLM target rather than joined from Document, because injecting a
-            scored field would score edgartools against edgartools, Phase 2 D9).
+        company_name: LLM-extracted registrant name. A scored field, so it is
+            kept as an LLM target rather than joined from Document: injecting
+            it from edgartools would score edgartools against itself.
         fiscal_year_end: LLM-extracted fiscal period end (scored field).
         total_revenue / net_income / total_assets / total_liabilities /
             operating_cash_flow: LLM-extracted figures in ACTUAL DOLLAR UNITS.
@@ -304,6 +308,7 @@ class ExtractedRecord(Base):
     )
 
     def __repr__(self) -> str:
+        """Short form for logs and the debugger: id, document, status, strategy."""
         return (
             f"ExtractedRecord(id={self.id}, document_id={self.document_id}, "
             f"status={self.extraction_status!r}, "
@@ -326,8 +331,7 @@ _SessionFactory = sessionmaker(bind=_engine, expire_on_commit=False)
 
 
 def init_db() -> None:
-    """
-    Create the metadata database and all tables if they do not exist.
+    """Create the metadata database and all tables if they do not exist.
 
     Idempotent: SQLAlchemy issues CREATE TABLE IF NOT EXISTS, so repeated
     calls never drop or modify existing data. Also ensures the parent
@@ -340,11 +344,11 @@ def init_db() -> None:
     NOT appear in an existing file — that needs an explicit migration or a
     regenerated database.
 
-    Must be called explicitly once at startup by the caller that owns
-    process lifecycle — the acquisition script in Phase 1, the extraction
-    script in Phase 3, the FastAPI lifespan manager in Phase 6. It is
-    deliberately NOT called at import time: importing this module must have
-    no side effects (no file writes).
+    Called explicitly by the processes that write the database: the
+    acquisition pipeline and the extraction script. It is deliberately NOT
+    called at import time (importing this module must have no side effects)
+    and NOT called by the API: the API is read-only, and creating an empty
+    database at startup would make a missing corpus look present.
 
     Returns:
         None
@@ -360,8 +364,7 @@ def init_db() -> None:
 
 @contextmanager
 def get_session() -> Iterator[Session]:
-    """
-    Provide a transactional database session as a context manager.
+    """Provide a transactional database session as a context manager.
 
     Scope is one unit of work — one document, in both the acquisition and the
     extraction pipelines. On clean exit the transaction is committed; on any
@@ -389,8 +392,7 @@ def get_session() -> Iterator[Session]:
 
 
 def document_exists(ticker: str, year: int) -> bool:
-    """
-    Return True if a Document row already exists for this (ticker, year).
+    """Return True if a Document row already exists for this (ticker, year).
 
     The acquisition pipeline's pre-flight skip check: a local SQLite read run
     BEFORE any network fetch, so an already-acquired document costs a query, not
@@ -423,14 +425,13 @@ def create_document(
     local_path: str,
     filing_date: str | None = None,
 ) -> int:
-    """
-    Persist one Document tracking row and return its primary key.
+    """Persist one Document tracking row and return its primary key.
 
     Called only after BOTH text acquisition and ground-truth capture succeed —
     the committed row is the success signal under the implicit-completeness
     model (no acquisition-status column; the row's existence means the
     document is fully acquired). is_extracted and is_embedded stay at their
-    defaults (False); Phases 3 and 4 set them. Keyword-only arguments prevent
+    defaults (False); the extraction and embedding pipelines set them. Keyword-only arguments prevent
     positional mistakes among the several string fields.
 
     Args:
@@ -465,27 +466,6 @@ def create_document(
         return doc.id
 
 
-def get_pending_extraction_ids() -> list[int]:
-    """
-    Return the ids of documents that have not yet been successfully extracted.
-
-    Selection is on Document.is_extracted rather than on the presence of an
-    extracted_records row, because under one-row-per-attempt a document can have
-    several rows and still need extracting — is_extracted is set only by a
-    SUCCESS write, so it is the single unambiguous signal.
-
-    Returns:
-        Document ids ordered by id, for a stable, resumable run order.
-    """
-    with get_session() as session:
-        stmt = (
-            select(Document.id)
-            .where(Document.is_extracted.is_(False))
-            .order_by(Document.id)
-        )
-        return list(session.execute(stmt).scalars().all())
-
-
 def create_extracted_record(
     *,
     document_id: int,
@@ -503,17 +483,17 @@ def create_extracted_record(
     output_tokens: int | None = None,
     failure_reason: str | None = None,
 ) -> int:
-    """
-    Persist one extraction attempt, flipping Document.is_extracted on SUCCESS.
+    """Persist one extraction attempt, flipping Document.is_extracted on SUCCESS.
 
     The record write and the flag update share ONE transaction, so the two can
     never disagree: a crash between them is impossible, and a rolled-back record
     leaves the document pending rather than marked done with nothing stored.
-    This is the extraction-side equivalent of the Phase 1 D6 write ordering.
+    Acquisition follows the same rule: a row exists only once the work behind
+    it is complete, so the row and its completion are one event.
 
     Failure rows are persisted, not skipped. An EXTRACTION_FAILED response was
-    billed; discarding it repeats the Phase 2 bug where ten paid responses were
-    lost to an uncaught post-call exception. TECHNICAL_FAILED rows cost nothing
+    billed; discarding it would repeat an early bug where ten paid responses
+    were lost to an uncaught exception raised after the call. TECHNICAL_FAILED rows cost nothing
     but record that the attempt happened and why it did not complete.
 
     Args:
@@ -614,15 +594,16 @@ def create_extracted_record(
         )
         return record.id
 
+
 def latest_successful_stmt() -> Select[tuple[Document, ExtractedRecord]]:
-    """
-    Build the composable SELECT over the latest SUCCESS attempt per document.
+    """Build the composable SELECT over the latest SUCCESS attempt per document.
 
     THE definition of "current answer" under one-row-per-attempt, in one place.
     Returned unexecuted and without ordering so callers can attach their own
     WHERE, ORDER BY and LIMIT and have them run as bound SQL rather than as
-    Python filtering over a materialised list — which is what the query path's
-    parameterized-read design requires (D31).
+    Python filtering over a materialised list. The SQL path builds its
+    filters, ordering and limit on this statement, so its parameterized,
+    read-only query is real SQL, not a list comprehension.
 
     "Latest" is resolved by a correlated subquery picking one extracted_records
     id per document: extracted_at descending, id descending for rows written
@@ -655,9 +636,34 @@ def latest_successful_stmt() -> Select[tuple[Document, ExtractedRecord]]:
         .where(ExtractedRecord.id == latest_id)
     )
 
-def latest_successful_records() -> list[tuple[Document, ExtractedRecord]]:
+
+def unextracted_documents_stmt() -> Select[tuple[Document]]:
+    """Build the SELECT over documents with no successful extraction attempt.
+
+    The complement of latest_successful_stmt(), defined by the same rule (a
+    SUCCESS row exists), so the two can never disagree about which documents
+    have figures. The SQL path uses it to name, in a ranking or filter, the
+    companies it could not consider at all.
+
+    Returns:
+        A Select yielding Document rows, in unspecified order.
     """
-    A thin caller of latest_successful_stmt(), which holds the definition of latest.
+    succeeded = exists().where(
+        ExtractedRecord.document_id == Document.id,
+        ExtractedRecord.extraction_status == ExtractionStatus.SUCCESS.value,
+    )
+    return select(Document).where(~succeeded)
+
+
+def latest_successful_records() -> list[tuple[Document, ExtractedRecord]]:
+    """Return the latest successful extraction for every document, by ticker.
+
+    A thin caller of latest_successful_stmt(), which holds the definition of
+    "latest". Used by the CSV export and the figure guard.
+
+    Returns:
+        (Document, ExtractedRecord) pairs, ordered by ticker; documents with no
+        successful attempt are absent.
     """
     with get_session() as session:
         stmt = latest_successful_stmt().order_by(Document.ticker)

@@ -1,11 +1,11 @@
-"""
-scripts/probe_quality_flags.py — DIAGNOSTIC (print() allowed).
+"""Validate the figure quality flag against known-wrong and known-right figures.
 
-Validates the D29 quality flag before anything is built on it: prints every
+Diagnostic (print() allowed). Validates the flag before anything is built on
+it: prints every
 field of every stored record with its implied multiplier and verdict, then
 asserts the controls.
 
-Positive controls (known wrong, from Phase 3 held-out): BAC total_assets and
+Positive controls (known wrong, found by the held-out extraction scoring): BAC total_assets and
 total_liabilities, GS operating_cash_flow.
 Negative controls (known correct): AAPL, MSFT, GOOGL, and NFLX — Netflix prints
 in thousands throughout, so it catches any rule that assumes millions globally.
@@ -17,9 +17,7 @@ columns have drifted apart.
 Read-only. No LLM, no network, no answer key.
 
 Usage:
-    python -m scripts.probe_quality_flags
-
-Dependencies: src.storage.metadata_store, src.storage.quality, src.utils.logger.
+    python -m scripts.diagnostic.probe_quality_flags
 """
 
 from __future__ import annotations

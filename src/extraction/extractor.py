@@ -1,6 +1,4 @@
-"""
-src/extraction/extractor.py
-Runs a single extraction strategy over a document's sliced sections.
+"""Run one extraction strategy over a document's sliced sections, with on-disk caching.
 
 Reads the section artifacts produced by scripts/build_sections.py, assembles the
 prompt input (cover + financial statements, identically for every strategy),
@@ -56,8 +54,7 @@ _SECTION_LABELS: dict[str, str] = {
 
 
 class ExtractionResult(BaseModel):
-    """
-    One strategy's output for one document, plus the metadata scoring needs.
+    """One strategy's output for one document, plus the metadata scoring needs.
 
     Attributes:
         strategy_id: which strategy produced this.
@@ -90,8 +87,7 @@ class ExtractionResult(BaseModel):
 
 
 def load_sections(cik: str, year: int) -> dict[str, dict]:
-    """
-    Load a document's section artifact from disk.
+    """Load a document's section artifact from disk.
 
     Args:
         cik: canonical 10-digit CIK.
@@ -113,8 +109,7 @@ def load_sections(cik: str, year: int) -> dict[str, dict]:
 
 
 def assemble_input(sections: dict[str, dict]) -> tuple[str, str]:
-    """
-    Concatenate the sections into the single text block the prompts consume.
+    """Concatenate the sections into the single text block the prompts consume.
 
     Cover and financial statements are joined with labelled separators, in the
     same order for every strategy — the input is a controlled constant, so only
@@ -140,8 +135,7 @@ def assemble_input(sections: dict[str, dict]) -> tuple[str, str]:
 def _cache_key(
     strategy_id: str, model: str, prompt_repr: str, section_text: str
 ) -> str:
-    """
-    Build the content hash that identifies this exact call.
+    """Build the content hash that identifies this exact call.
 
     Includes every input that determines the output, so any change to the
     prompt, the model, or the sliced text invalidates the cache automatically.
@@ -167,8 +161,7 @@ def _cache_path(strategy_id: str, cik: str, year: int, key: str) -> Path:
 
 
 def _read_cache(path: Path) -> ExtractionResult | None:
-    """
-    Read a cached ExtractionResult, or None if absent/unreadable.
+    """Read a cached ExtractionResult, or None if absent/unreadable.
 
     A corrupt cache file is logged and treated as a miss rather than raising —
     the correct recovery is to re-call, not to crash the run.
@@ -205,8 +198,7 @@ def _write_cache(path: Path, result: ExtractionResult) -> None:
 
 
 def _usage(raw: object) -> tuple[int, int]:
-    """
-    Pull input/output token counts off the raw AIMessage.
+    """Pull input/output token counts off the raw AIMessage.
 
     Returns (0, 0) if usage metadata is absent rather than raising — missing
     cost data must not fail an otherwise successful extraction, but it is
@@ -222,8 +214,7 @@ def _usage(raw: object) -> tuple[int, int]:
 def extract_with_strategy(
     strategy_id: str, cik: str, year: int, use_cache: bool = True
 ) -> ExtractionResult:
-    """
-    Run one extraction strategy over one document.
+    """Run one extraction strategy over one document.
 
     Loads the document's sections, assembles the input, binds the strategy's
     schema, and invokes the model. Returns an ExtractionResult whose
@@ -323,7 +314,7 @@ def extract_with_strategy(
 
 # Fields written to extracted_records. business_description and
 # primary_risk_factors are DELIBERATELY absent: with only cover + Item 8 in the
-# input they have no source, and inspection of the eval-10 showed the model
+# input they have no source, and inspection of the 10-document selection set showed the model
 # returning Item 8 note headings ("Uncertain tax positions") under
 # primary_risk_factors — real text, correct location, wrong field. Storing that
 # under a column named for Item 1A would misrepresent it. They remain in the
@@ -338,8 +329,7 @@ PERSISTED_FIELDS: tuple[str, ...] = (
 
 
 def prompt_version(strategy_id: str) -> str:
-    """
-    Return a short, derived identifier for a strategy's prompt template.
+    """Return a short, derived identifier for a strategy's prompt template.
 
     Derived from the template text rather than hand-maintained, so it cannot
     drift from the prompt it names — a manually bumped version is the kind of
@@ -365,8 +355,7 @@ def prompt_version(strategy_id: str) -> str:
 def _split_evidence(
     evidence: dict[str, dict] | None,
 ) -> dict[str, str | None]:
-    """
-    Flatten an evidence map to field -> cited source line.
+    """Flatten an evidence map to field -> cited source line.
 
     Args:
         evidence: the per-field evidence map, or None.
@@ -382,8 +371,7 @@ def _split_evidence(
 
 
 def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, bool]:
-    """
-    Run one document through extraction and persist exactly one record.
+    """Run one document through extraction and persist exactly one record.
 
     Grounding runs at write time, not at read time, so a figure's lineage verdict
     is stored beside the figure and no consumer has to recompute it. Both checks
@@ -519,10 +507,9 @@ def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, boo
 
 
 def run_extraction_pipeline(
-    document_ids: list[int], strategy_id: str = "S3"
+    document_ids: list[int], strategy_id: str | None = None
 ) -> dict[str, object]:
-    """
-    Extract a batch of documents, writing one record per attempt.
+    """Extract a batch of documents, writing one record per attempt.
 
     Per-item error handling: any failure is caught, recorded with the document's
     identity, and the batch continues. Zero silent drops — every id in
@@ -534,7 +521,9 @@ def run_extraction_pipeline(
 
     Args:
         document_ids: documents to process, in order.
-        strategy_id: the strategy to apply. Defaults to the Phase 2 winner.
+        strategy_id: the strategy to apply. None means
+            settings.EXTRACTION_STRATEGY (S3, rules + evidence, the strategy
+            selected by the prompt-strategy comparison).
 
     Returns:
         Summary with processed, succeeded, extraction_failed, technical_failed,
@@ -544,6 +533,7 @@ def run_extraction_pipeline(
         KeyError: if strategy_id is not a known strategy (raised before any work
             begins, so a typo cannot half-run a batch).
     """
+    strategy_id = strategy_id or settings.EXTRACTION_STRATEGY
     version = prompt_version(strategy_id)  # fails fast on an unknown strategy
     logger.info(
         "extraction_pipeline_start",
