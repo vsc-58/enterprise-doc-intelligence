@@ -34,7 +34,7 @@ def planner_version() -> str:
         32-character hex digest.
     """
     schema = json.dumps(QueryPlan.model_json_schema(), sort_keys=True)
-    payload = f"{PLANNER_SYSTEM}|{settings.OPENAI_MODEL}|{schema}"
+    payload = f"{PLANNER_SYSTEM}|{settings.QUERY_MODEL}|{schema}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
 
 
@@ -57,7 +57,7 @@ def _get_llm() -> ChatOpenAI:
     global _llm
     if _llm is None:
         _llm = ChatOpenAI(
-            model=settings.OPENAI_MODEL,
+            model=settings.QUERY_MODEL,
             api_key=settings.OPENAI_API_KEY,
             temperature=0,
             timeout=settings.OPENAI_TIMEOUT_SECONDS,

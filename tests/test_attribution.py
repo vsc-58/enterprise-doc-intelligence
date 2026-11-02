@@ -184,16 +184,21 @@ def test_runner_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setattr(runner, "load_index", lambda: build_index([CorpusEntry(
         ticker="WMT", cik="1", company_name="Walmart Inc.", document_id=1, filing_year=2023)]))
     monkeypatch.setattr(runner, "get_chunks_by_key", lambda keys: {("WMT", "Item 7", 25): BLOCK})
+    monkeypatch.setattr(runner, "check_served_or_log", lambda role, configured: configured)
     monkeypatch.setattr(runner, "judge_claim", lambda company, claim, blocks: JudgeResult(
         label=S if claim == "good" else N, supporting_span="x", span_found=True))
 
     assert runner.main(execution_path, runs=3, run_number=1) == 0
-    result = json.loads((tmp_path / settings.ATTRIBUTION_RESULTS_FILE).read_text())
+    out = runner.results_path(judge_version(), execution, 1)
+    assert out.parent == tmp_path and out.name.startswith("attribution_results_")
+    result = json.loads(out.read_text())
+    assert result["judge_served_model"] == settings.JUDGE_MODEL
     assert result["judge_passed"] is True
     assert result["criteria"]["kappa_test_plus_seeds"]["value"] == 1.0
     assert result["headline"]["n"] == 2 and result["headline"]["supported"] == 1
     assert [x["id"] for x in result["not_supported_claims"]] == ["R28|1|c2"]
-    assert (tmp_path / "attribution_results.md").exists()
+    assert out.with_suffix(".md").exists()
+    assert not (tmp_path / settings.ATTRIBUTION_RESULTS_FILE).exists()
 
 
 def test_parse_label_sheet() -> None:

@@ -1,7 +1,10 @@
 # Query-Path Evaluation Results
 
-Status: complete (2026-10-15). Covers routing, execution, retrieval (section 7)
-and attribution support (section 8).
+Status: complete. First measured 2026-10-13 to 2026-10-15 on the `gpt-4o-mini`
+alias; re-measured 2026-11-01 with the query path pinned to
+`gpt-4o-mini-2024-07-18` (section 10). The headline below is the pinned re-run,
+with the October numbers beside it. Sections 4 to 8 analyse the October runs;
+section 10 says what changed in the re-run and why.
 
 All numbers are means over **3 runs**: temperature 0 is not deterministic, and
 the same question can get a different plan from one run to the next.
@@ -15,8 +18,30 @@ results would turn them into a second dev set and leave no out-of-sample claim.
 
 ## 1. Headline
 
-| Measure | Held-out | Dev |
-|---|---|---|
+| Measure | Held-out | Dev | October (alias), held / dev |
+|---|---|---|---|
+| Routing, v1 — **clean out-of-sample** (October only; prompt retired) | **82.5%** [68–91] | 79.6% [68–88] | — |
+| Routing, v3 (final prompt) | 87.3% [74–94] | 89.6% [80–95] | 88.9% / 90.0% |
+| End-to-end correct outcome (v3, adjudicated) | 88.1% [75–95] (raw 83.3%) | 91.0% [82–96] (raw 89.6%) | 89.7% / 93.5% |
+| Downstream with gold plan (oracle, all 91 executable, adjudicated) | 100% [90–100] (raw 91.7%) | 100% [93–100] (raw 98.2%) | 100% / 100% |
+| Deterministic refusals (section absent, year not held, non-corpus, ambiguous, flagged figure, fallback) | 100% | 100% | 100% / 100% |
+| Figure-guard redactions (masking misses), 6 runs | 0 | 0 | 0 in 9 runs |
+| Invalid citations, 6 runs | 2 in total, both detected by the citation check | | 1 in 9 runs |
+| Retrieval: relevant chunk in the top 5 (strict, n = 18 specific questions) | 100% [68–100] | 100% [72–100] | same |
+| Retrieval: capped recall@5 / precision@5 (strict) | 79% / 50% | 59% / 46% | same |
+| **Attribution: claims supported by their cited chunks** (validated judge; 91.4% of 362 overall, October 93.2% of 322) | **90.2%** [84–94] | **92.2%** [88–95] | 91.1% / 94.5% |
+
+Reading it: the downstream system is exact when given the right plan; the
+remaining end-to-end errors are almost all routing. Retrieval always puts a
+relevant chunk in front of the chain, but often not all of them (Walmart's
+liquidity text ranks 9–18, section 7.4). About 9% of answer sentences claim more
+than their cited text says — mostly added inference, rarely invention (section
+8.3). v1's held-out routing number is the only one untouched by tuning; v2 and
+v3 held-out numbers are reported beside it, not instead of it (section 4.4).
+Every re-run number is within its October interval; section 10.4 lists each
+question whose result changed.
+
+---|---|---|
 | Routing, v1 — **clean out-of-sample** | **82.5%** [68–91] | 79.6% [68–88] |
 | Routing, v3 (final) | 88.9% [76–95] | 90.0% [81–95] |
 | End-to-end correct outcome (v3, adjudicated) | 89.7% [77–96] | 93.5% [85–97] |
@@ -90,6 +115,7 @@ routed correctly). The gap between modes is the cost of routing errors.
 | v1 `0ed3e740` | 82.5% | 87.3% | 79.6% | 84.1% | 5 |
 | v2 `f5252664` | 88.1% | 92.9% | 87.6% | 90.5% | 2 |
 | v3 `d4bc8e36` (final) | 88.9% | 92.9% | 90.0% | 93.0% | 5 |
+| v3 re-run on the pinned model, `0dacd92a` (same prompt, section 10) | 87.3% | 91.3% | 89.6% | 92.5% | 7 |
 
 Few questions change plan between runs: the misses are systematic, not noise.
 
@@ -220,6 +246,11 @@ score is reported as primary and the adjudicated score beside it.
 | N44 | ratio_or_derived | field_not_queryable defensible | Debt-to-equity needs equity, which is not stored |
 | R35 | BAC revenue answered | answered_flagged | BAC's four checkable fields split 2–2 between two scales, so all four are flagged scale-ambiguous; revenue is disputed |
 | N14 | answered | answered_flagged | The lowest row is Intel, whose net income is disputed |
+| H04 | answered | not_addressed (honest refusal) | Found in the re-run (10.4). Intel's Item 1 holds the same two chunks as N20's pool, the cross-reference index, so nothing describes what Intel does |
+
+N20 and H04 share one cause: each task's expected outcome was derived from the
+section inventory, which marks an intent answerable when any eligible chunk
+exists. A cross-reference index counts as a chunk.
 
 ### 6.2 Harness artifact — oracle hybrids (fixed)
 
@@ -425,23 +456,144 @@ text is about regulators' compliance focus on AI, not AI causing harm.
 | Chunks lose their subsection heading (R28, N29) | Diagnosed (7.4); fix = contextual chunk headers, needs re-embed |
 | Unnamed-company questions planned as surveys (N49, N50) | Wrong answers; needs a structural guard, not a prompt rule |
 | R&D and dividend questions refused (N41, N43) | Non-stored-figure rule fragile (6.3); needs a schema signal |
-| ~7% of answer sentences over-interpret their source | Measured; candidate fix = run the judge as a post-generation check |
+| ~7% (October) to ~9% (pinned re-run) of answer sentences over-interpret their source | Measured; candidate fix = run the judge as a post-generation check |
 | Corpus gaps: Intel/JPM/XOM MD&A, Tesla Item 7A, Intel Item 1 is an index | Logged; acquisition-layer fixes |
 | Planner on a stronger model | Not run; would share the judge's model |
 
 ---
 
-## 10. Reproduce
+## 10. Re-measurement on a pinned model
+
+### 10.1 Why
+
+Every number above was measured with the query path configured as
+`gpt-4o-mini`. That name is an alias: OpenAI can move it to a newer snapshot
+without notice. The prompt versions hash the configured name, not the served
+snapshot, so a silent model change would keep `planner_version` and
+`chain_version` the same while the model behind them changed. The October result
+files record only the configured name.
+
+On 2026-10-31 a probe call showed `gpt-4o-mini` served as
+`gpt-4o-mini-2024-07-18`, and the judge `gpt-6-luna` served as `gpt-6-luna` (a
+fixed name already). The query path is now pinned to `gpt-4o-mini-2024-07-18`.
+That changes both prompt versions, because the model name is part of each hash,
+so every query-path number is re-measured on the pinned model.
+
+Whatever the re-run gives is reported, including any drop. The October numbers
+stay in this document beside the new ones. Which snapshot answered in October is
+not known: the files never recorded it, so a difference between the two runs
+cannot be assigned to a model change, a prompt change (there is none) or
+run-to-run variation alone.
+
+### 10.2 What is re-run
+
+| Measurement | Re-run? | Why |
+|---|---|---|
+| Routing (planner, 3 runs) | Yes | The planner runs on the query model |
+| Execution, oracle and end to end (3 runs) | Yes | The answer chain runs in both modes; end to end also plans |
+| Retrieval | Yes, embeddings only | Its primary "planner" score embeds the task questions the planner wrote, read from the routing file, so a new routing run gives new queries. The "original" score uses the same retriever, embeddings and questions as in October and is expected to match it; a difference would be a finding |
+| Attribution support | Yes | The judge scores the claims of the new end-to-end run. Judge validation re-runs inside the same script on every run |
+| Routing v1, 82.5% held-out | No | That prompt no longer exists. It stays reported as "v1, `gpt-4o-mini` alias, October 2026", still the only routing number untouched by tuning |
+| Extraction, 1.00 in-sample / 0.90 held-out | No | Extraction keeps `EXTRACTION_MODEL=gpt-4o-mini`, the name it was measured and cached under. The API serves the stored figures; extraction is not run again |
+| Judge validation numbers as a separate claim | Only as part of the attribution run | The judge model and prompt are unchanged (`judge_version` is the same); the validation is repeated because the attribution script always validates before scoring |
+
+Each re-run script checks before any paid call that the served model equals the
+configured one, and refuses to run otherwise. The served name is recorded in
+every new result file. Retrieval makes no chat call, so it copies the routing
+file's model names instead; attribution records the judge's served name and
+copies the execution file's.
+
+### 10.3 Results, side by side
+
+| Measure | October, `gpt-4o-mini` alias | 2026-11-01, pinned | Change |
+|---|---|---|---|
+| Routing v3, strict, held / dev | 88.9% / 90.0% | 87.3% / 89.6% | −1.6 / −0.4 points |
+| Routing v3, lenient, held / dev | 92.9% / 93.0% | 91.3% / 92.5% | −1.6 / −0.5 |
+| Oracle raw, held / dev | 91.7% / 100% | 91.7% / 98.2% | 0 / −1.8 (H04) |
+| Oracle adjudicated, held / dev | 100% / 100% | 100% / 100% | 0 |
+| End to end raw, held / dev | 84.9% / 93.5% | 83.3% / 89.6% | −1.6 / −3.9 |
+| End to end adjudicated, held / dev | 89.7% / 93.5% | 88.1% / 91.0% | −1.6 / −2.5 |
+| Retrieval, original questions (every question, every metric) | as in section 7 | identical | 0 |
+| Retrieval, planner queries, strict recall@5 held / dev | 79% / 59% | 79% / 59% | 0 (one lenient score rose, N28) |
+| Judge validation: seeds caught / kappa / flips | 30/30 · 0.97 · 3.3% | 30/30 · 0.97 · 2.2% | judge reproduced |
+| Attribution supported, all / held / dev | 93.2% / 91.1% / 94.5% | 91.4% / 90.2% / 92.2% | −1.8 / −0.9 / −2.3 |
+
+Run dates: routing and execution 2026-10-13 and the oracle re-run 2026-10-14;
+retrieval 2026-10-14; attribution 2026-10-15. Re-run: all four on 2026-11-01.
+Adjudication follows the October rule exactly, so the columns compare like
+with like: the oracle credits R35, N14 and N20, and the end-to-end headline
+credits R35 and N14; the one new adjudication, H04, is applied to the re-run.
+Recomputing October's end-to-end held figure this way gives its reported 89.7%.
+
+### 10.4 Every change, audited
+
+Each question whose result changed was read against its frozen label. Labels
+were not edited.
+
+- **H04 "What does Intel do?" — label error, and an October false pass.**
+  October passed it 3/3 with the answer "Intel Corp is involved in the general
+  development of business and has a description of its business activities
+  detailed in the filing", citing chunk 0 of Intel's Item 1. That sentence says
+  nothing. The re-run refuses in all 3 oracle and all 3 end-to-end runs: the
+  passages do not address the question. Intel's Item 1 holds two chunks, the
+  same cross-reference index already examined for N20, so the refusal is the
+  correct answer (6.1). Under the same adjudication October's pass would have
+  been a miss: October's adjudicated oracle dev score would be 98.2%, and its
+  adjudicated end-to-end dev score 92.0%, not 100% and 93.5%.
+- **Routing: 2 fixed, 5 broken.** Fixed: N01 ("last year", now 3/3) and N49
+  ("that bank", now a clarification 3/3). Broken: N18, N32, N33, N35 and H05,
+  all the same way — one question planned as two or three tasks with the same
+  intent, a pattern October already listed for N32 and N35 (4.5). The answers
+  stay correct but repeat work. With 7 changes, a 5–2 split or one more lopsided
+  happens by chance about 45% of the time (two-sided sign test), so this is
+  consistent with run-to-run variation, not evidence of a model change.
+- **End to end: H08 and N34** each failed in 1 of 3 runs on the same split
+  pattern; **N41** (Apple R&D) passed 1 of 3 in October and 0 of 3 now, the
+  known non-stored-figure miss (6.3).
+- **Attribution.** The judge validation reproduced: its majority verdict is the
+  same as in October on all 90 validation items (calibration, test and seeds),
+  and 2 of 90 items flipped between runs (C01, T33; October 3), so the judge is
+  not what changed. The scored answers did: 362 claims against 322, because the
+  extra survey splits above produce near-duplicate findings (Tesla's
+  supply-chain finding appears under N32 task 1 and task 2). Claims cluster
+  within questions, so the claim-level intervals overlap more than they look.
+  Three claims had every judge call fail and are left out of n (two in October).
+- **Retrieval.** The original-question scores match October on every question
+  and every metric, as expected for the same retriever, embeddings and
+  questions: the instrument is stable. No unjudged chunk entered any top 10.
+
+One disclosure about the attribution reference labels: the October adjudication
+of T02 (in the judge's favour, 8.2) was written into `attribution_labels.json`
+with the October results, so the label file now holds the adjudicated label.
+Against the original reference the re-run's kappa is 0.97, exactly October's;
+against the file as it stands it is 1.00, which the results file reports. The
+label file is not hash-frozen like the question set and the retrieval gold.
+
+### 10.5 What can be claimed
+
+- Every query-path number now names the model snapshot that produced it, and
+  the evaluation scripts refuse to run on any other.
+- On that snapshot the system scores within the October intervals on every
+  measure. The differences are small (at most 4 points, on n = 42 to 67) and
+  cannot be assigned to a model change, because October never recorded which
+  snapshot answered.
+- The re-run found one wrong October pass (H04), which no earlier check could
+  see: a one-sentence non-answer that cited a chunk counted as answered.
+
+---
+
+## 11. Reproduce
 
 ```bash
 python -m scripts.diagnostic.dump_section_inventory          # section inventory
 python -m scripts.run_routing_eval                           # routing, 3 runs
 python -m scripts.run_execution_eval                         # oracle + end to end, 3 runs
-python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
+python -m scripts.run_retrieval_eval --routing data/eval/routing_results_0dacd92a.json
 python -m scripts.diagnostic.probe_heading_context           # heading-loss test (7.4)
 python -m scripts.diagnostic.probe_judge                     # judge structured-output probe
+python -m scripts.diagnostic.probe_served_model              # configured vs served model
 python -m scripts.export_attribution_set                     # seeds + label sheet
-python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
+python -m scripts.run_attribution_eval --execution data/eval/execution_results_0dacd92a_79177d36.json
 pytest                                                       # unit tests (no network, no API key)
 ```
 
@@ -449,4 +601,7 @@ Evidence in `data/eval/`: `query_eval_set.json`, `section_inventory.json`,
 `oracle_params.json`, `routing_results_{0ed3e740,f5252664,d4bc8e36}.{json,md}`,
 `execution_results_d4bc8e36_b1d8ee5c{,_oracle}.{json,md}`, `retrieval_gold.json`,
 `retrieval_results.{json,md}`, `attribution_set.json`, `attribution_seeds.json`,
-`attribution_labels.json`, `attribution_results.{json,md}`.
+`attribution_labels.json`, `attribution_results.{json,md}` (October, alias); and
+for the pinned re-run `routing_results_0dacd92a`, `execution_results_0dacd92a_79177d36`,
+`retrieval_results_0dacd92a` and `attribution_results_95183c61_0dacd92a_79177d36`
+(each `.json` and `.md`).

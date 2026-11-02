@@ -142,6 +142,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info(
         "api_started", ready=readiness.ready, unavailable=sorted(readiness.failures),
         rate_limit_per_minute=limiter.per_minute, daily_query_budget=limiter.daily_budget,
+        query_model=settings.QUERY_MODEL,
     )
     yield
     logger.info("api_stopped")

@@ -111,8 +111,8 @@ and the plan type in `QueryPlan`. The route reads all three.
     }
   ],
   "sources": [],
-  "planner_version": "d4bc8e36…",
-  "chain_version": "b1d8ee5c…",
+  "planner_version": "0dacd92a…",
+  "chain_version": "79177d36…",
   "request_id": "6f1c2a9e0b7d4e1f",
   "latency_ms": 1840
 }

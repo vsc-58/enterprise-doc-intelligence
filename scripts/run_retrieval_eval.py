@@ -22,8 +22,16 @@ labelling round. While any remain, precision is a lower bound and the results
 are marked provisional. Broad questions have no pool at all, so their first run
 exists to produce that file.
 
-Embedding calls only (one per distinct query string, about 100); no LLM.
-Writes settings.EVAL_DATA_PATH / RETRIEVAL_RESULTS_FILE plus a markdown summary.
+Embedding calls only (one per distinct query string, about 100); no LLM, so no
+served-model check here. The planner queries come from the routing file, which
+records the model that wrote them; its configured and served names are copied
+into the results so the chain of evidence stays in one file.
+
+Writes settings.EVAL_DATA_PATH / RETRIEVAL_RESULTS_FILE with the routing file's
+planner_version prefix appended (retrieval_results_<planner8>.json; without
+--routing, retrieval_results_original.json), so a re-run for a new planner
+version never overwrites an earlier version's evidence. A markdown summary is
+written beside it.
 
 Run:  python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
       python -m scripts.run_retrieval_eval --ids R28,N22        (subset)
@@ -204,6 +212,23 @@ def _fmt(value: float | None, pct: bool = True) -> str:
     return f"{value:.0%}" if pct else f"{value:.1f}"
 
 
+def results_path(planner_version: str | None, smoke: bool) -> Path:
+    """Where one run's results are written.
+
+    Args:
+        planner_version: The routing file's planner_version; None when only the
+            original questions are scored.
+        smoke: Whether this is a subset run.
+
+    Returns:
+        A path under settings.EVAL_DATA_PATH named for the planner version.
+    """
+    stem = Path(settings.RETRIEVAL_RESULTS_FILE).stem
+    tag = planner_version[:8] if planner_version else "original"
+    suffix = "_smoke" if smoke else ""
+    return Path(settings.EVAL_DATA_PATH) / f"{stem}_{tag}{suffix}.json"
+
+
 def main(routing_path: Path | None, ids: set[str] | None) -> int:
     """Run the retrieval eval and write results.
 
@@ -221,10 +246,14 @@ def main(routing_path: Path | None, ids: set[str] | None) -> int:
         index = load_index()
         routing: dict[str, dict[str, Any]] = {}
         planner_version: str | None = None
+        routing_model: str | None = None
+        routing_served: str | None = None
         if routing_path is not None:
             raw = json.loads(routing_path.read_text(encoding="utf-8"))
             routing = {q["id"]: q for q in raw["questions"]}
             planner_version = raw.get("planner_version")
+            routing_model = raw.get("model")
+            routing_served = raw.get("served_model")   # absent in files before pinning
     except (GoldError, EvalSetError, RuntimeError, OSError, json.JSONDecodeError, KeyError) as exc:
         logger.error("retrieval_eval_setup_failed", error_type=type(exc).__name__, error=str(exc))
         return 1
@@ -332,14 +361,15 @@ def main(routing_path: Path | None, ids: set[str] | None) -> int:
               for r in records if r["audit"]]
     provisional = bool(to_label)
 
-    out_dir = Path(settings.EVAL_DATA_PATH)
-    results_path = out_dir / settings.RETRIEVAL_RESULTS_FILE
+    output = results_path(planner_version, smoke=ids is not None)
     results = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "gold_status": gold.status,
         "provisional": provisional,
-        "routing_file": str(routing_path) if routing_path else None,
+        "routing_file": routing_path.as_posix() if routing_path else None,
         "planner_version": planner_version,
+        "routing_model": routing_model,
+        "routing_served_model": routing_served,
         "embedding_model": settings.EMBEDDING_MODEL,
         "ks": settings.RETRIEVAL_EVAL_KS,
         "metric_notes": [
@@ -354,16 +384,16 @@ def main(routing_path: Path | None, ids: set[str] | None) -> int:
         "unjudged_total": sum(1 for v in to_label.values() if v["reason"] == "unjudged in top-k"),
         "questions": records,
     }
-    out_dir.mkdir(parents=True, exist_ok=True)
-    results_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(results, indent=2), encoding="utf-8")
 
     label_path = Path(settings.PROCESSED_DATA_PATH) / settings.RETRIEVAL_TO_LABEL_FILE
     label_path.parent.mkdir(parents=True, exist_ok=True)
     label_path.write_text(json.dumps(sorted(to_label.values(), key=lambda v: (v["id"], v["key"])),
                                      indent=1), encoding="utf-8")
 
-    _write_markdown(results_path.with_suffix(".md"), results, records)
-    logger.info("retrieval_eval_written", results=str(results_path), to_label=str(label_path),
+    _write_markdown(output.with_suffix(".md"), results, records)
+    logger.info("retrieval_eval_written", results=str(output), to_label=str(label_path),
                 to_label_count=len(to_label), provisional=provisional)
     return 0
 
@@ -382,6 +412,10 @@ def _write_markdown(path: Path, results: dict[str, Any], records: list[dict[str,
         "",
         f"gold `{results['gold_status']}` · planner `{(results['planner_version'] or '-')[:8]}` · "
         f"embeddings `{results['embedding_model']}` · k = {ks}",
+        "",
+        f"planner queries from `{results['routing_file'] or '-'}` · model "
+        f"`{results.get('routing_model') or '-'}` (served "
+        f"`{results.get('routing_served_model') or 'not recorded'}`)",
         "",
     ]
     if results["provisional"]:

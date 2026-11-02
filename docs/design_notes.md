@@ -500,6 +500,24 @@ prefixing each chunk with its subsection heading lifted recall@5 from 20% to 80%
 cause is chunks losing their subsection heading. The fix (contextual chunk
 headers) needs a full re-embed and is logged, not built.
 
+### Pin the measured model, and check it before measuring
+
+A version hash says which prompt produced a number, but it hashes the model's
+configured name. `gpt-4o-mini` is an alias OpenAI can move to a newer snapshot,
+so the hash would stay the same while the model changed underneath it. The
+query path is pinned to the dated snapshot `gpt-4o-mini-2024-07-18`, and each
+evaluation script makes one tiny call first and refuses to run unless the
+response names exactly the configured model. The served name goes into every
+result file. Extraction keeps the alias on purpose: its responses are cached
+under that name and it is not re-run, so pinning it would only break the cache.
+A `.env` that still sets the retired `OPENAI_MODEL` stops startup with a
+message, rather than being ignored or guessed at.
+
+Pinning changed both prompt versions, so every query-path number was measured
+again and reported as it came out. All stayed within their earlier intervals,
+and the re-run exposed one earlier pass that was wrong: a one-sentence
+non-answer about Intel that had counted as answered.
+
 ### Validate a judge before trusting its numbers
 
 Attribution — does each answer sentence's cited text support it? — is scored by
@@ -510,9 +528,11 @@ only because it passed criteria committed before any judge output existed:
 
 - 30 of 30 seeded errors caught (invented detail, wrong block, wrong company);
 - Cohen's kappa 0.97 against reference labels;
-- 3.3% label flips across runs (bar: 5%).
+- 3.3% label flips across runs (bar: 5%); 2.2% when validation was repeated a
+  fortnight later, with the same majority verdict on all 90 items.
 
-Kappa, not raw agreement: 39 of 40 real claims are supported, so a judge that
+Kappa, not raw agreement: 39 of 40 real claims are supported in the original
+reference labels, so a judge that
 always said "supported" would score 97.5% agreement while catching nothing. At
 that prevalence kappa is unstable too (one disagreement gives 0.66), so kappa is
 computed over the test claims plus the seeded errors. That amendment was made
@@ -578,3 +598,34 @@ The first thing a visitor to the Space sees should not be `{"detail": "Not
 Found"}`. `/` serves one static page that calls the public endpoints like any
 client — no second path into the pipeline — and inserts server text as text,
 never as HTML. Swagger stays at `/docs`.
+
+## 8. Container
+
+### One image with the code only; the corpus is mounted
+
+The image holds `src/` and the pinned requirements, nothing else: no tests,
+scripts, evaluation data or corpus. The corpus is mounted from `./db` locally,
+so rebuilding the corpus never means rebuilding the image. The API reads
+nothing under `data/`, so that is not mounted. One uvicorn worker, for the API's
+reasons. The command is uvicorn in exec form, with no shell entrypoint script,
+so Windows line endings cannot break startup and uvicorn receives the stop
+signal directly.
+
+### The mount is read-write, though the API only reads
+
+A read-only mount would have made "never creates a store" a guarantee of the
+platform, not just of the code. It was tested and does not work: Chroma writes
+to its own files whenever it opens a store, and on a read-only mount it fails
+to open at all. The code-level guarantee is tested instead: on an empty,
+writable `./db` the container starts, answers 503 and creates nothing.
+
+### Non-root, a health check and a baked token encoding
+
+The container runs as UID 1000, the user a Hugging Face Space expects, so the
+local image already behaves like the hosted one. The health check calls
+`/health` with Python (the slim image has no curl) and treats 503 as unhealthy,
+which is correct without a corpus. Every narrative question is embedded, and the
+embedding client first counts tokens with tiktoken's `cl100k_base`; tiktoken
+downloads that file on first use, so it is fetched at build time. Without it the
+first narrative request after each container start would wait on a download
+that can fail. Chroma's telemetry is turned off so the API only calls OpenAI.
