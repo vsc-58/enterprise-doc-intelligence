@@ -17,6 +17,10 @@ held-out results. Revisions are made against dev results only, and any
 revision changes planner_version, which is recorded in the results so a
 before/after comparison is explicit.
 
+Before any planner call, one probe call confirms OpenAI serves settings.QUERY_MODEL
+under exactly that name (a dated snapshot, not an alias); the run refuses to
+start otherwise, and the served name is recorded in the results.
+
 Writes settings.EVAL_DATA_PATH / ROUTING_RESULTS_FILE with the planner_version
 prefix appended (routing_results_<version8>.json), so each prompt version's
 evidence is kept rather than overwritten, plus a markdown summary beside it.
@@ -45,6 +49,7 @@ from src.eval.query_eval import (
     score_question,
     summarise,
 )
+from src.eval.served_model import check_served_or_log
 from src.query.planner import plan_query, planner_version
 from src.query.resolve import CorpusIndex, load_index
 from src.utils.config import settings
@@ -160,13 +165,16 @@ def main(runs: int, ids: set[str] | None) -> int:
 
     Returns:
         Process exit code: 0 on completion, 1 if the eval set or index could not
-        be loaded.
+        be loaded or the served model is not the configured one.
     """
     try:
         eval_set = load_eval_set()
         index = load_index()
     except (EvalSetError, RuntimeError) as exc:
         logger.error("routing_eval_setup_failed", error_type=type(exc).__name__, error=str(exc))
+        return 1
+    served = check_served_or_log("query", settings.QUERY_MODEL)
+    if served is None:
         return 1
 
     questions = [q for q in eval_set.questions if ids is None or q.id in ids]
@@ -236,7 +244,8 @@ def main(runs: int, ids: set[str] | None) -> int:
     results = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "planner_version": version,
-        "model": settings.OPENAI_MODEL,
+        "model": settings.QUERY_MODEL,
+        "served_model": served,
         "eval_set_sha256": eval_set.sha256,
         "freeze_commit": FREEZE_COMMIT,
         "runs": runs,
@@ -259,7 +268,8 @@ def main(runs: int, ids: set[str] | None) -> int:
             [
                 "# Routing eval",
                 "",
-                f"planner_version `{version}` · model `{settings.OPENAI_MODEL}` · "
+                f"planner_version `{version}` · model `{settings.QUERY_MODEL}` "
+                f"(served `{served}`) · "
                 f"{runs} runs · eval set `{eval_set.sha256[:12]}` (freeze {FREEZE_COMMIT})",
                 "",
                 "Held-out is report-only. Intervals: n = questions, not question×runs.",

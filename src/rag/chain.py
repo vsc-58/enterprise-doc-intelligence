@@ -151,7 +151,7 @@ def chain_version() -> str:
         [
             ANSWER_SYSTEM,
             VERDICT_SYSTEM,
-            settings.OPENAI_MODEL,
+            settings.QUERY_MODEL,
             json.dumps(DraftAnswer.model_json_schema(), sort_keys=True),
             json.dumps(DraftVerdict.model_json_schema(), sort_keys=True),
         ]
@@ -176,7 +176,7 @@ def _get_llm() -> ChatOpenAI:
     global _llm
     if _llm is None:
         _llm = ChatOpenAI(
-            model=settings.OPENAI_MODEL,
+            model=settings.QUERY_MODEL,
             api_key=settings.OPENAI_API_KEY,
             temperature=0,
             timeout=settings.OPENAI_TIMEOUT_SECONDS,

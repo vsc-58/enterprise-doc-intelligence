@@ -112,7 +112,7 @@ def main() -> None:
         "extraction_run_start",
         pending=len(pending),
         strategy=args.strategy,
-        model=settings.OPENAI_MODEL,
+        model=settings.EXTRACTION_MODEL,
         documents=[f"{ticker}_{year}" for _, ticker, year in pending],
     )
 

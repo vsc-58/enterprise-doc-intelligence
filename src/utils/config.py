@@ -6,7 +6,7 @@ hardcodes a value that belongs here. Import the singleton:
 `from src.utils.config import settings`.
 """
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,10 +21,15 @@ class Settings(BaseSettings):
                          are missing from the environment or .env file.
     """
 
+    # hide_input_in_errors: a validation error otherwise prints the raw input,
+    # and for a missing required setting that input is every other setting,
+    # so the API key would appear in plain text in the startup error (and in
+    # `docker compose logs`).
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        hide_input_in_errors=True,
     )
 
     # Required — no defaults, will raise ValidationError at startup if missing.
@@ -35,9 +40,28 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr
     EDGAR_IDENTITY: str
 
-    # Models
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    # Models. Two chat-model settings, because the two uses were measured
+    # differently:
+    #   QUERY_MODEL      the planner and the answer chain, pinned to a dated
+    #                    snapshot. "gpt-4o-mini" is an alias OpenAI can move to a
+    #                    newer snapshot without notice, and the prompt version
+    #                    hashes hash the configured NAME, so an alias would let
+    #                    the served model change while the hashes stayed equal.
+    #                    The evaluation scripts check the served snapshot equals
+    #                    this name before they run.
+    #   EXTRACTION_MODEL the extractor. Stays the alias: extraction was measured
+    #                    and its responses cached under this name (the name is
+    #                    part of the cache key and of each stored record), the
+    #                    served answers use the stored figures, and extraction
+    #                    is not re-run.
+    QUERY_MODEL: str = "gpt-4o-mini-2024-07-18"
+    EXTRACTION_MODEL: str = "gpt-4o-mini"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
+    # Retired: replaced by the two settings above. Kept as a field only so that
+    # an old .env or environment that still sets it fails at startup with a
+    # message, instead of being ignored (an environment variable) or rejected as
+    # an unknown key with no hint (a .env line). See _reject_retired_settings.
+    OPENAI_MODEL: str | None = None
 
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -259,6 +283,34 @@ class Settings(BaseSettings):
     # single-process).
     RATE_LIMIT_PER_MINUTE: int | None = None    # per client IP, /query only -> 429
     DAILY_QUERY_BUDGET: int | None = None       # /query calls per UTC day -> 429
+
+    @field_validator("OPENAI_MODEL")
+    @classmethod
+    def _reject_retired_settings(cls, value: str | None) -> str | None:
+        """Fail at startup when the retired OPENAI_MODEL setting is still set.
+
+        Mapping it silently to one of its replacements would guess wrong half the
+        time: someone who set OPENAI_MODEL=gpt-4o meant both the query path and
+        extraction, which are now separate settings. A field validator, so the
+        check sees only this one value, never the other settings.
+
+        Args:
+            value: The OPENAI_MODEL value, if one was set.
+
+        Returns:
+            The value, when it is None.
+
+        Raises:
+            ValueError: If OPENAI_MODEL is set (pydantic reports it as a
+                ValidationError).
+        """
+        if value is not None:
+            raise ValueError(
+                "OPENAI_MODEL is no longer used. Remove it from .env or the environment, "
+                "and set QUERY_MODEL (planner and answer chain, a dated snapshot) and/or "
+                "EXTRACTION_MODEL (extractor) instead."
+            )
+        return value
 
 # Singleton instance — import this everywhere
 # from src.utils.config import settings

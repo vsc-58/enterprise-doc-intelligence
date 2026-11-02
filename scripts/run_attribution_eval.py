@@ -28,7 +28,16 @@ Majority over runs is the per-item label; a tie counts as NOT_SUPPORTED.
 Wilson intervals use n = claims; claims cluster within questions, so the true
 uncertainty is wider — stated with the number.
 
-Writes settings.EVAL_DATA_PATH / ATTRIBUTION_RESULTS_FILE plus a markdown summary.
+Before any judge call, one probe call confirms OpenAI serves settings.JUDGE_MODEL
+under exactly that name; the run refuses to start otherwise. The query model
+that wrote the scored answers is copied from the execution file (configured and
+served), so one results file names every model behind its numbers.
+
+Writes settings.EVAL_DATA_PATH / ATTRIBUTION_RESULTS_FILE with the judge version
+and the execution file's planner and chain versions appended
+(attribution_results_<judge8>_<planner8>_<chain8>.json, plus _run<N> when a run
+other than 1 is scored), so scoring a new execution run never overwrites an
+earlier run's evidence. A markdown summary is written beside it.
 
 Run:  python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
 
@@ -63,6 +72,7 @@ from src.eval.attribution import (
     split_key,
 )
 from src.eval.query_eval import EvalSetError, load_eval_set, wilson_interval
+from src.eval.served_model import check_served_or_log
 from src.query.resolve import load_index
 from src.storage.vector_store import RetrievedChunk, VectorStoreError, get_chunks_by_key
 from src.utils.config import settings
@@ -149,11 +159,31 @@ def _agreement(ids: list[str], human: dict[str, JudgeLabel],
     }
 
 
+def results_path(judge: str, execution: dict[str, Any], run_number: int) -> Path:
+    """Where one scoring run's results are written.
+
+    Args:
+        judge: judge_version.
+        execution: The loaded execution results file.
+        run_number: Which end_to_end run of that file is scored.
+
+    Returns:
+        A path under settings.EVAL_DATA_PATH named for the judge and the
+        execution file's prompt versions.
+    """
+    stem = Path(settings.ATTRIBUTION_RESULTS_FILE).stem
+    planner = str(execution.get("planner_version") or "unknown")[:8]
+    chain = str(execution.get("chain_version") or "unknown")[:8]
+    suffix = f"_run{run_number}" if run_number != 1 else ""
+    return Path(settings.EVAL_DATA_PATH) / f"{stem}_{judge[:8]}_{planner}_{chain}{suffix}.json"
+
+
 def main(execution_path: Path, runs: int, run_number: int) -> int:
     """Validate the judge and score one execution run.
 
     Returns:
-        Process exit code: 0 on completion (pass or fail), 1 if setup failed.
+        Process exit code: 0 on completion (pass or fail), 1 if setup failed or
+        the served judge model is not the configured one.
     """
     eval_dir = Path(settings.EVAL_DATA_PATH)
     try:
@@ -166,6 +196,9 @@ def main(execution_path: Path, runs: int, run_number: int) -> int:
         claims = claims_from_execution(execution, "end_to_end", run_number)
     except (OSError, json.JSONDecodeError, KeyError, IndexError, EvalSetError, RuntimeError) as exc:
         logger.error("attribution_eval_setup_failed", error_type=type(exc).__name__, error=str(exc))
+        return 1
+    judge_served = check_served_or_log("judge", settings.JUDGE_MODEL)
+    if judge_served is None:
         return 1
 
     names = {e.ticker: display_name(e.company_name, e.ticker) for e in index.entries}
@@ -277,11 +310,14 @@ def main(execution_path: Path, runs: int, run_number: int) -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "judge_version": version,
         "judge_model": settings.JUDGE_MODEL,
+        "judge_served_model": judge_served,
         "reasoning_effort": settings.JUDGE_REASONING_EFFORT,
         "structured_method": settings.JUDGE_STRUCTURED_METHOD,
         "runs": runs,
         "execution_file": execution_path.name,
         "execution_run": run_number,
+        "execution_model": execution.get("model"),
+        "execution_served_model": execution.get("served_model"),   # absent before pinning
         "judge_passed": passed,
         "reference_not_supported": sorted(i for i, lab in human["test"].items()
                                           if lab is JudgeLabel.NOT_SUPPORTED),
@@ -294,7 +330,7 @@ def main(execution_path: Path, runs: int, run_number: int) -> int:
         "not_supported_claims": not_supported,
         "claims": judged_claims,
     }
-    out = eval_dir / settings.ATTRIBUTION_RESULTS_FILE
+    out = results_path(version, execution, run_number)
     out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     _write_markdown(out.with_suffix(".md"), results)
     logger.info("attribution_eval_written", results=str(out), judge_passed=passed,
@@ -317,6 +353,9 @@ def _write_markdown(path: Path, r: dict[str, Any]) -> None:
         f"judge `{r['judge_model']}` · reasoning `{r['reasoning_effort']}` · method "
         f"`{r['structured_method']}` · judge_version `{r['judge_version'][:12]}` · {r['runs']} runs · "
         f"scored: {r['execution_file']} end_to_end run {r['execution_run']}", "",
+        f"judge served `{r.get('judge_served_model') or 'not recorded'}` · answers written by "
+        f"`{r.get('execution_model') or '-'}` (served "
+        f"`{r.get('execution_served_model') or 'not recorded'}`)", "",
         f"## Judge validation — {'PASSED' if r['judge_passed'] else 'FAILED'}", "",
         "| criterion | value | threshold | pass |", "|---|---|---|---|",
         f"| seeded catch, overall | {_pct(c['seed_catch_overall']['value'])} | ≥ {c['seed_catch_overall']['threshold']:.0%} | {c['seed_catch_overall']['pass']} |",

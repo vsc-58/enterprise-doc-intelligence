@@ -7,8 +7,8 @@ planner that sends each part of a question either to an exact SQL lookup or to
 cited retrieval-augmented generation (RAG). Every stage is measured against
 ground truth or frozen labels.
 
-Status: runs locally as a FastAPI service over a 20-filing corpus. Docker
-packaging and a hosted demo are not built yet.
+Status: runs locally as a FastAPI service over a 20-filing corpus, directly
+or in Docker. A hosted demo is not built yet.
 
 ---
 
@@ -44,10 +44,17 @@ All numbers come from committed result files; methods and caveats are in
 | Stage | Result | Evidence |
 |---|---|---|
 | Extraction | Five prompt strategies scored against XBRL ground truth; the winner scores 1.00 on the ten filings it was chosen on and **0.90 on the ten held-out filings** | [results.json](data/eval/results.json), [held_out_results.json](data/eval/held_out_results.json) |
-| Routing (planner) | **82.5%** of held-out questions planned correctly before any prompt tuning (clean out-of-sample), 88.9% after | [v1](data/eval/routing_results_0ed3e740.md), [final](data/eval/routing_results_d4bc8e36.md) |
-| Execution given the right plan | **100%** (adjudicated; 91.7% raw on held-out, the gap being three label errors) — remaining end-to-end errors are routing | [oracle run](data/eval/execution_results_d4bc8e36_b1d8ee5c_oracle.md) |
-| Retrieval | A relevant chunk in the top 5 for every question; capped recall@5 79% held-out, 59% dev | [retrieval_results.md](data/eval/retrieval_results.md) |
-| Attribution | **93.2%** of 322 answer sentences supported by their cited text, scored by an LLM judge that caught 30 of 30 planted errors (Cohen's kappa 0.97) | [attribution_results.md](data/eval/attribution_results.md) |
+| Routing (planner) | **82.5%** of held-out questions planned correctly before any prompt tuning (clean out-of-sample), **87.3%** with the final prompt | [v1](data/eval/routing_results_0ed3e740.md), [final](data/eval/routing_results_0dacd92a.md) |
+| Execution given the right plan | **100%** (adjudicated; raw 91.7% held-out and 98.2% dev, the gap being four label errors) — remaining end-to-end errors are routing; end to end 88.1% held-out, 91.0% dev (adjudicated) | [execution run](data/eval/execution_results_0dacd92a_79177d36.md) |
+| Retrieval | A relevant chunk in the top 5 for every question; capped recall@5 79% held-out, 59% dev | [retrieval results](data/eval/retrieval_results_0dacd92a.md) |
+| Attribution | **91.4%** of 362 answer sentences supported by their cited text, scored by an LLM judge that caught 30 of 30 planted errors (Cohen's kappa 0.97) | [attribution results](data/eval/attribution_results_95183c61_0dacd92a_79177d36.md) |
+
+The query-path numbers were measured on 2026-11-01 with the planner and answer
+chain pinned to `gpt-4o-mini-2024-07-18`. The earlier run on the `gpt-4o-mini`
+alias (October 2026) is kept beside them, with every difference explained, in
+[section 10 of the results](docs/query_eval_results.md#10-re-measurement-on-a-pinned-model).
+The 82.5% is from the first prompt version, which exists only in that earlier
+run.
 
 The judge's reference labels were written by a second model (Claude), with every
 disagreement adjudicated by the developer — not by human labellers.
@@ -112,13 +119,14 @@ Why each of these choices was made, and what it costs:
 | Language | Python 3.11 |
 | API | FastAPI + uvicorn |
 | LLM orchestration | LangChain 1.x (`with_structured_output`, LCEL) |
-| Models | OpenAI gpt-4o-mini (extraction, planner, answers); text-embedding-3-small; gpt-6-luna as the evaluation judge only |
+| Models | OpenAI `gpt-4o-mini-2024-07-18` for the planner and answers, pinned to a dated snapshot; `gpt-4o-mini` for extraction (the name its results were measured and cached under); text-embedding-3-small; gpt-6-luna as the evaluation judge only |
 | Acquisition | edgartools (filing text and XBRL) |
 | Vector store | ChromaDB (local, persistent, cosine) |
 | Metadata store | SQLite + SQLAlchemy 2.x |
 | Validation and config | Pydantic v2, pydantic-settings |
 | Logging | structlog |
 | Tests | pytest |
+| Containers | Docker + Docker Compose (one service, one worker) |
 
 Exact versions are pinned in `requirements.txt`.
 
@@ -139,6 +147,7 @@ scripts/       pipeline and evaluation entry points
 tests/         unit tests (no network, no API key, no database)
 docs/          design notes, API contract, evaluation write-ups
 data/eval/     committed evaluation evidence: answer key, eval sets, labels, results
+Dockerfile, docker-compose.yml, .dockerignore   the API image and its local run
 ```
 
 `data/raw/`, `data/processed/` and `db/` are gitignored: a fresh clone has the
@@ -163,6 +172,11 @@ cp .env.example .env               # then set OPENAI_API_KEY and EDGAR_IDENTITY
 `EDGAR_IDENTITY` is the name and email SEC asks automated clients to send
 (for example `Jane Doe jane@example.com`). Every other setting has a default in
 `src/utils/config.py` and can be overridden in `.env`.
+
+The chat model is set by two settings: `QUERY_MODEL` (planner and answers,
+default the dated snapshot `gpt-4o-mini-2024-07-18`) and `EXTRACTION_MODEL`
+(default `gpt-4o-mini`). They replace the older `OPENAI_MODEL`; a `.env` that
+still sets `OPENAI_MODEL` stops at startup with a message saying which to use.
 
 ## Build the corpus
 
@@ -230,13 +244,41 @@ returns, among other fields:
 Asking for a year the corpus does not hold returns a 200 refusal: "I hold one
 Apple Inc. filing, for fiscal year 2021. I don't have 2022."
 
+## Run with Docker
+
+Needs Docker with Compose, a `.env` file (as in Setup) and the built corpus in
+`db/`. The image holds the code and the pinned requirements; the corpus is
+mounted from `./db`, not copied into the image.
+
+```bash
+docker compose up --build -d          # build the image and start the API
+docker compose logs -f app            # "api_started ... ready=True" when the corpus loaded
+curl http://localhost:8000/health     # 200 with document and chunk counts
+docker compose down                   # stop
+```
+
+- Same endpoints as above, on `http://localhost:8000`.
+- One uvicorn worker, as in "Run the API", for the same two reasons.
+- `./db` is mounted read-write. The API only reads the corpus, but Chroma writes
+  to its own files whenever it opens a store, so a read-only mount does not
+  work. The container runs as UID 1000, which must be able to write `./db`.
+- Back up `db/` before the first run on a new machine: the store is then
+  opened, and written, by a different operating system.
+- Stop the container before running any pipeline script on the host: the Chroma
+  store supports one process at a time.
+- Without a corpus the container still starts; `/health` returns 503 naming the
+  missing parts, and the container reports itself unhealthy.
+- The image is about 1 GB, most of it the dependencies of edgartools and
+  chromadb (pyarrow, onnxruntime, kubernetes). The API imports neither
+  pipeline; a smaller image would need a second, API-only requirements file.
+
 ## Tests
 
 ```bash
 pytest -q
 ```
 
-403 tests, all without network, database or a real API key: LLM calls are
+427 tests, all without network, database or a real API key: LLM calls are
 stubbed. The settings class still requires `OPENAI_API_KEY` and `EDGAR_IDENTITY`
 to be present, so set them (any value works) in `.env` or the environment.
 `tests/test_prompt_versions.py` checks that the prompt versions in the code are
@@ -252,9 +294,18 @@ python -m scripts.run_eval                   # extraction: five strategies, ten 
 python -m scripts.run_heldout_eval           # extraction: the ten held-out filings
 python -m scripts.run_routing_eval           # planner accuracy, 3 runs
 python -m scripts.run_execution_eval         # oracle and end-to-end execution, 3 runs
-python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
-python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
+python -m scripts.run_retrieval_eval --routing data/eval/routing_results_0dacd92a.json
+python -m scripts.run_attribution_eval --execution data/eval/execution_results_0dacd92a_79177d36.json
 ```
+
+`0dacd92a` and `79177d36` are the first eight characters of the planner and
+chain versions, shown by `GET /health` and written into every result file name;
+a prompt or model change gives new ones. Before
+any paid call, the routing, execution and attribution scripts make one tiny
+call and refuse to run unless OpenAI serves the configured model under exactly
+that name (a dated snapshot, not an alias); the served name is recorded in each
+result file. `python -m scripts.diagnostic.probe_served_model` shows the same
+check for every configured chat model.
 
 Extraction responses are cached by a hash of strategy, model, prompt and input
 text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
@@ -289,13 +340,16 @@ text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
   as an adjudicated score beside the raw one, never edited.
 - **Repeated runs.** LLM measurements run three times (temperature 0 is not
   deterministic); intervals use n = questions.
+- **Pinned model.** The query path runs a dated model snapshot, the evaluation
+  scripts refuse to run unless OpenAI serves exactly that snapshot, and every
+  result file records the model that answered.
 - **Stage by stage.** Routing is scored on the planner alone; execution runs
   once with the gold plan and once end to end, so routing errors are separated
   from downstream errors.
 - **Validated judge.** The attribution judge had to pass criteria fixed before
   it ran: catch planted errors, agree with reference labels (kappa, not raw
-  agreement, because 39 of 40 real claims were supported), and stay stable
-  across runs.
+  agreement, because nearly every real claim was supported), and stay stable
+  across runs. Validation re-runs every time the score is computed.
 
 ## Security and data handling
 
@@ -324,7 +378,8 @@ text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
   every answer and in the export.
 - **Routing misses remain:** questions about an unnamed company ("that bank")
   can be planned as a 20-company survey; R&D and dividend questions are
-  sometimes refused.
+  sometimes refused; a single survey question is sometimes split into two or
+  three surveys, which repeats work.
 - **Retrieval:** chunks lose their subsection heading, which hurts recall on
   long MD&A sections (diagnosed; the fix needs a re-embed).
 - **Small evaluation samples:** 18 retrieval questions and 40 judge test

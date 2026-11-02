@@ -178,7 +178,8 @@ def test_runner_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     }
     (tmp_path / "eval").mkdir()
     (tmp_path / "eval" / settings.RETRIEVAL_GOLD_FILE).write_text(json.dumps(gold), encoding="utf-8")
-    routing = {"planner_version": "abcdef123", "questions": [{"id": "Q1", "runs": [
+    routing = {"planner_version": "abcdef123", "model": "snap-1", "served_model": "snap-1",
+               "questions": [{"id": "Q1", "runs": [
         {"observed": {"tasks": [{"intent": "strategy", "company": "AAA", "question": "rephrased"}]}},
         {"observed": None},
     ]}]}
@@ -207,7 +208,10 @@ def test_runner_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     assert runner.main(routing_path, None) == 0
 
-    results = json.loads((tmp_path / "eval" / settings.RETRIEVAL_RESULTS_FILE).read_text())
+    # Named for the routing file's planner version, so an earlier run is never overwritten.
+    out = tmp_path / "eval" / "retrieval_results_abcdef12.json"
+    results = json.loads(out.read_text())
+    assert results["routing_model"] == "snap-1" and results["routing_served_model"] == "snap-1"
     record = results["questions"][0]
     assert record["planner_unmeasured_runs"] == 1
     strict = record["summary"]["strict"]
@@ -221,4 +225,5 @@ def test_runner_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert ("AAA|Item 7|4", "unjudged in top-k") in reasons
     assert ("AAA|Item 7|3", "judged on partial text") in reasons
     assert next(v for v in to_label if v["key"] == "AAA|Item 7|4")["best_rank"] == 1
-    assert (tmp_path / "eval" / "retrieval_results.md").exists()
+    assert out.with_suffix(".md").exists()
+    assert not (tmp_path / "eval" / settings.RETRIEVAL_RESULTS_FILE).exists()

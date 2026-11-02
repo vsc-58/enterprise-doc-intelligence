@@ -1,0 +1,24 @@
+# docker-compose.yml — run the API locally against the corpus in ./db.
+#
+#   docker compose up --build      then open http://localhost:8000
+#
+# ./db is mounted read-write, although the API only reads the corpus: Chroma
+# writes to its own files whenever it opens a store (tested: a read-only mount
+# fails with "Could not connect to tenant default_tenant"). The API never
+# creates a store: on an empty ./db it starts and /health answers 503.
+# The container runs as UID 1000, which must be able to write ./db.
+#
+# ./data is not mounted: the API reads nothing under data/ at run time.
+# Do not run the pipeline scripts on the host while this container is up:
+# Chroma's local store supports one process at a time.
+
+services:
+  app:
+    build: .
+    image: enterprise-doc-intelligence:local
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./db:/app/db
+    restart: unless-stopped

@@ -25,13 +25,27 @@ from src.rag.chain import chain_version
 from src.utils.config import settings
 
 # Results file -> the version fields it records. These are the sources of the
-# README's routing, end-to-end, oracle, retrieval and attribution numbers.
+# README's routing, end-to-end, oracle, retrieval and attribution numbers, all
+# measured on the pinned query model. The earlier files measured on the
+# "gpt-4o-mini" alias stay in data/eval as history and are not pinned here.
 MEASURED: dict[str, tuple[str, ...]] = {
-    "routing_results_d4bc8e36.json": ("planner_version",),
-    "execution_results_d4bc8e36_b1d8ee5c.json": ("planner_version", "chain_version"),
-    "execution_results_d4bc8e36_b1d8ee5c_oracle.json": ("planner_version", "chain_version"),
-    "retrieval_results.json": ("planner_version",),
-    "attribution_results.json": ("judge_version",),
+    "routing_results_0dacd92a.json": ("planner_version",),
+    "execution_results_0dacd92a_79177d36.json": ("planner_version", "chain_version"),
+    "retrieval_results_0dacd92a.json": ("planner_version",),
+    "attribution_results_95183c61_0dacd92a_79177d36.json": ("judge_version",),
+}
+
+# Results file -> (field naming the model the code is configured with now,
+# field naming the model that actually answered during the run). Both must equal
+# the current setting: a result measured on another snapshot cannot vouch for
+# the one being served.
+SERVED: dict[str, tuple[str, str, str]] = {
+    "routing_results_0dacd92a.json": ("QUERY_MODEL", "model", "served_model"),
+    "execution_results_0dacd92a_79177d36.json": ("QUERY_MODEL", "model", "served_model"),
+    "retrieval_results_0dacd92a.json": (
+        "QUERY_MODEL", "routing_model", "routing_served_model"),
+    "attribution_results_95183c61_0dacd92a_79177d36.json": (
+        "JUDGE_MODEL", "judge_model", "judge_served_model"),
 }
 
 CURRENT = {
@@ -56,3 +70,23 @@ def test_code_runs_the_measured_prompt_version(filename: str, field: str) -> Non
         f"{field} in the code differs from the one recorded in {filename}: "
         "the numbers from that file no longer describe the served prompt"
     )
+
+
+@pytest.mark.parametrize("filename", sorted(SERVED))
+def test_results_were_measured_on_the_configured_model(filename: str) -> None:
+    setting, configured_field, served_field = SERVED[filename]
+    recorded = _recorded(filename)
+    expected = getattr(settings, setting)
+    assert recorded[configured_field] == expected, (
+        f"{filename} was run with {configured_field}={recorded[configured_field]!r}, "
+        f"but settings.{setting} is {expected!r}")
+    assert recorded[served_field] == expected, (
+        f"{filename} records the served model {recorded[served_field]!r}, "
+        f"not the configured {expected!r}")
+
+
+def test_attribution_scored_the_measured_execution_run() -> None:
+    attribution = _recorded("attribution_results_95183c61_0dacd92a_79177d36.json")
+    assert attribution["execution_file"] in MEASURED
+    assert attribution["execution_served_model"] == settings.QUERY_MODEL
+

@@ -18,6 +18,10 @@ masking miss to investigate.
 
 HELD-OUT IS REPORT-ONLY, as for routing.
 
+Before any question runs, one probe call confirms OpenAI serves
+settings.QUERY_MODEL (planner and chain) under exactly that name; the run
+refuses to start otherwise, and the served name is recorded in the results.
+
 Writes settings.EVAL_DATA_PATH / execution_results_<planner8>_<chain8>.json and
 a markdown summary beside it.
 
@@ -52,6 +56,7 @@ from src.eval.query_eval import (
     observe,
     wilson_interval,
 )
+from src.eval.served_model import check_served_or_log
 from src.query.executor import execute_plan
 from src.query.planner import plan_query, planner_version
 from src.query.resolve import CorpusIndex, load_index
@@ -199,7 +204,8 @@ def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
     """Run the execution eval and write results.
 
     Returns:
-        Process exit code: 0 on completion, 1 if setup failed.
+        Process exit code: 0 on completion, 1 if setup failed or the served model
+        is not the configured one.
     """
     try:
         eval_set = load_eval_set()
@@ -208,6 +214,9 @@ def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
     except (EvalSetError, OracleError, RuntimeError) as exc:
         logger.error("execution_eval_setup_failed", error_type=type(exc).__name__, error=str(exc))
         return 1
+    served = check_served_or_log("query", settings.QUERY_MODEL)
+    if served is None:
+        return 1
 
     questions = [q for q in eval_set.questions if ids is None or q.id in ids]
     by_id = {q.id: q for q in questions}
@@ -215,11 +224,13 @@ def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
     results: dict = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "planner_version": p_version, "chain_version": c_version,
-        "model": settings.OPENAI_MODEL, "eval_set_sha256": eval_set.sha256,
+        "model": settings.QUERY_MODEL, "served_model": served,
+        "eval_set_sha256": eval_set.sha256,
         "runs": runs, "subset": sorted(ids) if ids else None, "modes": {},
     }
     md = ["# Execution eval", "",
-          f"planner `{p_version[:8]}` · chain `{c_version[:8]}` · {runs} runs · "
+          f"planner `{p_version[:8]}` · chain `{c_version[:8]}` · model `{served}` · "
+          f"{runs} runs · "
           f"eval set `{eval_set.sha256[:12]}`", "",
           "Question correct = every task's outcome matches its label (end to end: and "
           "routed correctly). Intervals use n = questions. Held-out is report-only.", ""]

@@ -1,0 +1,35 @@
+# .dockerignore — keep the build context to what the image needs.
+# The image copies only requirements.txt and src/; everything else is excluded
+# so it cannot leak in (secrets, the local corpus) or slow the build.
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local environments and caches
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Version control and editors
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Corpus and working data: mounted at run time, never baked in this image.
+# data/eval is evaluation evidence; the API does not read it.
+db/
+data/
+
+# Not used by the running API
+tests/
+scripts/
+docs/
+README.md

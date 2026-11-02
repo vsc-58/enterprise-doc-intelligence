@@ -242,7 +242,7 @@ def extract_with_strategy(
     section_text, section_source = assemble_input(sections)
 
     key = _cache_key(
-        strategy_id, settings.OPENAI_MODEL, str(prompt), section_text
+        strategy_id, settings.EXTRACTION_MODEL, str(prompt), section_text
     )
     path = _cache_path(strategy_id, cik, year, key)
 
@@ -257,7 +257,9 @@ def extract_with_strategy(
     is_evidence = strategy_id in EVIDENCE_STRATEGIES
     schema = FilingExtractionWithEvidence if is_evidence else FilingExtraction
 
-    llm = ChatOpenAI(model=settings.OPENAI_MODEL, api_key=settings.OPENAI_API_KEY, temperature=0,)
+    llm = ChatOpenAI(
+        model=settings.EXTRACTION_MODEL, api_key=settings.OPENAI_API_KEY, temperature=0,
+    )
     chain = prompt | llm.with_structured_output(schema, include_raw=True)
 
     inputs: dict[str, str] = {"section_text": section_text}
@@ -427,7 +429,7 @@ def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, boo
             extraction_status=ExtractionStatus.TECHNICAL_FAILED,
             extraction_strategy_used=strategy_id,
             prompt_version=version,
-            model_name=settings.OPENAI_MODEL,
+            model_name=settings.EXTRACTION_MODEL,
             failure_reason=f"{type(exc).__name__}: {exc}",
         )
         return ExtractionStatus.TECHNICAL_FAILED.value, 0, 0, False
@@ -447,7 +449,7 @@ def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, boo
             extraction_status=ExtractionStatus.EXTRACTION_FAILED,
             extraction_strategy_used=strategy_id,
             prompt_version=version,
-            model_name=settings.OPENAI_MODEL,
+            model_name=settings.EXTRACTION_MODEL,
             section_source=result.section_source,
             input_tokens=result.input_tokens,
             output_tokens=result.output_tokens,
@@ -467,7 +469,7 @@ def _extract_one(document_id: int, strategy_id: str) -> tuple[str, int, int, boo
         extraction_status=ExtractionStatus.SUCCESS,
         extraction_strategy_used=strategy_id,
         prompt_version=version,
-        model_name=settings.OPENAI_MODEL,
+        model_name=settings.EXTRACTION_MODEL,
         fields=fields,
         source_lines=_split_evidence(result.evidence),
         evidence_present=present,
@@ -540,7 +542,7 @@ def run_extraction_pipeline(
         documents=len(document_ids),
         strategy=strategy_id,
         prompt_version=version,
-        model=settings.OPENAI_MODEL,
+        model=settings.EXTRACTION_MODEL,
     )
 
     counts = {"success": 0, "extraction_failed": 0, "technical_failed": 0}
