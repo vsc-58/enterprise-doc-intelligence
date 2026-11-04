@@ -29,7 +29,12 @@ import asyncio
 
 from src.query.resolve import load_index
 from src.query.schemas import Intent, NarrativeResult
-from src.rag.chain import answer_for_company, chain_version, refusal_message, survey_companies
+from src.rag.chain import (
+    answer_for_company,
+    chain_version,
+    refusal_message,
+    survey_companies,
+)
 from src.rag.retriever import CompanyRef
 from src.utils.logger import get_logger
 from src.utils.text import display_name

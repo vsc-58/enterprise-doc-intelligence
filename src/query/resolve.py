@@ -16,11 +16,9 @@ from collections.abc import Sequence
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
-from src.utils.text import display_name
-
 from src.query.schemas import (
-    ResolutionFailure,
     Resolution,
+    ResolutionFailure,
     ResolvedEntity,
 )
 from src.storage.metadata_store import (
@@ -29,6 +27,7 @@ from src.storage.metadata_store import (
     latest_successful_stmt,
 )
 from src.utils.logger import get_logger
+from src.utils.text import display_name
 
 logger = get_logger(__name__)
 

@@ -5,8 +5,8 @@ get_narrative_sections() across the corpus before any chunking. Read-only: no
 writes to db/, data/eval/ or Chroma. No API calls; edgartools reads the SEC.
 
 Usage:
-    python -m scripts.diagnostic.test_narrative_sections        # all documents
-    python -m scripts.diagnostic.test_narrative_sections 3      # first 3 tickers only
+    python -m scripts.diagnostic.check_narrative_sections        # all documents
+    python -m scripts.diagnostic.check_narrative_sections 3      # first 3 tickers only
 """
 
 from __future__ import annotations

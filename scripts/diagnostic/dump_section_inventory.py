@@ -35,7 +35,7 @@ from __future__ import annotations
 import json
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -232,7 +232,7 @@ def main() -> int:
 
     # ---- Write ------------------------------------------------------------------
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "chunk_params_hash": chunk_params_hash(),
         "total_chunks": total,
         "chunks_by_section": {s: by_section.get(s, 0) for s in SECTION_ORDER},

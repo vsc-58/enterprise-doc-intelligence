@@ -42,15 +42,18 @@ jobs:
           cache-dependency-path: requirements.txt
 
       # requirements.txt is pip-frozen (on Windows) and installs on Linux as is.
-      # ruff is a development tool, not a runtime dependency, so it is pinned here.
+      # ruff and pytest-cov are development tools, not runtime dependencies, so
+      # they are pinned here.
       - name: Install dependencies
         run: |
           python -m pip install -r requirements.txt
-          python -m pip install ruff==0.17.3
+          python -m pip install ruff==0.17.3 pytest-cov==7.1.0
 
-      # F: pyflakes (undefined names, unused imports), E9: syntax errors.
+      # Rules in pyproject.toml: pyflakes, syntax errors, import order, likely
+      # bugs, and modern syntax for Python 3.11.
       - name: Lint
-        run: ruff check --select F,E9 .
+        run: ruff check .
 
+      # Coverage of src/ is printed in the log (settings in pyproject.toml).
       - name: Tests
-        run: python -m pytest -q
+        run: python -m pytest -q --cov --cov-report=term

@@ -25,6 +25,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from src.eval.grounding import check_grounding
 from src.extraction.extractor import (
     ExtractionResult,
     assemble_input,
@@ -33,8 +34,6 @@ from src.extraction.extractor import (
 from src.extraction.schemas import FilingExtraction
 from src.utils.config import settings
 from src.utils.logger import get_logger
-
-from src.eval.grounding import check_grounding
 
 logger = get_logger(__name__)
 

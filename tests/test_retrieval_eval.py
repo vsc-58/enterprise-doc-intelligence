@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from scripts import run_retrieval_eval as runner
+from src.eval.query_eval import EvalSet
 from src.eval.retrieval_eval import (
     GoldError,
     GoldQuestion,
@@ -20,7 +21,6 @@ from src.eval.retrieval_eval import (
     score_ranking,
     unjudged_in_top,
 )
-from src.eval.query_eval import EvalSet
 from src.query.resolve import CorpusEntry, build_index
 from src.rag.retriever import CompanyContext, ContextBlock
 from src.storage.vector_store import RetrievalStatus, RetrievedChunk

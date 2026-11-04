@@ -39,7 +39,7 @@ and the execution file's planner and chain versions appended
 other than 1 is scored), so scoring a new execution run never overwrites an
 earlier run's evidence. A markdown summary is written beside it.
 
-Run:  python -m scripts.run_attribution_eval --execution data/eval/execution_results_d4bc8e36_b1d8ee5c.json
+Run:  python -m scripts.run_attribution_eval --execution data/eval/execution_results_0dacd92a_79177d36.json
 
 Arguments: --execution (execution results file whose end_to_end claims are scored),
 --runs (judge runs per item, default settings.QUERY_EVAL_RUNS), --run-number
@@ -53,15 +53,15 @@ import argparse
 import json
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from src.eval.attribution import (
     JudgedItem,
     JudgeLabel,
-    LabelSheetError,
     JudgeResult,
+    LabelSheetError,
     claims_from_execution,
     cohen_kappa,
     flipped,
@@ -307,7 +307,7 @@ def main(execution_path: Path, runs: int, run_number: int) -> int:
                      for i in all_ids if judged_claims[i]["label"] == JudgeLabel.NOT_SUPPORTED.value]
 
     results = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "judge_version": version,
         "judge_model": settings.JUDGE_MODEL,
         "judge_served_model": judge_served,

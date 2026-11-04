@@ -31,7 +31,11 @@ from fastapi import APIRouter, Depends, Response
 from src.api.dependencies import database_ready
 from src.api.models import ErrorBody
 from src.query.schemas import MetricField
-from src.storage.metadata_store import Document, ExtractedRecord, latest_successful_records
+from src.storage.metadata_store import (
+    Document,
+    ExtractedRecord,
+    latest_successful_records,
+)
 from src.storage.quality import assess_record
 from src.utils.logger import get_logger
 from src.utils.text import display_name

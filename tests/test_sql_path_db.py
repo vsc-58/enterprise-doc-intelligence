@@ -49,7 +49,7 @@ def _figures(rev: float, ni: float, assets: float, liab: float, ocf: float | Non
     """Values in actual dollars, each with a cited line printing it at its scale."""
     names = ["total_revenue", "net_income", "total_assets", "total_liabilities", "operating_cash_flow"]
     out: dict[str, object] = {}
-    for name, value, unit in zip(names, (rev, ni, assets, liab, ocf), scale):
+    for name, value, unit in zip(names, (rev, ni, assets, liab, ocf), scale, strict=False):
         out[name] = None if value is None else value * unit
         out[f"{name}_source_line"] = None if value is None else f"{name} {value:,.0f}"
     return out

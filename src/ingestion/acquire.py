@@ -7,6 +7,7 @@ separately in src/eval/ground_truth.py.
 
 from __future__ import annotations
 
+from datetime import date, datetime  ## added for filing_date extraction
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -14,7 +15,6 @@ from edgar import Company, set_identity
 
 from src.utils.config import settings
 from src.utils.logger import get_logger
-from datetime import date, datetime ## added for filing_date extraction
 
 if TYPE_CHECKING:
     # Imported for type-checking only; keeps runtime import surface minimal.

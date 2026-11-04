@@ -14,9 +14,10 @@ and an instrument calibrated twice can disagree with itself.
 """
 
 import re
-from src.utils.numbers import SCALE_MULTIPLIERS, numbers_in_line
+
 from src.utils.config import settings
 from src.utils.logger import get_logger
+from src.utils.numbers import SCALE_MULTIPLIERS, numbers_in_line
 
 logger = get_logger(__name__)
 

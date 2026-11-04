@@ -452,7 +452,7 @@ def get_chunks_by_key(
             logger.error("chunk_fetch_failed", ticker=ticker, section=section,
                          error_type=type(exc).__name__, error=str(exc))
             raise VectorStoreError(f"Could not read chunks for {ticker} {section}") from exc
-        for text, meta in zip(got["documents"], got["metadatas"]):
+        for text, meta in zip(got["documents"], got["metadatas"], strict=False):
             if int(meta["chunk_index"]) in indexes:
                 chunk = _to_chunk(LCDocument(page_content=text, metadata=meta), 0.0)
                 found[(chunk.ticker, chunk.section, chunk.chunk_index)] = chunk
