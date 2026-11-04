@@ -6,6 +6,8 @@ hardcodes a value that belongs here. Import the singleton:
 `from src.utils.config import settings`.
 """
 
+from typing import Literal
+
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -65,6 +67,11 @@ class Settings(BaseSettings):
 
     # Logging
     LOG_LEVEL: str = "INFO"
+    # "console": coloured, human-readable lines (the default, for a terminal).
+    # "json": one JSON object per line, with "severity" and "message" keys, for
+    # a log collector such as Google Cloud Logging, which reads those two keys
+    # and would otherwise show the colour codes as text.
+    LOG_FORMAT: Literal["console", "json"] = "console"
 
     # Storage paths
     CHROMA_DB_PATH: str = "db/chroma"
@@ -280,7 +287,8 @@ class Settings(BaseSettings):
 
     # Cost protection for the public demo, OFF when None. In-memory counters:
     # correct only because the API runs one worker (Chroma's local store is
-    # single-process).
+    # single-process). The hosted deployment sets both
+    # (scripts/deploy_cloud_run.sh); local runs leave them off.
     RATE_LIMIT_PER_MINUTE: int | None = None    # per client IP, /query only -> 429
     DAILY_QUERY_BUDGET: int | None = None       # /query calls per UTC day -> 429
 

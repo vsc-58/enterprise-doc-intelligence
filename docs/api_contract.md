@@ -258,8 +258,9 @@ SQLite file or Chroma folder creates an empty one.
 **Startup never crashes on a missing store.** If `load_index()` raises
 (empty database) or the store cannot open, the lifespan logs the error and
 starts anyway; `/health` returns 503 naming the failed part, and `/query`
-returns 503 `not_ready`. On Hugging Face this shows *why* in a browser instead
-of a crash loop.
+returns 503 `not_ready`. On the hosted service this shows *why* in a browser
+instead of a crash loop. The hosted service's startup probe calls `/health`, so
+an instance whose corpus did not load never receives traffic.
 
 ---
 
@@ -272,7 +273,7 @@ of a crash loop.
 | 422 | Body malformed: missing/empty/too long `question`, extra fields, not JSON | FastAPI's validation format (kept: Swagger understands it) |
 | 429 | One client over `RATE_LIMIT_PER_MINUTE`, or all clients over `DAILY_QUERY_BUDGET` today — **off by default** (§9) | error envelope: `rate_limited` ("wait a moment") or `daily_budget_exhausted` ("resets at 00:00 UTC"), with `Retry-After` |
 | 500 | Unexpected exception | error envelope, `internal_error` |
-| 503 | Not ready (§6); OpenAI unreachable/timeout/rate-limited/auth on the planner call; every task in the plan `failed` | error envelope: `not_ready`, `llm_unavailable`, `service_degraded` |
+| 503 | Not ready (§6); OpenAI unreachable/timeout/rate-limited/auth on the planner call; OpenAI credit or spend limit used up; every task in the plan `failed` | error envelope: `not_ready`, `llm_unavailable`, `llm_quota_exhausted` (`Retry-After: 3600`), `service_degraded` |
 | 504 | `QUERY_TIMEOUT_SECONDS` exceeded | error envelope, `timeout` |
 
 **Refused is not failed.** `refused` means the system worked and the corpus
@@ -299,6 +300,18 @@ inside the handler — found when the server was first run.)
 
 **OpenAI down → 503, not 502.** 502 says "an upstream gave a bad response";
 the user-facing meaning (try again later) is 503's. A judgement call.
+
+**Out of credit is not "unavailable".** OpenAI answers both "too many requests"
+and "the credit or a spend limit is used up" with HTTP 429; the error code in
+the body (`insufficient_quota`, `credit_balance_exhausted`,
+`project_spend_limit_exceeded`, `organization_spend_limit_exceeded`,
+`organization_usage_limit_exceeded`) tells them apart. The second gets
+`llm_quota_exhausted` and `Retry-After: 3600`, because "try again shortly"
+would be false: it stays refused until the credit is topped up or the monthly
+limit resets. The message points to `/documents` and `/export`, which need no
+OpenAI call. The planner is the first OpenAI call of every question, so this
+is where an exhausted credit shows; if it ran out between the planner and the
+answer, the parts fail and the request ends as `service_degraded`.
 
 ### Error envelope (every non-422 error)
 
@@ -350,8 +363,9 @@ Consequences to know:
 | `OPENAI_MAX_RETRIES` | 1 | §8 |
 | `READINESS_RETRY_SECONDS` | 5 | Minimum gap between readiness re-tries; `Retry-After` on 503 |
 | `CORS_ALLOW_ORIGINS` | `[]` | No cross-origin browser access; Swagger is same-origin |
-| `RATE_LIMIT_PER_MINUTE` | `None` (off) | Per client IP, `/query` only → 429. To be switched on for the public deployment |
-| `DAILY_QUERY_BUDGET` | `None` (off) | Max `/query` calls per UTC day → 429. To be switched on for the public deployment |
+| `RATE_LIMIT_PER_MINUTE` | `None` (off) | Per client IP, `/query` only → 429. Hosted: 10 |
+| `DAILY_QUERY_BUDGET` | `None` (off) | `/query` calls per UTC day → 429. Hosted: 50 |
+| `LOG_FORMAT` | `console` | `json`: one JSON object per line for Cloud Logging. Hosted: `json` |
 
 ### Usage limits (`src/api/limits.py`)
 
@@ -368,12 +382,14 @@ Consequences to know:
   clients are swept once per window, so memory cannot grow without bound.
 - **Daily:** all clients together, per UTC day. `Retry-After` is the seconds
   until UTC midnight.
-- **Client identity** is the address the server sees. Behind a proxy (the
-  Hugging Face Space) run uvicorn with `--proxy-headers --forwarded-allow-ips`
-  so it is the real client's; still to be confirmed on the deployed Space with
-  two devices. `X-Forwarded-For` is never parsed in code: any client can send it.
+- **Client identity** is the address the server sees. Behind Cloud Run,
+  uvicorn runs with `--proxy-headers` and a list of trusted internal addresses
+  (`Dockerfile.cloudrun`), so it takes the address Cloud Run appended to
+  `X-Forwarded-For`, which a client cannot forge. Never `--forwarded-allow-ips
+  "*"`: uvicorn would then take the leftmost entry, which the client writes.
+  `X-Forwarded-For` is never parsed in code: any client can send it.
 - In-memory counters — correct only because there is one worker (§1) — and
-  reset on restart.
+  reset on restart, including a scale-to-zero of the hosted instance.
 - The OpenAI dashboard spend limit stays the final guard (it also covers a
   leaked key, which nothing in this code can).
 
@@ -402,6 +418,7 @@ tests/test_api_query.py    POST /query: statuses, timeout, 422 before readiness
 tests/test_api_routes.py   /documents, /export, /health
 tests/test_demo_page.py    GET /, server text inserted as text only
 tests/test_limits.py       usage limits, including the 429s through /query
+tests/test_llm_quota.py    out-of-credit 429 from OpenAI -> llm_quota_exhausted
 tests/test_openapi.py      what Swagger shows: API-written enum descriptions
 tests/test_readiness.py, test_dependencies.py, test_llm_clients.py
 ```

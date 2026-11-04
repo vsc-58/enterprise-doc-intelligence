@@ -1,0 +1,56 @@
+# CI: lint and unit tests on every push and pull request. No deploy (see
+# scripts/deploy_cloud_run.sh for why deployment is a script, not a pipeline).
+#
+# The tests need no network, no API key and no database: they stub every LLM
+# call and build throwaway stores. The settings class still requires
+# OPENAI_API_KEY and EDGAR_IDENTITY to exist, so dummy values are set below.
+# They are not secrets and reach nothing.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Read the code, nothing else: the job writes nothing back to the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch (or pull request) cancels the older run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: lint and tests (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ci-dummy-not-a-key
+      EDGAR_IDENTITY: CI Runner ci@example.com
+    steps:
+      # Actions pinned to full commit SHAs: a tag can be moved, a SHA cannot.
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # requirements.txt is pip-frozen (on Windows) and installs on Linux as is.
+      # ruff is a development tool, not a runtime dependency, so it is pinned here.
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install ruff==0.17.3
+
+      # F: pyflakes (undefined names, unused imports), E9: syntax errors.
+      - name: Lint
+        run: ruff check --select F,E9 .
+
+      - name: Tests
+        run: python -m pytest -q

@@ -1,0 +1,14 @@
+# Dockerfile.cloudrun.dockerignore — the build context of Dockerfile.cloudrun.
+#
+# BuildKit uses this file instead of .dockerignore when it builds
+# Dockerfile.cloudrun. The local .dockerignore keeps excluding db/, so local
+# builds are unchanged.
+#
+# Allow-list: exclude everything, then let back in only the corpus. The code
+# is not taken from this context: Dockerfile.cloudrun starts FROM the local
+# image. So .env, venvs, data/, tests/ and any other file in the repo can never
+# reach the hosted image, whatever is lying around in the working copy.
+
+*
+!db/metadata.db
+!db/chroma/

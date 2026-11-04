@@ -1,8 +1,10 @@
 # Dockerfile — the API image: FastAPI app served by uvicorn on port 8000.
 #
-# The corpus (db/) is NOT in the image: docker-compose.yml mounts it read-only.
-# Without it the API still starts and /health answers 503 naming what is missing.
+# The corpus (db/) is NOT in this image: docker-compose.yml mounts it (read-write,
+# because Chroma writes to its own files when it opens a store). Without it the
+# API still starts and /health answers 503 naming what is missing.
 # The image holds only what the API imports (src/) and the pinned requirements.
+# Dockerfile.cloudrun builds the hosted image from this one, adding the corpus.
 
 FROM python:3.11-slim-bookworm
 
@@ -29,7 +31,7 @@ RUN pip install -r requirements.txt
 # fetching it here means no request ever waits on (or fails at) that download.
 RUN python -c "import tiktoken; tiktoken.get_encoding('cl100k_base')"
 
-# Run as a non-root user. UID 1000 is also what the Hugging Face Space expects.
+# Run as a non-root user (UID 1000), here and in the hosted image.
 RUN useradd --create-home --uid 1000 app
 COPY --chown=app:app src/ src/
 USER app

@@ -576,8 +576,8 @@ limit could then only fire after the request had already timed out.
 
 If the database is empty or the vector store cannot open, the server starts,
 `/query` returns 503 `not_ready`, and `/health` returns 503 naming the failed
-part. On a hosted Space this shows the cause in a browser instead of a crash
-loop. `/health` has exactly one check per readiness part, enforced by a test,
+part. On the hosted service this shows the cause in a browser instead of a
+crash loop. `/health` has exactly one check per readiness part, enforced by a test,
 after a gap where a missing figure guard produced a 503 whose every check read
 "ok".
 
@@ -590,11 +590,18 @@ planner runs, so invalid or not-ready requests cost nothing. Requests rather
 than tokens, because a request's cost has a ceiling (at most 3 tasks and 500
 characters, about $0.004 for the costliest kind), so N requests is a dollar cap.
 Client identity is the address the server sees; `X-Forwarded-For` is never
-parsed in code, since any client can send it.
+parsed in code, since any client can send it. Behind Cloud Run, uvicorn derives
+that address from the header in a way a client cannot forge (section 9).
+
+When OpenAI refuses a call because the credit or a spend limit is used up, the
+API answers 503 `llm_quota_exhausted`, not `llm_unavailable`: OpenAI sends both
+"slow down" and "no money left" as HTTP 429, and only the second makes "try
+again shortly" a false promise. The message names what still works without
+OpenAI (`/documents`, `/export`).
 
 ### A demo page at `/`
 
-The first thing a visitor to the Space sees should not be `{"detail": "Not
+The first thing a visitor to the hosted demo sees should not be `{"detail": "Not
 Found"}`. `/` serves one static page that calls the public endpoints like any
 client — no second path into the pipeline — and inserts server text as text,
 never as HTML. Swagger stays at `/docs`.
@@ -621,11 +628,115 @@ writable `./db` the container starts, answers 503 and creates nothing.
 
 ### Non-root, a health check and a baked token encoding
 
-The container runs as UID 1000, the user a Hugging Face Space expects, so the
-local image already behaves like the hosted one. The health check calls
+The container runs as UID 1000, locally and in the hosted image, which is built
+from this one. The health check calls
 `/health` with Python (the slim image has no curl) and treats 503 as unhealthy,
 which is correct without a corpus. Every narrative question is embedded, and the
 embedding client first counts tokens with tiktoken's `cl100k_base`; tiktoken
 downloads that file on first use, so it is fetched at build time. Without it the
 first narrative request after each container start would wait on a download
 that can fail. Chroma's telemetry is turned off so the API only calls OpenAI.
+
+## 9. Hosting
+
+### Cloud Run, because the container already existed
+
+The demo runs on Google Cloud Run, which runs the same Docker image as local
+development. Hugging Face Spaces was the first plan; Docker Spaces now need a
+paid account. Cloud Run's free tier covers a demo's traffic, it scales to zero
+when nobody uses it, and it needs no second repository for the corpus.
+
+### The hosted image is the local image plus the corpus
+
+`Dockerfile.cloudrun` starts `FROM` the local image and adds only `db/` and
+the start command, so the hosted image runs exactly the code that runs
+locally; two copies of the same build steps would drift apart. Its own ignore
+file (`Dockerfile.cloudrun.dockerignore`) lets in `db/metadata.db` and
+`db/chroma/` and nothing else, so a stray `.env` or data file in the working
+copy cannot reach the image. The corpus is owned by the app user because Chroma
+writes to its own files whenever it opens a store. Tested by building with a
+decoy `.env`, decoy data files and a stray file in `db/`: none reached the image.
+
+On Cloud Run the container's filesystem lives in memory. Chroma rewrites its
+SQLite file and every index file on open, so a copy of the Chroma folder sits
+in memory next to the process. Memory is sized for both.
+
+### Client identity behind Cloud Run's front end
+
+Cloud Run's front end appends the real client address to `X-Forwarded-For`;
+whatever a client wrote there stays in front of it. uvicorn, given a list of
+trusted internal addresses, reads the header from the right and takes the
+first address it does not trust: the one the front end appended. With `*`
+(trust everyone) it takes the leftmost entry instead, the one the client
+controls, and the per-client limit could be dodged by sending a new fake
+address with each request. Tested both ways with forged headers: with the list,
+the 11th request from one real address got 429 whatever the fake part said;
+with `*`, twelve requests with twelve fake addresses never did.
+
+If the front end connects from an address outside the list, every visitor
+shares one identity. The failure mode is a stricter limit, never a looser one.
+
+### The startup probe calls `/health`
+
+Cloud Run ignores the Dockerfile's `HEALTHCHECK` and probes the container
+itself. Its default probe only checks that the port accepts connections,
+which would let an image with a missing or broken corpus take traffic. The
+probe is set to `GET /health`, which is 200 only when every data part loaded.
+A deploy starts one instance and waits for the probe, so a broken image fails
+the deploy and the previous revision keeps serving.
+
+### One instance, scaled to zero
+
+At most one instance: the Chroma store is single-process, the usage counters
+are in memory, and it caps the compute bill. At least zero: an idle demo costs
+nothing, and the first visitor after a quiet spell waits for a cold start.
+Billing is per request (CPU only while serving or starting).
+
+Measured on the live service: five instance starts took 15.4–20.5 s from
+start to a passing probe, and the first visitor after an idle spell waited
+15.0 s and 20.0 s. The limit of one is not absolute: when the demo page sent
+its second request just as the first instance became ready, Cloud Run started
+a second instance, which Google documents for rapid traffic surges. That
+request waited another 20 s, and for that moment the usage counters were
+split across two instances. Memory peaked at about 24% of 1 GiB.
+
+A cold start cannot be measured by deploying a new revision and calling it:
+Cloud Run starts the new revision's instance while moving traffic to it. The
+reliable source is Cloud Run's own log of real starts ("Starting new
+instance", "STARTUP HTTP probe succeeded") next to the request log's
+latencies.
+
+### Cost limits in layers
+
+Each limit covers a gap the others leave:
+
+| Layer | Stops | Survives a restart? |
+|---|---|---|
+| Per-client rate limit (10 a minute) | one visitor hammering | no (in memory) |
+| Daily budget (50 questions, all visitors) | a slow drain | no (in memory) |
+| OpenAI project spend limit (hard) | the credit running out | yes |
+| Cloud Run spend cap and max one instance | the Google bill | yes |
+
+The in-memory counters reset when the instance restarts or scales to zero,
+so an abuser who pauses long enough for a scale-down gets a fresh daily
+budget. The outer layers are what hold then. Shared counters (Redis, a
+database) would close that gap; for a one-instance demo they are not worth a
+second service.
+
+### Logs as JSON lines
+
+With `LOG_FORMAT=json` every log line is one JSON object with `severity` and
+`message`, which Cloud Logging reads, so errors can be filtered by severity
+and colour codes do not appear as text. The console format stays the default
+for local runs. One consequence: `gcloud run services logs read` prints only
+plain-text lines, so it shows the app's structured lines without their
+content; `gcloud logging read jsonPayload.message=<event>` reads them. A
+search for secrets in the logs must use the second, or it searches nothing.
+
+### CI, not CD
+
+Every push runs ruff and the unit tests on GitHub Actions. Deploying is a
+script (`scripts/deploy_cloud_run.sh`) run by hand: the corpus is deliberately
+not in git, so a pipeline would have no corpus to build from, and deploying
+from GitHub would need keyless login to Google Cloud (Workload Identity
+Federation). Both are production additions, not demo needs.

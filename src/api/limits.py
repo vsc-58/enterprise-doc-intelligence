@@ -26,9 +26,10 @@ because Chroma's local store is single-process (docs/api_contract.md §1). They
 reset on restart; for a demo that is acceptable and stated. Several workers
 would each keep their own counts and multiply the limits.
 
-CLIENT IDENTITY is request.client.host. Behind a proxy (such as a Hugging
-Face Space) that is the PROXY's address unless uvicorn runs with
---proxy-headers and --forwarded-allow-ips, which make it the real client's.
+CLIENT IDENTITY is request.client.host. Behind a proxy (such as Cloud Run's
+front end) that is the PROXY's address unless uvicorn runs with
+--proxy-headers and --forwarded-allow-ips set to the proxy's addresses, which
+make it the real client's (Dockerfile.cloudrun explains why not "*").
 X-Forwarded-For is deliberately NOT parsed here: any client can send that
 header, so trusting it in code would let one client pose as many. The daily
 budget does not depend on client identity and works either way.
