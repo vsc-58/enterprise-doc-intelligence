@@ -1,0 +1,60 @@
+# Dockerfile.cloudrun — the hosted image for Google Cloud Run: the local API
+# image plus the corpus, started the way Cloud Run needs it.
+#
+# Build from the repo root, AFTER the local image (scripts/deploy_cloud_run.sh
+# runs both builds, in this order):
+#   docker build --platform linux/amd64 -t enterprise-doc-intelligence:local .
+#   docker build --platform linux/amd64 -f Dockerfile.cloudrun -t <image>:<tag> .
+#
+# Why FROM the local image rather than a copy of its steps: the hosted image
+# then runs exactly the code, requirements and settings that run locally, and
+# this file holds only what differs. Two copies of the same steps drift apart.
+#
+# The build context is filtered by Dockerfile.cloudrun.dockerignore (BuildKit
+# reads "<Dockerfile name>.dockerignore" instead of .dockerignore), which lets
+# in db/metadata.db and db/chroma/ and nothing else: no .env, no data/, no
+# tests. The code comes from the local image, not from this context. db/ is
+# gitignored, so the corpus never enters git; it enters only this image, which
+# is kept in a private registry.
+
+ARG APP_IMAGE=enterprise-doc-intelligence:local
+FROM ${APP_IMAGE}
+
+# The corpus: SQLite (document index, extracted figures) and the Chroma store.
+# Owned by the app user (UID 1000, set in the local image): Chroma writes to
+# its own files whenever it opens a store, and cannot open one it may not
+# write. On Cloud Run those writes go to the instance's in-memory filesystem
+# (they count against its memory) and vanish when the instance stops; the image
+# itself never changes.
+COPY --chown=app:app db/ db/
+
+# The HEALTHCHECK inherited from the local image still works with `docker run`.
+# Cloud Run ignores it and uses the startup probe set at deploy time instead.
+#
+# Start command: the local one plus how to read proxy headers.
+#   --port 8000             Cloud Run is told the same port at deploy time
+#                           (--port=8000), so no shell is needed to read $PORT.
+#   --proxy-headers         take the client address and scheme from
+#                           X-Forwarded-For / X-Forwarded-Proto ...
+#   --forwarded-allow-ips   ... but only on connections from these internal
+#                           addresses. Cloud Run's front end connects from an
+#                           internal address and APPENDS the real client
+#                           address to X-Forwarded-For. Given a list, uvicorn
+#                           reads that header from the right and takes the first
+#                           address it does not trust: the one Cloud Run
+#                           appended. Anything a client wrote into the header
+#                           sits further left and is never reached. With "*"
+#                           uvicorn would take the LEFTMOST entry, which the
+#                           client controls, and the per-client rate limit
+#                           could be dodged by sending a new fake address with
+#                           every request. If the front end's address turns out
+#                           not to be in this list, every visitor shares one
+#                           identity: the limit gets stricter, never looser.
+#   --no-access-log         the middleware already logs every request (with
+#                           request id and latency) and Cloud Run logs it again
+#                           (with the client address); a third line adds noise.
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", \
+     "--proxy-headers", \
+     "--forwarded-allow-ips", \
+     "127.0.0.1,::1,169.254.0.0/16,fe80::/10,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16", \
+     "--no-access-log"]

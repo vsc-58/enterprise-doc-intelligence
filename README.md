@@ -1,5 +1,7 @@
 # Enterprise Document Intelligence System
 
+[![CI](https://github.com/vsc-58/enterprise-doc-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/vsc-58/enterprise-doc-intelligence/actions/workflows/ci.yml)
+
 An AI pipeline that turns SEC 10-K filings into structured, queryable and
 evaluated data. It extracts financial figures from filing text with an LLM,
 indexes the narrative sections for retrieval, and answers questions through a
@@ -7,8 +9,26 @@ planner that sends each part of a question either to an exact SQL lookup or to
 cited retrieval-augmented generation (RAG). Every stage is measured against
 ground truth or frozen labels.
 
-Status: runs locally as a FastAPI service over a 20-filing corpus, directly
-or in Docker. A hosted demo is not built yet.
+Status: live on Google Cloud Run (see Live demo), and runs locally as a
+FastAPI service over the same 20-filing corpus, directly or in Docker.
+
+## Live demo
+
+**https://edi-api-808508931004.asia-south1.run.app** — ask a question on the
+page, or use the API at `/docs`. No login.
+
+- **First visit after a quiet spell is slow.** The service scales to zero when
+  nobody uses it, so the first request starts a fresh instance: the page takes
+  about 15–20 seconds (measured 15.0 s and 20.0 s), and the example buttons can
+  take as long again. After that, figure questions take about 2 seconds
+  (1.4–3.2 s over 14 runs) and narrative answers 7–9 seconds.
+- **Usage limits.** Each visitor can ask 10 questions a minute, and all
+  visitors together 50 a day (the count restarts at 00:00 UTC, and whenever the
+  service restarts). When the demo's OpenAI allowance for the month is used up,
+  questions get a short message saying so; the filings list (`/documents`) and
+  the extracted figures (`/export`) keep working, because they need no model.
+- Same corpus and code as the results below: the hosted service reports the
+  planner and answer-chain versions at `/health`.
 
 ---
 
@@ -127,6 +147,8 @@ Why each of these choices was made, and what it costs:
 | Logging | structlog |
 | Tests | pytest |
 | Containers | Docker + Docker Compose (one service, one worker) |
+| Hosting | Google Cloud Run (one instance, scales to zero), Artifact Registry, Secret Manager |
+| CI | GitHub Actions: ruff and pytest on every push and pull request |
 
 Exact versions are pinned in `requirements.txt`.
 
@@ -148,6 +170,9 @@ tests/         unit tests (no network, no API key, no database)
 docs/          design notes, API contract, evaluation write-ups
 data/eval/     committed evaluation evidence: answer key, eval sets, labels, results
 Dockerfile, docker-compose.yml, .dockerignore   the API image and its local run
+Dockerfile.cloudrun, Dockerfile.cloudrun.dockerignore   the hosted image (local image + corpus)
+scripts/deploy_cloud_run.sh   build, check, push and deploy to Cloud Run
+.github/workflows/ci.yml      lint and tests on every push
 ```
 
 `data/raw/`, `data/processed/` and `db/` are gitignored: a fresh clone has the
@@ -272,14 +297,54 @@ docker compose down                   # stop
   chromadb (pyarrow, onnxruntime, kubernetes). The API imports neither
   pipeline; a smaller image would need a second, API-only requirements file.
 
+## How it is deployed
+
+The live demo runs on Google Cloud Run, from the same image as "Run with
+Docker" plus the corpus.
+
+- **Image:** `Dockerfile.cloudrun` starts from the local image and adds only
+  `db/` and the start command, so the hosted service runs exactly the code that
+  runs locally. Its own ignore file lets in the corpus and nothing else (no
+  `.env`, no data files). The image lives in a private Artifact Registry
+  repository; the corpus never enters git.
+- **Secrets:** the OpenAI key and the EDGAR identity are in Secret Manager.
+  Cloud Run reads them when an instance starts, as a service account whose only
+  permission is reading those two secrets. No key is in the image, the
+  repository or the deploy script.
+- **One instance, scaled to zero:** at most one instance (the Chroma store is
+  single-process and the usage counters are in memory) and none when idle, so
+  an idle demo costs nothing and the first visitor waits for a cold start.
+- **Startup probe on `/health`:** a new instance gets traffic only after the
+  corpus has loaded; an image with a broken corpus fails its deploy and the
+  previous version keeps serving.
+- **Client address:** uvicorn takes the address Cloud Run's front end appends
+  to `X-Forwarded-For`, which a client cannot forge, so the per-visitor limit
+  cannot be dodged with a fake header.
+- **Cost limits, in layers:** the per-visitor and daily limits in the API; a
+  hard monthly spend limit on the OpenAI project that holds the demo's key; a
+  Google Cloud spend cap on the service and an alert budget.
+- **Logs:** one JSON object per line (`LOG_FORMAT=json`), which Cloud Logging
+  reads by severity.
+
+Deploying is one script with every setting explained in it:
+
+```bash
+bash scripts/deploy_cloud_run.sh all     # build, check, push, deploy, verify
+```
+
+It runs by hand, not as continuous deployment on merge: the corpus is
+deliberately not in git, so a pipeline would have nothing to build the image
+from. CI (lint and tests) runs on every push.
+
 ## Tests
 
 ```bash
 pytest -q
 ```
 
-427 tests, all without network, database or a real API key: LLM calls are
-stubbed. The settings class still requires `OPENAI_API_KEY` and `EDGAR_IDENTITY`
+442 tests, all without network, database or a real API key: LLM calls are
+stubbed. GitHub Actions runs them, and ruff, on every push and pull request.
+The settings class still requires `OPENAI_API_KEY` and `EDGAR_IDENTITY`
 to be present, so set them (any value works) in `.env` or the environment.
 `tests/test_prompt_versions.py` checks that the prompt versions in the code are
 the ones the committed evaluation results were measured on.
@@ -353,17 +418,22 @@ text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
 
 ## Security and data handling
 
-- **Secrets** come from `.env` (gitignored) and the API key is held as a
-  `SecretStr`, so it is not printed in logs or reprs. No key is in the code or
-  the history.
+- **Secrets** come from `.env` (gitignored) locally and from Secret Manager in
+  the hosted service. The API key is held as a `SecretStr`, so it is not
+  printed in logs or reprs. No key is in the code, the history or the image.
+- **Least privilege:** the hosted service runs as a service account with no
+  project roles, allowed only to read its two secrets. The demo's OpenAI key
+  belongs to its own project, limited to the two models the API calls and to
+  a hard monthly spend limit.
 - **SQL** is built with SQLAlchemy `select()` from validated parameters: column
   allowlist, bound values, a row cap. The model never writes SQL.
 - **Errors** return a fixed message and a request id; exception text, paths and
   SQL go to the logs only.
 - **The demo page** inserts server text as text, never as HTML.
 - **Usage limits** (per-client rate limit, daily budget) protect the OpenAI
-  credit on a public deployment. They are off by default.
-  `X-Forwarded-For` is never parsed in code, since any client can send it.
+  credit on the public deployment. They are off by default and on in the
+  hosted service. `X-Forwarded-For` is never parsed in code, since any client
+  can send it.
 - **Data:** all filings are public SEC documents. No personal data is stored.
 
 ## Limitations
@@ -384,6 +454,17 @@ text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
   long MD&A sections (diagnosed; the fix needs a re-embed).
 - **Small evaluation samples:** 18 retrieval questions and 40 judge test
   claims; intervals are wide.
-- **API:** no authentication (a public read-only demo), counters reset on
-  restart, and CSV cells are not escaped against spreadsheet formulas (all
-  values come from filings and the pipeline, not from users).
+- **API:** no authentication (a public read-only demo), and CSV cells are not
+  escaped against spreadsheet formulas (all values come from filings and the
+  pipeline, not from users).
+- **Hosting:** the usage counters live in memory, so they reset whenever the
+  instance restarts or scales to zero; someone who pauses long enough gets a
+  fresh daily budget, and the OpenAI and Google spend limits are what hold
+  then. One instance means requests queue under load. The first request after
+  a quiet spell waits 15–20 s for a cold start, and when a page sends several
+  requests at that moment Cloud Run can briefly start a second instance
+  (observed once; Google documents it), which delays them further and briefly
+  splits the usage counters.
+- **Logs:** with JSON logs, `gcloud run services logs read` shows the app's
+  lines without their content; read them with `gcloud logging read` or the
+  Logs Explorer. uvicorn's own startup lines stay plain text.

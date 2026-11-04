@@ -462,6 +462,10 @@ class ErrorCode(str, Enum):
     NOT_READY (503): database, store or index unavailable.
     LLM_UNAVAILABLE (503): OpenAI unreachable, timed out, rate-limited or
         rejected the key on the planner call.
+    LLM_QUOTA_EXHAUSTED (503): OpenAI refused the planner call because the
+        account's credit or the project's spend limit is used up. Separate from
+        LLM_UNAVAILABLE because the client's action differs: "try again shortly"
+        would be wrong; it stays refused until the allowance is renewed.
     SERVICE_DEGRADED (503): every task in the plan failed.
     TIMEOUT (504): QUERY_TIMEOUT_SECONDS exceeded.
     RATE_LIMITED (429): one client sent too many questions in the last minute.
@@ -473,6 +477,7 @@ class ErrorCode(str, Enum):
 
     NOT_READY = "not_ready"
     LLM_UNAVAILABLE = "llm_unavailable"
+    LLM_QUOTA_EXHAUSTED = "llm_quota_exhausted"
     SERVICE_DEGRADED = "service_degraded"
     TIMEOUT = "timeout"
     RATE_LIMITED = "rate_limited"

@@ -13,8 +13,8 @@ Startup never crashes on a missing store. The lifespan warms the data
 parts through src/api/readiness.py and stores the state on app.state.readiness;
 a missing part is logged and the server starts anyway. Routes declare what
 they need through src/api/dependencies.py, which re-tries readiness while not
-ready and otherwise answers 503 not_ready with Retry-After. On a hosted Space
-this shows the cause in a browser instead of a crash loop.
+ready and otherwise answers 503 not_ready with Retry-After. On a hosted
+deployment this shows the cause in a browser instead of a crash loop.
 """
 
 import math
@@ -64,6 +64,24 @@ _LLM_UNAVAILABLE: tuple[type[openai.OpenAIError], ...] = (
     openai.PermissionDeniedError,
     openai.InternalServerError,
 )
+
+# OpenAI 429 codes that mean "the money is used up", not "slow down": the
+# account's prepaid credit is gone, or a spend limit set on the project or the
+# organization is reached. Retrying in a few seconds cannot help, so these get
+# their own code and a long Retry-After instead of llm_unavailable's 5 s.
+# "insufficient_quota" is the older code for the same condition.
+_QUOTA_CODES: frozenset[str] = frozenset({
+    "insufficient_quota",
+    "credit_balance_exhausted",
+    "project_spend_limit_exceeded",
+    "organization_spend_limit_exceeded",
+    "organization_usage_limit_exceeded",
+})
+
+# Retry-After for llm_quota_exhausted. The real wait is unknown to the API (a
+# top-up, or the monthly reset of a spend limit); an hour stops clients that
+# honour the header from retrying every few seconds.
+_QUOTA_RETRY_AFTER_S = 3600
 
 # Store failures that mean "a data store is unavailable" -> 503 not_ready.
 # OperationalError only (file missing, locked, unreadable): other SQLAlchemy
@@ -245,23 +263,50 @@ async def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
     return error_response(request, exc.code, exc.status_code, exc.retry_after_s)
 
 
+def is_quota_exhausted(exc: Exception) -> bool:
+    """Whether an OpenAI error means the credit or a spend limit is used up.
+
+    OpenAI answers both "too many requests" and "no money left" with HTTP 429
+    (RateLimitError); only the error code in the body tells them apart.
+
+    Args:
+        exc: An exception raised by the OpenAI client.
+
+    Returns:
+        True for a RateLimitError whose code or type is in _QUOTA_CODES.
+    """
+    if not isinstance(exc, openai.RateLimitError):
+        return False
+    return exc.code in _QUOTA_CODES or exc.type in _QUOTA_CODES
+
+
 async def handle_llm_unavailable(request: Request, exc: Exception) -> JSONResponse:
-    """OpenAI unreachable, timed out, rate-limited or rejecting the key -> 503.
+    """OpenAI unreachable, timed out, rate-limited, rejecting the key or out of credit.
 
     Reaches here only from the planner call: failures inside the executor are
-    caught per task and reported as failed parts (docs/api_contract.md §7).
+    caught per task and reported as failed parts (docs/api_contract.md §7). The
+    planner is the first OpenAI call of every question, so an exhausted credit
+    or spend limit is met here.
 
     Args:
         request: The failed request.
         exc: An OpenAI error from _LLM_UNAVAILABLE.
 
     Returns:
-        The error envelope, 503 llm_unavailable.
+        The error envelope: 503 llm_quota_exhausted with Retry-After 3600 when
+        the credit or a spend limit is used up, else 503 llm_unavailable.
     """
+    quota = is_quota_exhausted(exc)
     logger.error(
-        "llm_unavailable", error_type=type(exc).__name__, error=str(exc),
+        "llm_quota_exhausted" if quota else "llm_unavailable",
+        error_type=type(exc).__name__, error=str(exc),
         request_id=getattr(request.state, "request_id", None),
     )
+    if quota:
+        return error_response(
+            request, ErrorCode.LLM_QUOTA_EXHAUSTED, status.HTTP_503_SERVICE_UNAVAILABLE,
+            retry_after_s=_QUOTA_RETRY_AFTER_S,
+        )
     return error_response(
         request, ErrorCode.LLM_UNAVAILABLE, status.HTTP_503_SERVICE_UNAVAILABLE
     )

@@ -21,6 +21,11 @@ ERROR_MESSAGES: dict[ErrorCode, str] = {
     ErrorCode.LLM_UNAVAILABLE: (
         "The language model service is unavailable. Try again shortly."
     ),
+    ErrorCode.LLM_QUOTA_EXHAUSTED: (
+        "This demo has used up its language-model allowance, so it cannot answer "
+        "questions right now. The list of filings (/documents) and the extracted "
+        "figures (/export) still work."
+    ),
     ErrorCode.SERVICE_DEGRADED: (
         "No part of the question could be answered because of an internal fault. "
         "Try again shortly."
