@@ -152,7 +152,7 @@ def main() -> int:
                                     include=["documents", "metadatas"])
         texts = {
             chunk_key(m["source_ticker"], m["source_section"], int(m["chunk_index"])): doc
-            for doc, m in zip(got["documents"], got["metadatas"])
+            for doc, m in zip(got["documents"], got["metadatas"], strict=False)
         }
         try:
             vector = embed_query(question.question)

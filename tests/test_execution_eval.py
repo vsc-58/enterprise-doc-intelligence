@@ -7,9 +7,9 @@ import pytest
 
 from src.eval.execution_eval import (
     OracleError,
+    OracleParams,
     expected_by_key,
     is_executable,
-    OracleParams,
     load_oracle_params,
     matched_alternative,
     oracle_plan,
@@ -32,7 +32,6 @@ from src.query.schemas import (
     Tool,
 )
 from src.storage.quality import QualityFlag, QualityReason, QualityVerdict
-
 
 # --- Oracle plans ---------------------------------------------------------------
 

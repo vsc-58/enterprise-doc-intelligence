@@ -25,7 +25,7 @@ description is stored under Item 1A, so a section tag would score the slicer
 rather than the retriever.
 
 Usage:
-    python -m scripts.diagnostic.test_similarity_search
+    python -m scripts.diagnostic.check_similarity_search
 """
 
 from __future__ import annotations

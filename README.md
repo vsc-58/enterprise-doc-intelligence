@@ -1,6 +1,11 @@
 # Enterprise Document Intelligence System
 
 [![CI](https://github.com/vsc-58/enterprise-doc-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/vsc-58/enterprise-doc-intelligence/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688)
+![LangChain](https://img.shields.io/badge/LangChain-1.x-1C3C3C)
+[![Live on Cloud Run](https://img.shields.io/badge/demo-live%20on%20Cloud%20Run-4285F4)](https://edi-api-808508931004.asia-south1.run.app)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 An AI pipeline that turns SEC 10-K filings into structured, queryable and
 evaluated data. It extracts financial figures from filing text with an LLM,
@@ -9,28 +14,36 @@ planner that sends each part of a question either to an exact SQL lookup or to
 cited retrieval-augmented generation (RAG). Every stage is measured against
 ground truth or frozen labels.
 
-Status: live on Google Cloud Run (see Live demo), and runs locally as a
-FastAPI service over the same 20-filing corpus, directly or in Docker.
+**Live demo: https://edi-api-808508931004.asia-south1.run.app** — ask a
+question on the page, or use the API at `/docs`. No login.
 
-## Live demo
+![The demo page answering a question with a verified figure and cited sources](docs/images/demo.png)
 
-**https://edi-api-808508931004.asia-south1.run.app** — ask a question on the
-page, or use the API at `/docs`. No login.
+## At a glance
 
-- **First visit after a quiet spell is slow.** The service scales to zero when
-  nobody uses it, so the first request starts a fresh instance: the page takes
-  about 15–20 seconds (measured 15.0 s and 20.0 s), and the example buttons can
-  take as long again. After that, figure questions take about 2 seconds
-  (1.4–3.2 s over 14 runs) and narrative answers 7–9 seconds.
-- **Usage limits.** Each visitor can ask 10 questions a minute, and all
-  visitors together 50 a day (the count restarts at 00:00 UTC, and whenever the
-  service restarts). When the demo's OpenAI allowance for the month is used up,
-  questions get a short message saying so; the filings list (`/documents`) and
-  the extracted figures (`/export`) keep working, because they need no model.
-- Same corpus and code as the results below: the hosted service reports the
-  planner and answer-chain versions at `/health`.
+- **Exact figures from SQL, explanations from cited text:** one question can
+  use both, and no language model ever sees a stored figure.
+- **Measured at every stage:** extraction F1 0.90 on held-out filings; routing
+  87.3% (82.5% before any tuning); end to end 88.1% on held-out questions;
+  91.4% of answer sentences supported by their citations.
+- **Deployed and tested:** live on Google Cloud Run with secrets in Secret
+  Manager, per-visitor rate limits and spend caps; 442 tests and lint run on
+  every push.
 
----
+## Contents
+
+[The problem](#the-problem) ·
+[Results](#results) ·
+[Architecture](#architecture) ·
+[How it is deployed](#how-it-is-deployed) ·
+[Tech stack](#tech-stack) ·
+[Run it](#run-it) ·
+[Repository layout](#repository-layout) ·
+[What to look at](#what-to-look-at) ·
+[Evaluation approach](#evaluation-approach) ·
+[Security](#security-and-data-handling) ·
+[Limitations](#limitations) ·
+[License](#license)
 
 ## The problem
 
@@ -132,6 +145,32 @@ Key properties:
 Why each of these choices was made, and what it costs:
 [docs/design_notes.md](docs/design_notes.md).
 
+## How it is deployed
+
+- **Image:** the same Docker image as local runs, plus the corpus. The corpus
+  never enters git; the image is in a private registry.
+- **Secrets:** the OpenAI key and the EDGAR identity are in Secret Manager,
+  read at start by a service account whose only permission is reading them.
+- **One instance, scaled to zero:** an idle demo costs nothing. The first
+  visitor after a quiet spell waits about 15–20 s; after that, figure questions
+  take about 2 s (1.4–3.2 s over 14 runs) and narrative answers 7–9 s.
+- **Usage limits:** 10 questions a minute per visitor, keyed on an address a
+  client cannot forge, and 50 a day in total. When the demo's OpenAI allowance
+  is used up, questions get a short message saying so; `/documents` and
+  `/export` keep working, because they need no model.
+- **Cost limits in layers:** a hard spend limit on the OpenAI project that
+  holds the demo's key, a Google Cloud spend cap on the service, and an alert
+  budget.
+- **A broken image never serves:** the startup probe calls `/health`, which is
+  200 only once the corpus has loaded, so a bad deploy fails and the previous
+  version keeps serving.
+
+Deployment is one script (`scripts/deploy_cloud_run.sh`), run by hand: the
+corpus is deliberately not in git, so a pipeline would have nothing to build
+the image from. CI runs lint, tests and coverage on every push. Details:
+[docs/running.md](docs/running.md#deploy-to-google-cloud-run) and
+[design notes, section 9](docs/design_notes.md#9-hosting).
+
 ## Tech stack
 
 | Area | Choice |
@@ -145,12 +184,32 @@ Why each of these choices was made, and what it costs:
 | Metadata store | SQLite + SQLAlchemy 2.x |
 | Validation and config | Pydantic v2, pydantic-settings |
 | Logging | structlog |
-| Tests | pytest |
+| Tests | pytest: 442 tests, 72% line coverage (API 99.5%, query path 91%) |
 | Containers | Docker + Docker Compose (one service, one worker) |
 | Hosting | Google Cloud Run (one instance, scales to zero), Artifact Registry, Secret Manager |
 | CI | GitHub Actions: ruff and pytest on every push and pull request |
 
 Exact versions are pinned in `requirements.txt`.
+
+## Run it
+
+Requires Python 3.11 and an OpenAI API key. Building the corpus also needs
+network access to SEC EDGAR and costs about $0.18.
+
+```bash
+git clone https://github.com/vsc-58/enterprise-doc-intelligence.git
+cd enterprise-doc-intelligence
+python -m venv .venv && source .venv/bin/activate   # Git Bash: .venv/Scripts/activate
+pip install -r requirements.txt
+cp .env.example .env                                # then set OPENAI_API_KEY and EDGAR_IDENTITY
+# build the corpus: seven commands, listed in docs/running.md
+uvicorn src.api.main:app                            # or: docker compose up --build
+pytest -q                                           # 442 tests, no network or key needed
+```
+
+Everything else, including the API's endpoints and status codes, Docker,
+deployment and reproducing each evaluation number, is in
+[docs/running.md](docs/running.md).
 
 ## Repository layout
 
@@ -167,213 +226,20 @@ src/
 scripts/       pipeline and evaluation entry points
   diagnostic/  probes and smoke tests used during development
 tests/         unit tests (no network, no API key, no database)
-docs/          design notes, API contract, evaluation write-ups
-data/eval/     committed evaluation evidence: answer key, eval sets, labels, results
+docs/          design notes, API contract, evaluation write-ups, how to run
+data/eval/     committed evaluation evidence, with an index (data/eval/README.md)
 Dockerfile, docker-compose.yml, .dockerignore   the API image and its local run
 Dockerfile.cloudrun, Dockerfile.cloudrun.dockerignore   the hosted image (local image + corpus)
 scripts/deploy_cloud_run.sh   build, check, push and deploy to Cloud Run
-.github/workflows/ci.yml      lint and tests on every push
+.github/workflows/ci.yml      lint, tests and coverage on every push
+pyproject.toml                lint and coverage settings (dependencies: requirements.txt)
+LICENSE                       MIT
 ```
 
 `data/raw/`, `data/processed/` and `db/` are gitignored: a fresh clone has the
 code and the evaluation evidence, but not the built corpus.
 
 ---
-
-## Setup
-
-Requires Python 3.11 and an OpenAI API key. Building the corpus also needs
-network access to SEC EDGAR.
-
-```bash
-git clone https://github.com/vsc-58/enterprise-doc-intelligence.git
-cd enterprise-doc-intelligence
-python -m venv .venv
-source .venv/bin/activate          # Windows Git Bash: source .venv/Scripts/activate
-pip install -r requirements.txt
-cp .env.example .env               # then set OPENAI_API_KEY and EDGAR_IDENTITY
-```
-
-`EDGAR_IDENTITY` is the name and email SEC asks automated clients to send
-(for example `Jane Doe jane@example.com`). Every other setting has a default in
-`src/utils/config.py` and can be overridden in `.env`.
-
-The chat model is set by two settings: `QUERY_MODEL` (planner and answers,
-default the dated snapshot `gpt-4o-mini-2024-07-18`) and `EXTRACTION_MODEL`
-(default `gpt-4o-mini`). They replace the older `OPENAI_MODEL`; a `.env` that
-still sets `OPENAI_MODEL` stops at startup with a message saying which to use.
-
-## Build the corpus
-
-Run from the repository root, in this order. Acquisition, extraction and
-embedding skip work already done; the two slicing steps rebuild their files.
-
-```bash
-python -m scripts.acquire_filings            # 20 10-K filings + XBRL answer key (SEC)
-python -m scripts.build_sections             # cover + Item 8 slices for extraction
-python -m scripts.run_extraction --dry-run   # what would be extracted, no spend
-python -m scripts.run_extraction             # LLM extraction into SQLite
-python -m scripts.build_narrative_sections   # Items 1, 1A, 7, 7A (SEC)
-python -m scripts.embed_documents --dry-run  # chunk count and cost, no spend
-python -m scripts.embed_documents            # embed into ChromaDB
-```
-
-Measured cost of a full build: about $0.16 for extraction and $0.02 for
-embeddings. `python -m scripts.acquire_filings 2` acquires only the first two
-filings, for a quick check.
-
-## Run the API
-
-```bash
-uvicorn src.api.main:app --reload            # http://localhost:8000
-```
-
-- `http://localhost:8000/` — a demo page: ask a question, see the answer with
-  each figure's quality mark and numbered sources.
-- `http://localhost:8000/docs` — Swagger UI with example requests.
-- Run **one worker**: the Chroma store is single-process and the usage counters
-  are in memory.
-- Without a built corpus the server still starts; `/health` returns 503 naming
-  the missing part.
-
-| Endpoint | What it does |
-|---|---|
-| `POST /query` | `{"question": "..."}` → answer text, plan type, per-task status and refusal reason, each figure with its quality flag, numbered sources, planner and chain versions |
-| `GET /documents` | The 20 filings held, with ticker, name and fiscal year |
-| `GET /export` | `extracted_records` as CSV: each figure beside its quality flag, reason, note and cited line |
-| `GET /health` | Readiness of the database, vector store, corpus index and figure guard; 503 names the part that is down |
-
-Status codes: a refusal is a correct answer about the corpus, so it is a 200
-with a typed `refusal_reason`. 422 is malformed input, 429 a usage limit (off by
-default), 503 not ready or OpenAI unavailable, 504 a timeout after 30 s. The
-full contract is [docs/api_contract.md](docs/api_contract.md).
-
-Example (`POST /query`):
-
-```json
-{"question": "What was Apple's total revenue in fiscal 2021?"}
-```
-
-returns, among other fields:
-
-```json
-{
-  "answer": "Apple Inc.'s total revenue for fiscal year 2021 (period ending 2021-09-25) was $365.82 billion.",
-  "plan_type": "single",
-  "tasks": [{"intent": "financial_metric", "tool": "sql", "status": "success",
-             "figures": [{"ticker": "AAPL", "value": 365817000000.0,
-                          "quality": {"verdict": "verified", "reason": "consistent", "note": null}}]}]
-}
-```
-
-Asking for a year the corpus does not hold returns a 200 refusal: "I hold one
-Apple Inc. filing, for fiscal year 2021. I don't have 2022."
-
-## Run with Docker
-
-Needs Docker with Compose, a `.env` file (as in Setup) and the built corpus in
-`db/`. The image holds the code and the pinned requirements; the corpus is
-mounted from `./db`, not copied into the image.
-
-```bash
-docker compose up --build -d          # build the image and start the API
-docker compose logs -f app            # "api_started ... ready=True" when the corpus loaded
-curl http://localhost:8000/health     # 200 with document and chunk counts
-docker compose down                   # stop
-```
-
-- Same endpoints as above, on `http://localhost:8000`.
-- One uvicorn worker, as in "Run the API", for the same two reasons.
-- `./db` is mounted read-write. The API only reads the corpus, but Chroma writes
-  to its own files whenever it opens a store, so a read-only mount does not
-  work. The container runs as UID 1000, which must be able to write `./db`.
-- Back up `db/` before the first run on a new machine: the store is then
-  opened, and written, by a different operating system.
-- Stop the container before running any pipeline script on the host: the Chroma
-  store supports one process at a time.
-- Without a corpus the container still starts; `/health` returns 503 naming the
-  missing parts, and the container reports itself unhealthy.
-- The image is about 1 GB, most of it the dependencies of edgartools and
-  chromadb (pyarrow, onnxruntime, kubernetes). The API imports neither
-  pipeline; a smaller image would need a second, API-only requirements file.
-
-## How it is deployed
-
-The live demo runs on Google Cloud Run, from the same image as "Run with
-Docker" plus the corpus.
-
-- **Image:** `Dockerfile.cloudrun` starts from the local image and adds only
-  `db/` and the start command, so the hosted service runs exactly the code that
-  runs locally. Its own ignore file lets in the corpus and nothing else (no
-  `.env`, no data files). The image lives in a private Artifact Registry
-  repository; the corpus never enters git.
-- **Secrets:** the OpenAI key and the EDGAR identity are in Secret Manager.
-  Cloud Run reads them when an instance starts, as a service account whose only
-  permission is reading those two secrets. No key is in the image, the
-  repository or the deploy script.
-- **One instance, scaled to zero:** at most one instance (the Chroma store is
-  single-process and the usage counters are in memory) and none when idle, so
-  an idle demo costs nothing and the first visitor waits for a cold start.
-- **Startup probe on `/health`:** a new instance gets traffic only after the
-  corpus has loaded; an image with a broken corpus fails its deploy and the
-  previous version keeps serving.
-- **Client address:** uvicorn takes the address Cloud Run's front end appends
-  to `X-Forwarded-For`, which a client cannot forge, so the per-visitor limit
-  cannot be dodged with a fake header.
-- **Cost limits, in layers:** the per-visitor and daily limits in the API; a
-  hard monthly spend limit on the OpenAI project that holds the demo's key; a
-  Google Cloud spend cap on the service and an alert budget.
-- **Logs:** one JSON object per line (`LOG_FORMAT=json`), which Cloud Logging
-  reads by severity.
-
-Deploying is one script with every setting explained in it:
-
-```bash
-bash scripts/deploy_cloud_run.sh all     # build, check, push, deploy, verify
-```
-
-It runs by hand, not as continuous deployment on merge: the corpus is
-deliberately not in git, so a pipeline would have nothing to build the image
-from. CI (lint and tests) runs on every push.
-
-## Tests
-
-```bash
-pytest -q
-```
-
-442 tests, all without network, database or a real API key: LLM calls are
-stubbed. GitHub Actions runs them, and ruff, on every push and pull request.
-The settings class still requires `OPENAI_API_KEY` and `EDGAR_IDENTITY`
-to be present, so set them (any value works) in `.env` or the environment.
-`tests/test_prompt_versions.py` checks that the prompt versions in the code are
-the ones the committed evaluation results were measured on.
-
-## Reproduce the evaluation
-
-These call OpenAI and need the built corpus. The committed results in
-`data/eval/` are what the numbers above come from.
-
-```bash
-python -m scripts.run_eval                   # extraction: five strategies, ten filings
-python -m scripts.run_heldout_eval           # extraction: the ten held-out filings
-python -m scripts.run_routing_eval           # planner accuracy, 3 runs
-python -m scripts.run_execution_eval         # oracle and end-to-end execution, 3 runs
-python -m scripts.run_retrieval_eval --routing data/eval/routing_results_0dacd92a.json
-python -m scripts.run_attribution_eval --execution data/eval/execution_results_0dacd92a_79177d36.json
-```
-
-`0dacd92a` and `79177d36` are the first eight characters of the planner and
-chain versions, shown by `GET /health` and written into every result file name;
-a prompt or model change gives new ones. Before
-any paid call, the routing, execution and attribution scripts make one tiny
-call and refuse to run unless OpenAI serves the configured model under exactly
-that name (a dated snapshot, not an alias); the served name is recorded in each
-result file. `python -m scripts.diagnostic.probe_served_model` shows the same
-check for every configured chat model.
-
-Extraction responses are cached by a hash of strategy, model, prompt and input
-text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
 
 ## What to look at
 
@@ -383,6 +249,8 @@ text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
 | [docs/query_eval_results.md](docs/query_eval_results.md) | Query-path evaluation: routing, execution, retrieval, attribution, label audits |
 | [docs/prompt_strategy_results.md](docs/prompt_strategy_results.md) | Extraction experiment: five strategies, held-out check, two bugs the harness found in itself |
 | [docs/api_contract.md](docs/api_contract.md) | API behaviour, status codes, timeouts, usage limits |
+| [docs/running.md](docs/running.md) | Setup, corpus build, local and Docker runs, deployment, tests, reproducing the numbers |
+| [data/eval/README.md](data/eval/README.md) | Which evidence file is behind which number, and which files are history |
 | [data/eval/query_eval_set.json](data/eval/query_eval_set.json) | The 109 frozen evaluation questions with labels |
 | [data/eval/ground_truth.json](data/eval/ground_truth.json) | XBRL answer key per filing |
 | [src/rag/figure_guard.py](src/rag/figure_guard.py) | How stored figures are kept away from the answer model |
@@ -468,3 +336,7 @@ text (`data/eval/raw_outputs/`), so re-scoring the strategies costs nothing.
 - **Logs:** with JSON logs, `gcloud run services logs read` shows the app's
   lines without their content; read them with `gcloud logging read` or the
   Logs Explorer. uvicorn's own startup lines stay plain text.
+
+## License
+
+MIT: see [LICENSE](LICENSE). The filings themselves are public SEC documents.

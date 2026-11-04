@@ -17,9 +17,9 @@ from fastapi.testclient import TestClient
 
 from src.api.errors import (
     ERROR_MESSAGES,
+    DailyBudgetError,
     NotReadyError,
     QueryTimeoutError,
-    DailyBudgetError,
     RateLimitedError,
     ServiceDegradedError,
 )

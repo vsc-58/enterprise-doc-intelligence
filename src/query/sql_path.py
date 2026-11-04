@@ -19,6 +19,7 @@ allowlist is enforced by the type rather than by a check.
 from sqlalchemy import Select, and_
 
 from src.query.intents import policy_for
+from src.query.resolve import not_extracted_sentence
 from src.query.schemas import (
     Comparison,
     Direction,
@@ -31,7 +32,6 @@ from src.query.schemas import (
     Tool,
 )
 from src.query.thresholds import ThresholdParseError, parse_threshold
-from src.query.resolve import not_extracted_sentence
 from src.storage.metadata_store import (
     Document,
     ExtractedRecord,
@@ -39,10 +39,15 @@ from src.storage.metadata_store import (
     latest_successful_stmt,
     unextracted_documents_stmt,
 )
-from src.storage.quality import QualityFlag, QualityReason, QualityVerdict, assess_record
+from src.storage.quality import (
+    QualityFlag,
+    QualityReason,
+    QualityVerdict,
+    assess_record,
+)
 from src.utils.config import settings
-from src.utils.numbers import SCALE_MULTIPLIERS
 from src.utils.logger import get_logger
+from src.utils.numbers import SCALE_MULTIPLIERS
 from src.utils.text import display_name
 
 logger = get_logger(__name__)

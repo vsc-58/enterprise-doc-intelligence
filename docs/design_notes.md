@@ -608,10 +608,11 @@ never as HTML. Swagger stays at `/docs`.
 
 ## 8. Container
 
-### One image with the code only; the corpus is mounted
+### The local image holds the code only; the corpus is mounted
 
-The image holds `src/` and the pinned requirements, nothing else: no tests,
-scripts, evaluation data or corpus. The corpus is mounted from `./db` locally,
+The local image holds `src/` and the pinned requirements, nothing else: no
+tests, scripts, evaluation data or corpus. (The hosted image adds the corpus on
+top of it; see section 9.) The corpus is mounted from `./db` locally,
 so rebuilding the corpus never means rebuilding the image. The API reads
 nothing under `data/`, so that is not mounted. One uvicorn worker, for the API's
 reasons. The command is uvicorn in exec form, with no shell entrypoint script,

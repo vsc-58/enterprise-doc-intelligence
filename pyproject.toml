@@ -1,0 +1,35 @@
+# pyproject.toml — tool settings only (ruff, coverage). Dependencies stay in
+# requirements.txt, which is pip-frozen; this file installs nothing.
+
+[tool.ruff]
+target-version = "py311"
+# Cached LLM responses and evaluation evidence are data, not code.
+extend-exclude = ["data"]
+
+[tool.ruff.lint]
+# F   pyflakes: undefined names, unused imports and variables
+# E9  syntax and indentation errors
+# I   import order
+# B   likely bugs (bugbear)
+# UP  syntax that has a simpler form in Python 3.11
+select = ["F", "E9", "I", "B", "UP"]
+ignore = [
+    # `class X(str, Enum)` -> `StrEnum`. Several of these enums are bound to the
+    # planner and answer-chain prompts through with_structured_output; any change
+    # to them must be a measured change, never a lint fix. StrEnum also changes
+    # what str(member) returns.
+    "UP042",
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency-injection idiom: Depends(...) as a parameter default.
+extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src", "scripts", "tests"]
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+skip_empty = true

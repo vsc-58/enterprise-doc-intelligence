@@ -36,14 +36,14 @@ import argparse
 import asyncio
 import json
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.eval.execution_eval import (
     OracleError,
+    OracleParams,
     expected_by_key,
     is_executable,
-    OracleParams,
     load_oracle_params,
     matched_alternative,
     oracle_plan,
@@ -106,7 +106,7 @@ async def _run_question(
             answer = assemble(plan, outcomes)
             tasks = [
                 record(outcome, company, exp)
-                for outcome, company, exp in zip(outcomes, companies, expected)
+                for outcome, company, exp in zip(outcomes, companies, expected, strict=False)
             ]
         except (OracleError, Exception) as exc:  # noqa: BLE001 — batch item; logged and counted
             logger.warning(
@@ -222,7 +222,7 @@ def main(runs: int, ids: set[str] | None, modes: list[str]) -> int:
     by_id = {q.id: q for q in questions}
     p_version, c_version = planner_version(), chain_version()
     results: dict = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "planner_version": p_version, "chain_version": c_version,
         "model": settings.QUERY_MODEL, "served_model": served,
         "eval_set_sha256": eval_set.sha256,

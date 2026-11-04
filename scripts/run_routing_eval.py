@@ -34,7 +34,7 @@ Cost: about $0.15 for the full set at three runs (~330 planner calls).
 import argparse
 import json
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.eval.query_eval import (
@@ -189,7 +189,7 @@ def main(runs: int, ids: set[str] | None) -> int:
 
     for run in range(1, runs + 1):
         plans = _run(questions, index)
-        for question, plan in zip(questions, plans):
+        for question, plan in zip(questions, plans, strict=False):
             if plan is None:
                 scores[question.id].append(CALL_ERROR_SCORE)
                 signatures[question.id].append("call_error")
@@ -226,12 +226,12 @@ def main(runs: int, ids: set[str] | None) -> int:
             "runs": [
                 {"score": s.model_dump(), "signature": sig, "observed": obs}
                 for s, sig, obs in zip(scores[question.id], signatures[question.id],
-                                       observed[question.id])
+                                       observed[question.id], strict=False)
             ],
         }
         per_question.append(record)
         for run_no, (score, sig) in enumerate(
-            zip(scores[question.id], signatures[question.id]), start=1
+            zip(scores[question.id], signatures[question.id], strict=False), start=1
         ):
             if not score.lenient:
                 miss_lines.append(
@@ -242,7 +242,7 @@ def main(runs: int, ids: set[str] | None) -> int:
 
     varied = [q.id for q in questions if len(set(signatures[q.id])) > 1]
     results = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "planner_version": version,
         "model": settings.QUERY_MODEL,
         "served_model": served,

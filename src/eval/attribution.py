@@ -248,7 +248,7 @@ def cohen_kappa(a: list[JudgeLabel], b: list[JudgeLabel]) -> float | None:
     n = len(a)
     if n == 0:
         return None
-    observed = sum(x is y for x, y in zip(a, b)) / n
+    observed = sum(x is y for x, y in zip(a, b, strict=False)) / n
     pa = sum(x is JudgeLabel.SUPPORTED for x in a) / n
     pb = sum(x is JudgeLabel.SUPPORTED for x in b) / n
     expected = pa * pb + (1 - pa) * (1 - pb)

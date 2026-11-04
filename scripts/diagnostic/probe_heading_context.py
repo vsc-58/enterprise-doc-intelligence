@@ -89,7 +89,7 @@ def main() -> int:
         return 1
 
     chunks = sorted(((int(m["chunk_index"]), doc) for doc, m in
-                     zip(got["documents"], got["metadatas"])), key=lambda c: c[0])
+                     zip(got["documents"], got["metadatas"], strict=False)), key=lambda c: c[0])
     keys = [i for i, _ in chunks]
 
     heading = HEADINGS[0]

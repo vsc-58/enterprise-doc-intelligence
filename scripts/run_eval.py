@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import select
+
 from src.eval.eval_set import EVAL_SET
 from src.eval.evaluate import NUMERIC_FIELDS, SCORED_FIELDS, evaluate_strategy
 from src.extraction.extractor import ExtractionResult, extract_with_strategy

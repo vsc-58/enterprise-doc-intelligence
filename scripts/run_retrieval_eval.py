@@ -33,13 +33,13 @@ planner_version prefix appended (retrieval_results_<planner8>.json; without
 version never overwrites an earlier version's evidence. A markdown summary is
 written beside it.
 
-Run:  python -m scripts.run_retrieval_eval --routing data/eval/routing_results_d4bc8e36.json
+Run:  python -m scripts.run_retrieval_eval --routing data/eval/routing_results_0dacd92a.json
       python -m scripts.run_retrieval_eval --ids R28,N22        (subset)
 """
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -47,8 +47,8 @@ from src.eval.query_eval import EvalSet, EvalSetError, load_eval_set, wilson_int
 from src.eval.retrieval_eval import (
     GoldError,
     GoldQuestion,
-    RankingScore,
     PlannerQuery,
+    RankingScore,
     load_gold,
     mean_or_none,
     planner_queries,
@@ -363,7 +363,7 @@ def main(routing_path: Path | None, ids: set[str] | None) -> int:
 
     output = results_path(planner_version, smoke=ids is not None)
     results = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "gold_status": gold.status,
         "provisional": provisional,
         "routing_file": routing_path.as_posix() if routing_path else None,

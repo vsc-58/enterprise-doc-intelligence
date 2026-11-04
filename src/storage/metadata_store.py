@@ -13,7 +13,7 @@ this table rather than populating it.
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
@@ -24,15 +24,22 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Select,
     String,
     Text,
     UniqueConstraint,
     create_engine,
     exists,
     select,
-    Select,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, aliased, mapped_column, sessionmaker
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    Session,
+    aliased,
+    mapped_column,
+    sessionmaker,
+)
 
 from src.utils.config import settings
 from src.utils.logger import get_logger
@@ -139,7 +146,7 @@ class Document(Base):
         Boolean, nullable=False, default=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime, nullable=False, default=lambda: datetime.now(UTC)
     )
 
     def __repr__(self) -> str:
@@ -304,7 +311,7 @@ class ExtractedRecord(Base):
     )
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     extracted_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime, nullable=False, default=lambda: datetime.now(UTC)
     )
 
     def __repr__(self) -> str:

@@ -24,15 +24,11 @@ from pathlib import Path
 
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field
-
-from src.extraction.prompts import EVIDENCE_STRATEGIES, STRATEGIES
-from src.extraction.schemas import FilingExtraction, FilingExtractionWithEvidence
-from src.utils.config import settings
-from src.utils.logger import get_logger
-
 from sqlalchemy import select
 
 from src.eval.grounding import check_evidence_consistency, check_grounding
+from src.extraction.prompts import EVIDENCE_STRATEGIES, STRATEGIES
+from src.extraction.schemas import FilingExtraction, FilingExtractionWithEvidence
 from src.storage.metadata_store import (
     EVIDENCE_FIELDS,
     Document,
@@ -40,6 +36,8 @@ from src.storage.metadata_store import (
     create_extracted_record,
     get_session,
 )
+from src.utils.config import settings
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

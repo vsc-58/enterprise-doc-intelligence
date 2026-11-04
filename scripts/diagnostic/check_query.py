@@ -21,7 +21,7 @@ Calls the OpenAI API: one planner call per question plus the chain calls, about
 $0.02 total.
 
 Usage:
-    python -m scripts.diagnostic.test_query
+    python -m scripts.diagnostic.check_query
 """
 
 from __future__ import annotations
